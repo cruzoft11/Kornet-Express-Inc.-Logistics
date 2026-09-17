@@ -1,0 +1,61 @@
+name: Build and Deploy Kornet Express Logistics to Azure Web App
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Root & Frontend Dependencies
+        working-directory: kornet-system
+        run: npm ci
+
+      - name: Build Frontend (Vite)
+        working-directory: kornet-system
+        run: npm run build
+
+      - name: Install Backend Dependencies & Generate Prisma
+        working-directory: kornet-system/server
+        run: |
+          npm ci
+          npx prisma generate
+          npm run build
+
+      - name: Prepare Deployment Bundle
+        run: |
+          mkdir -p deploy-bundle
+          # Copy compiled frontend
+          cp -r kornet-system/dist deploy-bundle/dist
+          # Copy backend
+          cp -r kornet-system/server deploy-bundle/server
+          # Copy package.json & lockfile
+          cp kornet-system/package.json deploy-bundle/package.json
+          cp kornet-system/package-lock.json deploy-bundle/package-lock.json
+
+      - name: Install Production Node Modules for Bundle
+        working-directory: deploy-bundle
+        run: |
+          npm ci --omit=dev
+          cd server && npm ci --omit=dev && npx prisma generate
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ vars.AZURE_WEBAPP_NAME || 'kornet-logistics-prod' }}
+          slot-name: 'Production'
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: deploy-bundle

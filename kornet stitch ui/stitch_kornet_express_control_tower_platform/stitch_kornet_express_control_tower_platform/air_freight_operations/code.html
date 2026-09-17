@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base { html, body { margin: 0; padding: 0; } body { overscroll-behavior: none; } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "primary-fixed": "#dae2ff", "surface-container-lowest": "#ffffff", "outline-variant": "#c5c6d0", "inverse-surface": "#26323b", "on-error": "#ffffff", "outline": "#757780", "secondary": "#0462a0", "primary": "#00061d", "on-background": "#111d25", "tertiary-fixed-dim": "#ffb3ad", "on-secondary-fixed-variant": "#00497b", "surface-variant": "#d7e4f0", "on-error-container": "#93000a", "on-primary-fixed": "#021945", "on-tertiary-fixed-variant": "#930011", "on-secondary-fixed": "#001d35", "on-tertiary": "#ffffff", "surface-dim": "#cfdce7", "surface-container-highest": "#d7e4f0", "on-secondary-container": "#004a7c", "on-primary": "#ffffff", "inverse-primary": "#b4c5fb", "on-surface-variant": "#44464f", "surface-container-high": "#ddeaf6", "inverse-on-surface": "#e6f2fe", "primary-container": "#071d49", "secondary-fixed": "#d0e4ff", "on-surface": "#111d25", "on-secondary": "#ffffff", "surface-container": "#e3effb", "tertiary": "#190001", "error": "#ba1a1a", "on-primary-container": "#7486b8", "on-primary-fixed-variant": "#344573", "secondary-fixed-dim": "#9ccaff", "background": "#f6faff", "surface-tint": "#4c5d8c", "tertiary-container": "#480004", "on-tertiary-container": "#f94040", "surface-bright": "#f6faff", "on-tertiary-fixed": "#410003", "primary-fixed-dim": "#b4c5fb", "secondary-container": "#79bbff", "tertiary-fixed": "#ffdad6", "error-container": "#ffdad6", "surface": "#f6faff", "surface-container-low": "#ebf5ff" }, borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" }, spacing: { "gutter": "1rem", "margin": "1.5rem", "space-xs": "0.25rem", "space-xl": "1.75rem", "space-md": "0.75rem", "space-sm": "0.5rem", "space-lg": "1.25rem" }, fontFamily: { "headline-xl": ["Inter"], "headline-md": ["Inter"], "label-md": ["Inter"], "code-md": ["JetBrains Mono"], "code-lg": ["JetBrains Mono"], "label-sm": ["Inter"], "code-sm": ["JetBrains Mono"], "body-md": ["Inter"], "headline-sm": ["Inter"], "headline-lg": ["Inter"], "body-sm": ["Inter"], "body-lg": ["Inter"], "label-lg": ["Inter"] }, fontSize: { "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "label-md": ["11px", { "lineHeight": "16px", "letterSpacing": "0.03em", "fontWeight": "600" }], "code-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }], "code-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "500" }], "label-sm": ["10px", { "lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "700" }], "code-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.01em", "fontWeight": "500" }], "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }], "headline-sm": ["16px", { "lineHeight": "24px", "fontWeight": "600" }], "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }], "body-lg": ["15px", { "lineHeight": "22px", "fontWeight": "400" }], "label-lg": ["13px", { "lineHeight": "18px", "letterSpacing": "0.01em", "fontWeight": "600" }] } } } };</script></head><body class="bg-background font-body-md text-on-surface antialiased"><main class="w-full bg-background min-h-screen"><div class="flex flex-col w-full">
+<!-- Top Global Logistics Operational Ribbon -->
+<div class="w-full bg-primary text-on-primary px-margin py-space-sm shadow-md">
+<div class="flex flex-wrap items-center justify-between gap-space-md">
+<!-- Title & Connection Block -->
+<div class="flex items-center gap-space-md min-w-0">
+<div class="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center text-on-secondary shadow-sm">
+<span class="material-symbols-outlined text-headline-sm">flight_takeoff</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-space-sm flex-wrap">
+<span class="font-headline-sm text-headline-sm tracking-tight text-white">Air Freight Operations</span>
+<span class="bg-primary-container text-on-primary px-space-xs py-0.5 rounded text-label-sm font-code-sm font-semibold tracking-wider">MNL-CARGO-T3</span>
+<div class="flex items-center gap-1.5 bg-surface-container-lowest/10 px-2 py-0.5 rounded text-label-sm">
+<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+<span class="font-code-sm text-emerald-300">IATA EDI: 99.8% ONLINE</span>
+</div>
+</div>
+<p class="font-body-sm text-surface-variant/80 text-[11px] truncate">International Cargo Manifest &amp; Flight File Engine • NAIA Skyway Logistics Complex • Synced 12:48:22 UTC+8</p>
+</div>
+</div>
+<!-- Real-time KPI Chips -->
+<div class="flex items-center gap-space-sm flex-wrap">
+<div class="bg-primary-container/80 px-space-md py-1 rounded shadow-sm flex flex-col min-w-[110px]">
+<span class="text-label-sm text-primary-fixed-dim uppercase tracking-wider font-label-sm">In-Flight Cargo</span>
+<div class="flex items-baseline gap-1">
+<span class="font-code-md text-white font-bold">48,250</span>
+<span class="text-[10px] font-code-sm text-surface-variant">KG</span>
+<span class="text-[10px] text-secondary-fixed ml-1 font-body-sm">(18 Flt)</span>
+</div>
+</div>
+<div class="bg-primary-container/80 px-space-md py-1 rounded shadow-sm flex flex-col min-w-[100px]">
+<span class="text-label-sm text-primary-fixed-dim uppercase tracking-wider font-label-sm">Customs Pass</span>
+<div class="flex items-baseline gap-1">
+<span class="font-code-md text-emerald-300 font-bold">94.2%</span>
+<span class="text-[10px] font-body-sm text-surface-variant">BOC E2M</span>
+</div>
+</div>
+<div class="bg-error-container/20 px-space-md py-1 rounded shadow-sm flex flex-col min-w-[110px]">
+<span class="text-label-sm text-tertiary-fixed-dim uppercase tracking-wider font-label-sm">Cutoff Alert</span>
+<div class="flex items-baseline gap-1">
+<span class="font-code-md text-tertiary-fixed-dim font-bold">4 HAWB</span>
+<span class="text-[10px] text-error font-body-sm">&lt;90m</span>
+</div>
+</div>
+<div class="bg-primary-container/80 px-space-md py-1 rounded shadow-sm flex flex-col min-w-[100px]">
+<span class="text-label-sm text-primary-fixed-dim uppercase tracking-wider font-label-sm">Avg Air Margin</span>
+<div class="flex items-baseline gap-1">
+<span class="font-code-md text-secondary-container font-bold">+21.8%</span>
+<span class="text-[10px] text-surface-variant font-code-sm">NET</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Toolbar Button Row -->
+<div class="mt-space-sm pt-space-xs flex flex-wrap items-center justify-between gap-space-sm bg-primary-container/40 p-1.5 rounded">
+<div class="flex items-center gap-space-xs flex-wrap">
+<button class="bg-surface-container-lowest text-primary hover:bg-surface-container-low px-space-md py-1.5 rounded font-label-md text-label-md flex items-center gap-1.5 shadow-sm transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">add_box</span>
+          + New AWB (079-)
+        </button>
+<button class="bg-secondary text-on-secondary hover:bg-secondary/90 px-space-md py-1.5 rounded font-label-md text-label-md flex items-center gap-1.5 shadow-sm transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">flight</span>
+          + Flight File Booking
+        </button>
+<button class="bg-surface-container-lowest/10 hover:bg-surface-container-lowest/20 text-white px-space-md py-1.5 rounded font-label-md text-label-md flex items-center gap-1.5 transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">shield</span>
+          Screening Manifest
+        </button>
+<button class="bg-surface-container-lowest/10 hover:bg-surface-container-lowest/20 text-white px-space-md py-1.5 rounded font-label-md text-label-md flex items-center gap-1.5 transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">print</span>
+          Print Master AWB
+        </button>
+<button class="bg-surface-container-lowest/10 hover:bg-surface-container-lowest/20 text-white px-space-md py-1.5 rounded font-label-md text-label-md flex items-center gap-1.5 transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">cloud_download</span>
+          Export IATA CIMP
+        </button>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="bg-surface-container-lowest/10 hover:bg-surface-container-lowest/20 text-white px-space-sm py-1.5 rounded font-label-sm text-label-sm flex items-center gap-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-[14px]">sync</span>
+          Refresh Feed
+        </button>
+<span class="font-code-sm text-surface-variant text-[11px] px-2 py-1 bg-surface-container-lowest/5 rounded">CYCLE: 15s</span>
+</div>
+</div>
+</div>
+<!-- Operational Search, Filters & Dispatch Filters Bar -->
+<div class="w-full bg-surface-container-low px-margin py-space-sm shadow-sm">
+<div class="flex flex-col gap-space-sm">
+<!-- Search Input and Dropdowns -->
+<div class="flex flex-wrap items-center gap-space-sm">
+<div class="relative flex-1 min-w-[280px]">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-outline text-[18px]">search</span>
+<input class="w-full bg-surface-container-lowest text-on-surface font-body-md text-body-md pl-9 pr-16 py-2 rounded shadow-sm focus:outline-none focus:bg-white" placeholder="Search AWB (079-), Flight No, Airline, Shipper, Consignee, Airport (IATA)..." type="text" value="079-9812-4410"/>
+<span class="absolute right-2.5 top-2 bg-surface-container-high px-1.5 py-0.5 rounded font-code-sm text-[10px] text-on-surface-variant font-medium">⌘K</span>
+</div>
+<div class="flex items-center gap-space-xs flex-wrap">
+<!-- Airline Select -->
+<div class="flex items-center bg-surface-container-lowest px-2.5 py-1.5 rounded shadow-sm">
+<span class="font-label-sm text-label-sm text-outline mr-1.5 uppercase">Airline:</span>
+<select class="bg-transparent font-code-sm text-code-sm text-on-surface focus:outline-none cursor-pointer">
+<option>PAL Cargo (PR)</option>
+<option>Cathay Pacific (CX)</option>
+<option>Singapore Airlines (SQ)</option>
+<option>Korean Air (KE)</option>
+<option>Qatar Cargo (QR)</option>
+<option>All Carriers</option>
+</select>
+</div>
+<!-- Direction Select -->
+<div class="flex items-center bg-surface-container-lowest px-2.5 py-1.5 rounded shadow-sm">
+<span class="font-label-sm text-label-sm text-outline mr-1.5 uppercase">Flow:</span>
+<select class="bg-transparent font-code-sm text-code-sm text-on-surface focus:outline-none cursor-pointer">
+<option>Export (MNL OUT)</option>
+<option>Import (MNL IN)</option>
+<option>Transshipment</option>
+</select>
+</div>
+<!-- Gateway Select -->
+<div class="flex items-center bg-surface-container-lowest px-2.5 py-1.5 rounded shadow-sm">
+<span class="font-label-sm text-label-sm text-outline mr-1.5 uppercase">Hub:</span>
+<select class="bg-transparent font-code-sm text-code-sm text-on-surface focus:outline-none cursor-pointer">
+<option>MNL - Manila T3</option>
+<option>CEB - Mactan Cebu</option>
+<option>CRK - Clark Field</option>
+<option>DVO - Davao Int'l</option>
+</select>
+</div>
+<!-- Date Window -->
+<div class="flex items-center bg-surface-container-lowest px-2.5 py-1.5 rounded shadow-sm">
+<span class="font-label-sm text-label-sm text-outline mr-1.5 uppercase">ETD:</span>
+<span class="font-code-sm text-code-sm text-on-surface font-semibold">Today / +48h Window</span>
+</div>
+</div>
+</div>
+<!-- Segment Quick Filter Chips -->
+<div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-label-sm">
+<button class="bg-primary text-on-primary px-3 py-1 rounded shadow-sm font-label-sm whitespace-nowrap" type="button">All Files (64)</button>
+<button class="bg-surface-container-lowest hover:bg-surface-container text-on-surface px-3 py-1 rounded shadow-sm font-label-sm whitespace-nowrap" type="button">Booking Confirmed (12)</button>
+<button class="bg-surface-container-lowest hover:bg-surface-container text-on-surface px-3 py-1 rounded shadow-sm font-label-sm whitespace-nowrap" type="button">Terminal Lodged (14)</button>
+<button class="bg-surface-container-lowest hover:bg-surface-container text-on-surface px-3 py-1 rounded shadow-sm font-label-sm whitespace-nowrap" type="button">Security Cleared (8)</button>
+<button class="bg-secondary-fixed text-on-secondary-fixed font-bold px-3 py-1 rounded shadow-sm font-label-sm whitespace-nowrap flex items-center gap-1" type="button">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary animate-ping"></span>
+          Departed / In-Flight (19)
+        </button>
+<button class="bg-error-container text-on-error-container font-bold px-3 py-1 rounded shadow-sm font-label-sm whitespace-nowrap flex items-center gap-1" type="button">
+<span class="material-symbols-outlined text-[12px]">warning</span>
+          Customs Port Hold (3)
+        </button>
+<button class="bg-surface-container-lowest hover:bg-surface-container text-on-surface px-3 py-1 rounded shadow-sm font-label-sm whitespace-nowrap" type="button">Delivered to Consignee (8)</button>
+</div>
+</div>
+</div>
+<!-- Main Multi-Pane Workspace Layout -->
+<div class="w-full px-margin py-space-sm flex-1">
+<div class="grid grid-cols-12 gap-gutter items-start">
+<!-- LEFT WORKSPACE COLUMN: Master Manifest Table (65% width equivalent: col-span-12 lg:col-span-8) -->
+<div class="col-span-12 lg:col-span-8 flex flex-col gap-space-sm">
+<!-- Table Header Control Info -->
+<div class="bg-surface-container-lowest p-space-sm rounded shadow-sm flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="font-headline-sm text-headline-sm text-primary font-bold">Active Flight Manifest &amp; Air Waybill Registry</span>
+<span class="bg-secondary/10 text-secondary font-code-sm text-code-sm px-2 py-0.5 rounded font-bold">64 SHIPMENTS LOADED</span>
+</div>
+<div class="flex items-center gap-space-xs text-body-sm text-on-surface-variant font-code-sm">
+<span>SORT: ETD ASCENDING</span>
+<span class="text-outline">•</span>
+<span>AUTO-SYNC ENABLED</span>
+</div>
+</div>
+<!-- Master Data Grid -->
+<div class="bg-surface-container-lowest rounded shadow-sm overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left font-body-sm border-collapse">
+<thead>
+<tr class="bg-surface-container text-on-surface font-label-md text-label-md tracking-wider uppercase select-none">
+<th class="py-2.5 px-3 w-8 text-center">
+<input class="rounded w-3.5 h-3.5 accent-primary" type="checkbox"/>
+</th>
+<th class="py-2.5 px-3">AWB / HAWB REF</th>
+<th class="py-2.5 px-3">CARRIER &amp; FLIGHT</th>
+<th class="py-2.5 px-3">ROUTING / ETD-ETA</th>
+<th class="py-2.5 px-3">PCS &amp; WEIGHT</th>
+<th class="py-2.5 px-3">CLASSIFICATION</th>
+<th class="py-2.5 px-3">SECURITY &amp; SCREEN</th>
+<th class="py-2.5 px-3">STATUS</th>
+<th class="py-2.5 px-3 text-right">NET MARGIN</th>
+<th class="py-2.5 px-3 text-center">ACT</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-high/40 text-[12px]">
+<!-- Row 1: Selected Active File -->
+<tr class="bg-secondary-fixed/20 hover:bg-secondary-fixed/30 cursor-pointer transition-colors group">
+<td class="py-2.5 px-3 text-center">
+<input checked="" class="rounded w-3.5 h-3.5 accent-primary" type="checkbox"/>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex flex-col">
+<div class="flex items-center gap-1 font-code-sm font-bold text-secondary">
+<span class="material-symbols-outlined text-[13px]">radio_button_checked</span>
+<span>079-9812-4410</span>
+</div>
+<span class="font-code-sm text-[10px] text-on-surface-variant font-medium">HAWB: KRN-MNL-9981</span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-1.5">
+<span class="w-5 h-5 rounded bg-primary text-white flex items-center justify-center font-code-sm text-[10px] font-bold">PR</span>
+<div class="flex flex-col">
+<span class="font-code-md font-bold text-primary">PR102</span>
+<span class="text-[10px] font-body-sm text-on-surface-variant">B777-300ER</span>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex flex-col font-code-sm">
+<div class="flex items-center gap-1 font-bold text-on-surface">
+<span>MNL</span>
+<span class="material-symbols-outlined text-[12px] text-outline">arrow_forward</span>
+<span>LAX</span>
+</div>
+<span class="text-[10px] text-on-surface-variant">D: 12:45 | A: 10:20PST</span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex flex-col font-code-sm">
+<span class="font-bold text-on-surface">24 Pcs • 1,420.0 kg</span>
+<span class="text-[10px] text-on-surface-variant">Chg: 1,600 kg (4.8 CBM)</span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex flex-col">
+<span class="bg-surface-container-high px-1.5 py-0.5 rounded text-[10px] font-semibold text-primary inline-block w-max">VAL Electronic</span>
+<span class="text-[10px] text-secondary font-medium">Wafers 2-8°C</span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex flex-col">
+<span class="text-emerald-700 font-semibold text-[10px] flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[12px]">check_circle</span>
+                        CAAP / TSA OK
+                      </span>
+<span class="text-[10px] font-code-sm text-on-surface-variant">Dual Dual-X-Ray</span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<span class="bg-secondary text-on-secondary px-2 py-0.5 rounded text-label-sm font-bold tracking-wider inline-flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                      AIRBORNE
+                    </span>
+</td>
+<td class="py-2.5 px-3 text-right">
+<div class="flex flex-col font-code-sm">
+<span class="font-bold text-emerald-800">+$1,840.00</span>
+<span class="text-[10px] text-secondary font-semibold">22.0% NET</span>
+</div>
+</td>
+<td class="py-2.5 px-3 text-center">
+<div class="flex items-center justify-center gap-1">
+<button class="p-1 hover:bg-surface-container-highest rounded text-primary" type="button">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+</button>
+<button class="p-1 hover:bg-surface-container-highest rounded text-primary" type="button">
+<span class="material-symbols-outlined text-[16px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2: Cathay Pacific -->
+<tr class="hover:bg-surface-container-low cursor-pointer transition-colors">
+<td class="py-2.5 px-3 text-center">
+<input class="rounded w-3.5 h-3.5 accent-primary" type="checkbox"/>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex flex-col">
+<div class="flex items-center gap-1 font-code-sm font-bold text-primary">
+<span>160-4491-0021</span>
+</div>
+<span class="font-code-sm text-[10px] text-on-surface-variant font-medium">HAWB: KRN-HKG-1102</span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-1.5">
+<span class="w-5 h-5 rounded bg-emerald-900 text-white flex items-center justify-center font-code-sm text-[10px] font-bold">CX</span>
+<div class="flex flex-col">
+<span class="font-code-md font-bold text-primary">CX906</span>
+<span class="text-[10px] font-body-sm text-on-surface-variant">A350-1000</span>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex flex-col font-code-sm">
+<div class="flex items-center gap-1 font-bold text-on-surface">
+<span>MNL</span>
+<span class="material-symbols-outlined text-[12px] text-outline">arrow_forward</span>
+<span>HKG</span>
+</div>
+<span class="text-[10px] text-on-surface-variant">ETD: 15:20 | ETA: 17:40</span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex flex-col font-code-sm">
+<span class="font-bold text-on-surface">18 Pcs • 860.0 kg</span>
+<span class="text-[10px] text-on-surface-variant">Chg: 860 kg (2.6 CBM)</span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex flex-col">
+<span class="bg-surface-container-high px-1.5 py-0.5 rounded text-[10px] font-semibold text-primary inline-block w-max">Gen Cargo</span>
+<span class="text-[10px] text-on-surface-variant font-medium">Optical Sensors</span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex flex-col">
+<span class="text-emerald-700 font-semibold text-[10px] flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[12px]">check_circle</span>
+                        ETD Cutoff Met
+                      </span>
+<span class="text-[10px] font-code-sm text-on-surface-variant">Screened T3-Pair</span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<span class="bg-surface-container-high text-primary px-2 py-0.5 rounded text-label-sm font-bold tracking-wider">
+                      LODGED T3
+                    </span>
+</td>
+<td class="py-2.5 px-3 text-right">
+<div class="flex flex-col font-code-sm">
+<span class="font-bold text-emerald-800">+$920.00</span>
+<span class="text-[10px] text-secondary font-semibold">24.5% NET</span>
+</div>
+</td>
+<td class="py-2.5 px-3 text-center">
+<div class="flex items-center justify-center gap-1">
+<button class="p-1 hover:bg-surface-container-highest rounded text-primary" type="button">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+</button>
+<button class="p-1 hover:bg-surface-container-highest rounded text-primary" type="button">
+<span class="material-symbols-outlined text-[16px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3: Singapore Airlines Priority -->
+<tr class="hover:bg-surface-container-low cursor-pointer transition-colors">
+<td class="py-2.5 px-3 text-center">
+<input class="rounded w-3.5 h-3.5 accent-primary" type="checkbox"/>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex flex-col">
+<div class="flex items-center gap-1 font-code-sm font-bold text-primary">
+<span>618-2041-8833</span>
+</div>
+<span class="font-code-sm text-[10px] text-on-surface-variant font-medium">HAWB: KRN-FRA-7712</span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-1.5">
+<span class="w-5 h-5 rounded bg-amber-700 text-white flex items-center justify-center font-code-sm text-[10px] font-bold">SQ</span>
+<div class="flex flex-col">
+<span class="font-code-md font-bold text-primary">SQ917</span>
+<span class="text-[10px] font-body-sm text-on-surface-variant">B787-10 / 777F</span>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex flex-col font-code-sm">
+<div class="flex items-center gap-1 font-bold text-on-surface">
+<span>MNL</span>
+<span class="material-symbols-outlined text-[12px] text-outline">arrow_forward</span>
+<span>SIN</span>
+<span class="material-symbols-outlined text-[12px] text-outline">arrow_forward</span>
+<span>FRA</span>
+</div>
+<span class="text-[10px] text-on-surface-variant">ETD: 18:10 | ETA: +1 06:20</span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex flex-col font-code-sm">
+<span class="font-bold text-on-surface">42 Pcs • 3,210.0 kg</span>
+<span class="text-[10px] text-on-surface-variant">Chg: 3,450 kg (9.2 CBM)</span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex flex-col">
+<span class="bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded text-[10px] font-semibold inline-block w-max">Pharma Temp</span>
+<span class="text-[10px] text-on-surface-variant font-medium">Active Dry Ice UN1845</span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex flex-col">
+<span class="text-emerald-700 font-semibold text-[10px] flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[12px]">check_circle</span>
+                        DGR Cert Verified
+                      </span>
+<span class="text-[10px] font-code-sm text-on-surface-variant">BOC Green Lane</span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<span class="bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded text-label-sm font-bold tracking-wider">
+                      RAMP READY
+                    </span>
+</td>
+<td class="py-2.5 px-3 text-right">
+<div class="flex flex-col font-code-sm">
+<span class="font-bold text-emerald-800">+$3,410.00</span>
+<span class="text-[10px] text-secondary font-semibold">19.8% NET</span>
+</div>
+</td>
+<td class="py-2.5 px-3 text-center">
+<div class="flex items-center justify-center gap-1">
+<button class="p-1 hover:bg-surface-container-highest rounded text-primary" type="button">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+</button>
+<button class="p-1 hover:bg-surface-container-highest rounded text-primary" type="button">
+<span class="material-symbols-outlined text-[16px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4: Customs Red Lane Hold Incident -->
+<tr class="bg-error-container/10 hover:bg-error-container/20 cursor-pointer transition-colors">
+<td class="py-2.5 px-3 text-center">
+<input class="rounded w-3.5 h-3.5 accent-primary" type="checkbox"/>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex flex-col">
+<div class="flex items-center gap-1 font-code-sm font-bold text-error">
+<span class="material-symbols-outlined text-[13px]">report</span>
+<span>180-7762-9014</span>
+</div>
+<span class="font-code-sm text-[10px] text-on-surface-variant font-medium">HAWB: KRN-ICN-0391</span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-1.5">
+<span class="w-5 h-5 rounded bg-sky-800 text-white flex items-center justify-center font-code-sm text-[10px] font-bold">KE</span>
+<div class="flex flex-col">
+<span class="font-code-md font-bold text-primary">KE624</span>
+<span class="text-[10px] font-body-sm text-on-surface-variant">B747-8F Cargo</span>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex flex-col font-code-sm">
+<div class="flex items-center gap-1 font-bold text-on-surface">
+<span>MNL</span>
+<span class="material-symbols-outlined text-[12px] text-outline">arrow_forward</span>
+<span>ICN</span>
+</div>
+<span class="text-[10px] text-on-surface-variant">ETD: 23:55 | ETA: +1 04:50</span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex flex-col font-code-sm">
+<span class="font-bold text-on-surface">8 Pallets • 4,100 kg</span>
+<span class="text-[10px] text-on-surface-variant">Chg: 4,400 kg (12 CBM)</span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex flex-col">
+<span class="bg-red-100 text-red-900 px-1.5 py-0.5 rounded text-[10px] font-semibold inline-block w-max">DGR Class 9</span>
+<span class="text-[10px] text-error font-medium">Lithium Ion Bat UN3480</span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex flex-col">
+<span class="text-error font-bold text-[10px] flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[12px]">gavel</span>
+                        BOC RED LANE HOLD
+                      </span>
+<span class="text-[10px] font-code-sm text-on-surface-variant">Missing MSDS Section 14</span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<span class="bg-error text-on-error px-2 py-0.5 rounded text-label-sm font-bold tracking-wider inline-flex items-center gap-1">
+                      CUSTOMS HOLD
+                    </span>
+</td>
+<td class="py-2.5 px-3 text-right">
+<div class="flex flex-col font-code-sm">
+<span class="font-bold text-error">+$0.00 PEND</span>
+<span class="text-[10px] text-outline font-semibold">HOLD SLA -3h</span>
+</div>
+</td>
+<td class="py-2.5 px-3 text-center">
+<div class="flex items-center justify-center gap-1">
+<button class="p-1 hover:bg-surface-container-highest rounded text-error" type="button">
+<span class="material-symbols-outlined text-[16px]">priority_high</span>
+</button>
+<button class="p-1 hover:bg-surface-container-highest rounded text-primary" type="button">
+<span class="material-symbols-outlined text-[16px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 5: Qatar Cargo Heavy Lift -->
+<tr class="hover:bg-surface-container-low cursor-pointer transition-colors">
+<td class="py-2.5 px-3 text-center">
+<input class="rounded w-3.5 h-3.5 accent-primary" type="checkbox"/>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex flex-col">
+<div class="flex items-center gap-1 font-code-sm font-bold text-primary">
+<span>157-9912-3329</span>
+</div>
+<span class="font-code-sm text-[10px] text-on-surface-variant font-medium">HAWB: KRN-DOH-6610</span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-1.5">
+<span class="w-5 h-5 rounded bg-rose-950 text-white flex items-center justify-center font-code-sm text-[10px] font-bold">QR</span>
+<div class="flex flex-col">
+<span class="font-code-md font-bold text-primary">QR8461</span>
+<span class="text-[10px] font-body-sm text-on-surface-variant">B777 Freighter</span>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex flex-col font-code-sm">
+<div class="flex items-center gap-1 font-bold text-on-surface">
+<span>MNL</span>
+<span class="material-symbols-outlined text-[12px] text-outline">arrow_forward</span>
+<span>DOH</span>
+</div>
+<span class="text-[10px] text-on-surface-variant">ETD: 02:40 | ETA: 07:15</span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex flex-col font-code-sm">
+<span class="font-bold text-on-surface">6 Crates • 5,800 kg</span>
+<span class="text-[10px] text-on-surface-variant">Chg: 6,100 kg (18.5 CBM)</span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex flex-col">
+<span class="bg-surface-container-high px-1.5 py-0.5 rounded text-[10px] font-semibold text-primary inline-block w-max">Oversized AOG</span>
+<span class="text-[10px] text-on-surface-variant font-medium">Turbine Spares</span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex flex-col">
+<span class="text-emerald-700 font-semibold text-[10px] flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[12px]">check_circle</span>
+                        Ramp Checked
+                      </span>
+<span class="text-[10px] font-code-sm text-on-surface-variant">Shikhar Heavy ULD</span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<span class="bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded text-label-sm font-bold tracking-wider">
+                      CONFIRMED
+                    </span>
+</td>
+<td class="py-2.5 px-3 text-right">
+<div class="flex flex-col font-code-sm">
+<span class="font-bold text-emerald-800">+$4,220.00</span>
+<span class="text-[10px] text-secondary font-semibold">23.1% NET</span>
+</div>
+</td>
+<td class="py-2.5 px-3 text-center">
+<div class="flex items-center justify-center gap-1">
+<button class="p-1 hover:bg-surface-container-highest rounded text-primary" type="button">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+</button>
+<button class="p-1 hover:bg-surface-container-highest rounded text-primary" type="button">
+<span class="material-symbols-outlined text-[16px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Bottom Micro Table Pagination & Status Strip -->
+<div class="bg-surface-container-low px-space-md py-2 flex flex-wrap items-center justify-between text-body-sm text-on-surface-variant font-code-sm">
+<div class="flex items-center gap-space-sm">
+<span>Showing <span class="font-bold text-on-surface">1-5</span> of <span class="font-bold text-on-surface">64</span> Air Waybills</span>
+<span class="text-outline">•</span>
+<span>Total Chargeable Mass: <span class="font-bold text-on-surface">68,410 KG</span></span>
+</div>
+<div class="flex items-center gap-1">
+<button class="px-2 py-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface disabled:opacity-50" disabled="" type="button">&lt; PREV</button>
+<button class="px-2 py-1 rounded bg-primary text-on-primary font-bold" type="button">1</button>
+<button class="px-2 py-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface" type="button">2</button>
+<button class="px-2 py-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface" type="button">3</button>
+<button class="px-2 py-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface" type="button">NEXT &gt;</button>
+</div>
+</div>
+</div>
+<!-- Integrated Air Route Density Chart & Live Radar Segment -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-sm">
+<!-- Transpacific Runway Schedule Visualizer -->
+<div class="bg-surface-container-lowest p-space-md rounded shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-secondary text-[18px]">hub</span>
+<span class="font-headline-sm text-headline-sm text-primary">Transpacific Corridors</span>
+</div>
+<span class="font-code-sm text-[11px] bg-secondary-fixed/50 text-secondary px-2 py-0.5 rounded font-bold">LIVE LOAD FACTOR: 91.4%</span>
+</div>
+<!-- Inline Mini Bar Chart Visualizing Flight Capacity -->
+<div class="space-y-2 font-code-sm text-[11px]">
+<div>
+<div class="flex justify-between mb-0.5">
+<span class="text-on-surface font-semibold">PR102 MNL-LAX (Maindeck + Bellies)</span>
+<span class="text-primary font-bold">18.4T / 20.0T (92%)</span>
+</div>
+<div class="w-full bg-surface-container-high h-2 rounded overflow-hidden">
+<div class="bg-secondary h-full rounded" style="width: 92%"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between mb-0.5">
+<span class="text-on-surface font-semibold">CX906 MNL-HKG (Sub-Hub Connection)</span>
+<span class="text-primary font-bold">11.2T / 12.5T (89%)</span>
+</div>
+<div class="w-full bg-surface-container-high h-2 rounded overflow-hidden">
+<div class="bg-primary h-full rounded" style="width: 89%"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between mb-0.5">
+<span class="text-on-surface font-semibold">SQ917 MNL-SIN-FRA (Pharma Coldbox)</span>
+<span class="text-primary font-bold">14.8T / 15.0T (98%)</span>
+</div>
+<div class="w-full bg-surface-container-high h-2 rounded overflow-hidden">
+<div class="bg-amber-600 h-full rounded" style="width: 98%"></div>
+</div>
+</div>
+</div>
+<div class="mt-3 pt-2 border-t border-surface-container flex items-center justify-between text-[11px] text-on-surface-variant font-code-sm">
+<span>Ground Handling: PairCargo / MacroAsia</span>
+<span class="text-emerald-700 font-bold">SLAs Within Target</span>
+</div>
+</div>
+<!-- Ramp Weather & Slot Timing -->
+<div class="bg-surface-container-lowest p-space-md rounded shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-secondary text-[18px]">air</span>
+<span class="font-headline-sm text-headline-sm text-primary">NAIA T3 Ramp Meteorological</span>
+</div>
+<span class="font-code-sm text-[11px] text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded font-bold">METAR: RPLL VMC</span>
+</div>
+<div class="grid grid-cols-3 gap-2 text-center font-code-sm">
+<div class="bg-surface-container-low p-2 rounded">
+<span class="text-[10px] text-on-surface-variant block uppercase">Wind • Runway</span>
+<span class="text-headline-sm text-primary font-bold block">060/12kt</span>
+<span class="text-[10px] text-emerald-700">Rwy 06 Active</span>
+</div>
+<div class="bg-surface-container-low p-2 rounded">
+<span class="text-[10px] text-on-surface-variant block uppercase">Visibility</span>
+<span class="text-headline-sm text-primary font-bold block">&gt;10 km</span>
+<span class="text-[10px] text-on-surface-variant">Ceiling Clear</span>
+</div>
+<div class="bg-surface-container-low p-2 rounded">
+<span class="text-[10px] text-on-surface-variant block uppercase">Tarmac Temp</span>
+<span class="text-headline-sm text-primary font-bold block">+31.4°C</span>
+<span class="text-[10px] text-amber-700">Cooling Req'd</span>
+</div>
+</div>
+<div class="mt-2 text-[11px] text-on-surface-variant flex items-center justify-between font-code-sm">
+<span>Departure Slot Window: ON TIME (±3m)</span>
+<span class="text-primary font-bold">Slots Manila ATC: 100%</span>
+</div>
+</div>
+</div>
+</div>
+<!-- RIGHT WORKSPACE COLUMN: Active Flight File Inspection Drawer (35% width equivalent: col-span-12 lg:col-span-4) -->
+<div class="col-span-12 lg:col-span-4 flex flex-col gap-space-sm">
+<!-- Inspection Panel Main Card -->
+<div class="bg-surface-container-lowest rounded shadow-md overflow-hidden flex flex-col">
+<!-- Flight Status Telemetry Header -->
+<div class="bg-primary text-on-primary p-space-md">
+<div class="flex items-center justify-between mb-1">
+<div class="flex items-center gap-2">
+<span class="bg-secondary text-white text-label-sm font-code-sm px-2 py-0.5 rounded font-bold">AIRBORNE</span>
+<span class="font-code-md font-bold text-white tracking-wide">PAL PR102</span>
+</div>
+<div class="flex items-center gap-1 text-[11px] text-emerald-300 font-code-sm">
+<span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+<span>ADS-B LIVE</span>
+</div>
+</div>
+<div class="flex items-baseline justify-between mt-2">
+<div class="flex flex-col">
+<span class="text-label-sm text-surface-variant/80 uppercase font-label-sm">Primary Master AWB</span>
+<span class="font-code-lg text-code-lg font-bold text-secondary-container">079-9812-4410</span>
+</div>
+<div class="text-right">
+<span class="text-label-sm text-surface-variant/80 uppercase font-label-sm">Destination ETA</span>
+<span class="font-code-md text-white font-bold">LAX • 10:20 PST</span>
+</div>
+</div>
+<!-- Mini Airborne Stats Strip -->
+<div class="mt-3 pt-2 border-t border-primary-container grid grid-cols-3 gap-2 text-center font-code-sm text-[11px]">
+<div class="bg-primary-container/80 py-1 px-1.5 rounded">
+<span class="text-[9px] text-surface-variant uppercase block">Altitude</span>
+<span class="font-bold text-white">34,000 FT</span>
+</div>
+<div class="bg-primary-container/80 py-1 px-1.5 rounded">
+<span class="text-[9px] text-surface-variant uppercase block">Ground Spd</span>
+<span class="font-bold text-white">480 KTS</span>
+</div>
+<div class="bg-primary-container/80 py-1 px-1.5 rounded">
+<span class="text-[9px] text-surface-variant uppercase block">Position</span>
+<span class="font-bold text-white">PACIFIC R04</span>
+</div>
+</div>
+</div>
+<!-- Shipment Route Milestones Timeline Stepper -->
+<div class="p-space-md border-b border-surface-container">
+<div class="flex items-center justify-between mb-3">
+<span class="font-label-md text-label-md text-primary uppercase font-bold tracking-wider">Flight Leg Milestones</span>
+<span class="text-label-sm font-code-sm text-secondary font-bold">5 of 6 COMPLETED</span>
+</div>
+<div class="relative pl-5 space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-secondary/30">
+<!-- Milestone 1 -->
+<div class="relative flex flex-col text-[11px]">
+<span class="absolute -left-[17px] top-0.5 w-3.5 h-3.5 rounded-full bg-secondary text-white flex items-center justify-center text-[9px]">
+<span class="material-symbols-outlined text-[10px]">check</span>
+</span>
+<span class="font-bold text-primary">1. Cargo Lodged &amp; Weighed</span>
+<span class="font-code-sm text-on-surface-variant">MNL PairCargo CFS • 08:30 MNL • Sealed #PC-901</span>
+</div>
+<!-- Milestone 2 -->
+<div class="relative flex flex-col text-[11px]">
+<span class="absolute -left-[17px] top-0.5 w-3.5 h-3.5 rounded-full bg-secondary text-white flex items-center justify-center text-[9px]">
+<span class="material-symbols-outlined text-[10px]">check</span>
+</span>
+<span class="font-bold text-primary">2. Security Screening &amp; Trace Detection</span>
+<span class="font-code-sm text-on-surface-variant">CAAP / OTS Certified • Dual ETD Swab 10:15 MNL</span>
+</div>
+<!-- Milestone 3 -->
+<div class="relative flex flex-col text-[11px]">
+<span class="absolute -left-[17px] top-0.5 w-3.5 h-3.5 rounded-full bg-secondary text-white flex items-center justify-center text-[9px]">
+<span class="material-symbols-outlined text-[10px]">check</span>
+</span>
+<span class="font-bold text-primary">3. Customs BOC E2M Export Clearance</span>
+<span class="font-code-sm text-emerald-800 font-semibold">Ref: BOC-EXP-88912 • Green Route Released</span>
+</div>
+<!-- Milestone 4 -->
+<div class="relative flex flex-col text-[11px]">
+<span class="absolute -left-[17px] top-0.5 w-3.5 h-3.5 rounded-full bg-secondary text-white flex items-center justify-center text-[9px]">
+<span class="material-symbols-outlined text-[10px]">check</span>
+</span>
+<span class="font-bold text-primary">4. Ramped &amp; Aircraft Pallet Loaded</span>
+<span class="font-code-sm text-on-surface-variant">Unit Load Device #PMC-8821PR (Weight Verified)</span>
+</div>
+<!-- Milestone 5 (Active) -->
+<div class="relative flex flex-col text-[11px]">
+<span class="absolute -left-[17px] top-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[9px] ring-2 ring-emerald-200 animate-pulse">
+<span class="material-symbols-outlined text-[10px]">flight</span>
+</span>
+<span class="font-bold text-secondary">5. In Flight PR102 • Oceanic Sector</span>
+<span class="font-code-sm text-on-surface font-semibold">Dep 12:45 MNL • ETA 10:20 PST Bradley Cargo</span>
+</div>
+<!-- Milestone 6 (Pending) -->
+<div class="relative flex flex-col text-[11px] opacity-60">
+<span class="absolute -left-[17px] top-0.5 w-3.5 h-3.5 rounded-full bg-surface-container-highest border border-outline text-transparent flex items-center justify-center text-[9px]"></span>
+<span class="font-bold text-on-surface">6. Destination Handling &amp; Customs Break-bulk</span>
+<span class="font-code-sm text-on-surface-variant">Scheduled at LAX Terminal 2 CFS Bonded Facility</span>
+</div>
+</div>
+</div>
+<!-- Cargo Specifications & ULD Pallet Container Section -->
+<div class="p-space-md border-b border-surface-container bg-surface-container-low/40">
+<span class="font-label-md text-label-md text-primary uppercase font-bold tracking-wider block mb-2">ULD Container &amp; Environmental Telemetry</span>
+<div class="bg-surface-container-lowest p-space-sm rounded border border-surface-container shadow-sm space-y-2">
+<div class="flex items-center justify-between">
+<span class="text-body-sm text-on-surface-variant">ULD Unit Identifier</span>
+<span class="font-code-sm font-bold text-primary bg-surface-container px-2 py-0.5 rounded">PMC-8821PR</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-body-sm text-on-surface-variant">Pallet Configuration</span>
+<span class="font-code-sm text-on-surface font-semibold">Contour Maindeck Pallet (96x125 in)</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-body-sm text-on-surface-variant">Declared Commodity</span>
+<span class="font-code-sm text-on-surface font-bold text-[11px] truncate max-w-[190px]">Semiconductor Test Wafers</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-body-sm text-on-surface-variant">Weight Metrics</span>
+<span class="font-code-sm font-bold text-primary">1,420 kg Gross / 1,600 kg Chg</span>
+</div>
+<!-- TempTale Active Sensor Reading -->
+<div class="mt-2 pt-2 border-t border-surface-container flex items-center justify-between bg-emerald-50 p-2 rounded">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-emerald-700 text-[18px]">thermostat</span>
+<div class="flex flex-col">
+<span class="font-label-sm text-[10px] text-emerald-900 font-bold">TempTale Geo IoT Sensor</span>
+<span class="font-code-sm text-[10px] text-emerald-700">Target Range: 2.0°C - 8.0°C</span>
+</div>
+</div>
+<div class="text-right font-code-sm">
+<span class="text-headline-sm font-bold text-emerald-800">4.2°C</span>
+<span class="text-[9px] block text-emerald-700 font-semibold">STABLE</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Revenue, Accounting & P&L Ledger Calculation -->
+<div class="p-space-md border-b border-surface-container">
+<div class="flex items-center justify-between mb-2">
+<span class="font-label-md text-label-md text-primary uppercase font-bold tracking-wider">Accounting &amp; File P&amp;L</span>
+<span class="font-code-sm text-[11px] bg-emerald-100 text-emerald-900 font-bold px-1.5 py-0.5 rounded">LEDGER READY</span>
+</div>
+<div class="space-y-1.5 font-code-sm text-[12px]">
+<div class="flex justify-between text-on-surface-variant">
+<span>Air Freight (1,600 kg @ $4.10/kg):</span>
+<span class="font-semibold text-on-surface">$6,560.00</span>
+</div>
+<div class="flex justify-between text-on-surface-variant">
+<span>Fuel Surcharge (FSC) &amp; Security (SSC):</span>
+<span class="font-semibold text-on-surface">$1,440.00</span>
+</div>
+<div class="flex justify-between text-on-surface-variant">
+<span>Terminal Handling (Origin) &amp; Screening:</span>
+<span class="font-semibold text-on-surface">$380.00</span>
+</div>
+<div class="flex justify-between pt-1 border-t border-surface-container font-bold text-primary">
+<span>Total Billing Revenue (USD):</span>
+<span class="text-headline-sm text-secondary font-bold">$8,380.00</span>
+</div>
+<div class="flex justify-between text-on-surface-variant">
+<span>Carrier Net Cost (PAL Master Contract):</span>
+<span class="text-error font-semibold">-$6,540.00</span>
+</div>
+<div class="flex justify-between pt-1.5 border-t border-surface-container-high bg-surface-container-low p-2 rounded">
+<span class="font-bold text-primary uppercase text-label-sm">Net File Margin:</span>
+<div class="text-right">
+<span class="font-bold text-emerald-800 text-code-lg">+$1,840.00</span>
+<span class="block text-[10px] text-secondary font-bold">(22.0% NET)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Drawer Action Control Center -->
+<div class="p-space-md bg-surface-container-low flex flex-col gap-2">
+<button class="w-full bg-primary hover:bg-primary-container text-white py-2 px-space-md rounded font-label-md text-label-md font-bold flex items-center justify-center gap-2 shadow-sm transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">account_balance_wallet</span>
+              Transfer Charge to Bridge
+            </button>
+<div class="grid grid-cols-2 gap-2">
+<button class="bg-surface-container-lowest hover:bg-white text-on-surface py-2 px-2 rounded font-label-sm text-label-sm font-semibold flex items-center justify-center gap-1 shadow-sm transition-colors" type="button">
+<span class="material-symbols-outlined text-[14px]">verified_user</span>
+                Verify Security
+              </button>
+<button class="bg-surface-container-lowest hover:bg-white text-on-surface py-2 px-2 rounded font-label-sm text-label-sm font-semibold flex items-center justify-center gap-1 shadow-sm transition-colors" type="button">
+<span class="material-symbols-outlined text-[14px]">picture_as_pdf</span>
+                e-AWB PDF
+              </button>
+</div>
+<button class="w-full bg-secondary/10 hover:bg-secondary/20 text-secondary py-1.5 px-space-md rounded font-code-sm text-[11px] font-bold flex items-center justify-center gap-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-[14px]">sensors</span>
+              View Live Telemetry Sensor Stream
+            </button>
+</div>
+</div>
+<!-- Secondary Mini Card: BOC Manifest e-Lodgement Status -->
+<div class="bg-surface-container-lowest p-space-md rounded shadow-sm flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded bg-primary-container text-primary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-primary uppercase font-bold">BOC e-Manifest Protocol</span>
+<span class="font-code-sm text-[11px] text-on-surface-variant">IATA CIMP FFM Sent • Ack #2024-889</span>
+</div>
+</div>
+<span class="font-code-sm text-[11px] text-emerald-800 font-bold bg-emerald-100 px-2 py-0.5 rounded">ACK OK</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Operational Footer Bar: Kornet Operations Bridge Status -->
+<footer class="w-full bg-surface-container-low px-margin py-space-sm mt-space-md shadow-inner">
+<div class="flex flex-wrap items-center justify-between gap-space-sm text-on-surface-variant font-code-sm text-[11px]">
+<div class="flex items-center gap-space-md flex-wrap">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+<span class="text-primary font-bold">KORNET OPERATIONS BRIDGE: ACTIVE</span>
+</div>
+<span>All 18 air freight files linked to ISO 9001:2015 audit trail</span>
+<span class="text-outline">•</span>
+<span>Gateway: MNL-NAIA CARGO TERM 3</span>
+</div>
+<div class="flex items-center gap-space-md">
+<span>UTC +08:00 (PHT)</span>
+<span class="text-outline">•</span>
+<span class="font-bold text-secondary">VERIFIED MULTIMODAL LOGISTICS ENGINE</span>
+</div>
+</div>
+</footer>
+</div></main></body></html>

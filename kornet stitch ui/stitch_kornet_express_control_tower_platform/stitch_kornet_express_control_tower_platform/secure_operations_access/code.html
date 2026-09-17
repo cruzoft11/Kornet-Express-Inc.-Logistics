@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base { html, body { margin: 0; padding: 0; } body { overscroll-behavior: none; } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "primary-fixed": "#dae2ff", "surface-container-lowest": "#ffffff", "outline-variant": "#c5c6d0", "inverse-surface": "#26323b", "on-error": "#ffffff", "outline": "#757780", "secondary": "#0462a0", "primary": "#00061d", "on-background": "#111d25", "tertiary-fixed-dim": "#ffb3ad", "on-secondary-fixed-variant": "#00497b", "surface-variant": "#d7e4f0", "on-error-container": "#93000a", "on-primary-fixed": "#021945", "on-tertiary-fixed-variant": "#930011", "on-secondary-fixed": "#001d35", "on-tertiary": "#ffffff", "surface-dim": "#cfdce7", "surface-container-highest": "#d7e4f0", "on-secondary-container": "#004a7c", "on-primary": "#ffffff", "inverse-primary": "#b4c5fb", "on-surface-variant": "#44464f", "surface-container-high": "#ddeaf6", "inverse-on-surface": "#e6f2fe", "primary-container": "#071d49", "secondary-fixed": "#d0e4ff", "on-surface": "#111d25", "on-secondary": "#ffffff", "surface-container": "#e3effb", "tertiary": "#190001", "error": "#ba1a1a", "on-primary-container": "#7486b8", "on-primary-fixed-variant": "#344573", "secondary-fixed-dim": "#9ccaff", "background": "#f6faff", "surface-tint": "#4c5d8c", "tertiary-container": "#480004", "on-tertiary-container": "#f94040", "surface-bright": "#f6faff", "on-tertiary-fixed": "#410003", "primary-fixed-dim": "#b4c5fb", "secondary-container": "#79bbff", "tertiary-fixed": "#ffdad6", "error-container": "#ffdad6", "surface": "#f6faff", "surface-container-low": "#ebf5ff" }, borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" }, spacing: { "gutter": "1rem", "margin": "1.5rem", "space-xs": "0.25rem", "space-xl": "1.75rem", "space-md": "0.75rem", "space-sm": "0.5rem", "space-lg": "1.25rem" }, fontFamily: { "headline-xl": ["Inter"], "headline-md": ["Inter"], "label-md": ["Inter"], "code-md": ["JetBrains Mono"], "code-lg": ["JetBrains Mono"], "label-sm": ["Inter"], "code-sm": ["JetBrains Mono"], "body-md": ["Inter"], "headline-sm": ["Inter"], "headline-lg": ["Inter"], "body-sm": ["Inter"], "body-lg": ["Inter"], "label-lg": ["Inter"] }, fontSize: { "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "label-md": ["11px", { "lineHeight": "16px", "letterSpacing": "0.03em", "fontWeight": "600" }], "code-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }], "code-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "500" }], "label-sm": ["10px", { "lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "700" }], "code-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.01em", "fontWeight": "500" }], "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }], "headline-sm": ["16px", { "lineHeight": "24px", "fontWeight": "600" }], "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }], "body-lg": ["15px", { "lineHeight": "22px", "fontWeight": "400" }], "label-lg": ["13px", { "lineHeight": "18px", "letterSpacing": "0.01em", "fontWeight": "600" }] } } } };</script></head><body class="bg-background font-body-md text-on-surface antialiased"><main class="w-full bg-background min-h-screen"><div class="flex flex-col w-full min-h-screen relative overflow-hidden items-center justify-center p-space-md sm:p-space-xl">
+<div class="absolute inset-0 pointer-events-none opacity-40">
+<div class="absolute -top-48 -left-48 w-96 h-96 rounded-full bg-secondary-fixed blur-3xl"></div>
+<div class="absolute top-1/2 -right-48 w-96 h-96 rounded-full bg-surface-container-high blur-3xl"></div>
+<div class="absolute inset-0 bg-[radial-gradient(#d7e4f0_1px,transparent_1px)] [background-size:24px_24px] opacity-60"></div>
+</div>
+<div class="w-full max-w-xl relative z-10 flex flex-col items-center">
+<div class="w-full bg-surface-container-lowest shadow-xl rounded-xl overflow-hidden mb-space-lg">
+<div class="h-1.5 w-full flex">
+<div class="h-full bg-primary-container flex-1"></div>
+<div class="h-full bg-secondary w-28"></div>
+<div class="h-full bg-error w-16"></div>
+</div>
+<div class="p-space-lg sm:p-space-xl flex flex-col">
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-space-sm pb-space-md">
+<div class="flex items-center">
+<img alt="Kornet Express Official Brand Logo" class="h-9 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1URkBwlNjtw0v3JMreEOcZ74E8udKShftiznnWwyeiTBiqZ4Oz5yjFbs6aPtuBlYxqHU6AuaGoP-Nu09LRamyrk4N2fd4mSiaM2VhsgoIaQj06z-Bp2Z1chOsX-MnG9LhaU8X5ghYFOMnnU6pAAf3z-pUEvAqZ6TxREi6X_9eCTQ3ve-npYwZDRS4ecLb33zgD0nS7Hfw91sKmRQ58QiPTEfA36KpkegSWe5S_17ooR2bjpApCpvxzvupTV"/>
+</div>
+<div class="flex items-center space-x-space-xs bg-surface-container-low px-space-sm py-1 rounded">
+<span class="inline-block w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+<span class="font-code-sm text-code-sm text-secondary uppercase tracking-wider">GATEWAY // MNL-SEC-01</span>
+</div>
+</div>
+<div class="mt-space-md">
+<div class="flex items-center space-x-space-xs">
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-secondary font-bold">Kornet Express</span>
+<span class="text-outline-variant font-code-sm">•</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-medium">Global Logistics Operations</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-primary mt-space-xs font-bold tracking-tight">
+            Move every shipment with certainty.
+          </h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-space-xs leading-relaxed">
+            One secure workspace for freight files, fleet movement, customer tracking, and the decisions that keep cargo moving.
+          </p>
+</div>
+<div class="hidden mt-space-md p-space-md rounded bg-error-container text-on-error-container flex items-start space-x-space-sm transition-all duration-200" id="authAlert">
+<span class="material-symbols-outlined text-error text-lg mt-0.5">error</span>
+<div class="flex-1">
+<p class="font-label-lg text-label-lg font-semibold" id="authAlertText">Unable to verify those credentials.</p>
+<p class="font-body-sm text-body-sm opacity-90 mt-0.5">Contact the Systems Dispatch Desk if your access key requires revalidation.</p>
+</div>
+<button class="text-on-error-container hover:opacity-75" onclick="dismissAlert()" type="button">
+<span class="material-symbols-outlined text-sm">close</span>
+</button>
+</div>
+<form class="mt-space-lg flex flex-col space-y-space-md" id="loginForm" onsubmit="handleAuthSubmit(event)">
+<div class="flex flex-col space-y-1">
+<div class="flex justify-between items-center">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold" for="username">
+                OPERATIONS USER ID
+              </label>
+<span class="font-code-sm text-code-sm text-outline">SEC-AUTH REQUIRED</span>
+</div>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-outline text-lg pointer-events-none">badge</span>
+<input autocomplete="username" class="w-full h-10 pl-10 pr-space-md bg-surface-container-low focus:bg-surface-container-lowest text-on-surface font-code-md text-code-md rounded transition-colors focus:outline-none focus:ring-2 focus:ring-secondary" id="username" name="username" placeholder="e.g. OP-MNL-8842" required="" type="text"/>
+</div>
+</div>
+<div class="flex flex-col space-y-1">
+<div class="flex justify-between items-center">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold" for="password">
+                SECURITY PASSPHRASE
+              </label>
+<span class="font-code-sm text-code-sm text-outline">TOKEN / PIN COMPATIBLE</span>
+</div>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-outline text-lg pointer-events-none">key</span>
+<input autocomplete="current-password" class="w-full h-10 pl-10 pr-10 bg-surface-container-low focus:bg-surface-container-lowest text-on-surface font-code-md text-code-md rounded transition-colors focus:outline-none focus:ring-2 focus:ring-secondary" id="password" name="password" placeholder="••••••••••••••••" required="" type="password"/>
+<button aria-label="Toggle password view" class="absolute right-3 text-outline hover:text-on-surface flex items-center justify-center focus:outline-none" id="togglePassBtn" onclick="togglePasswordVisibility()" type="button">
+<span class="material-symbols-outlined text-lg" id="passwordIcon">visibility</span>
+</button>
+</div>
+</div>
+<div class="py-space-xs grid grid-cols-1 sm:grid-cols-3 gap-space-xs bg-surface-container-low p-space-sm rounded">
+<div class="flex items-center space-x-1.5">
+<span class="material-symbols-outlined text-secondary text-sm">verified_user</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant truncate">Company-scoped access</span>
+</div>
+<div class="flex items-center space-x-1.5">
+<span class="material-symbols-outlined text-secondary text-sm">lock</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant truncate">Encrypted session</span>
+</div>
+<div class="flex items-center space-x-1.5">
+<span class="material-symbols-outlined text-secondary text-sm">sync_saved_locally</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant truncate">Live operational records</span>
+</div>
+</div>
+<button class="w-full h-11 bg-primary-container hover:bg-primary text-on-primary font-label-lg text-label-lg rounded font-semibold tracking-wide flex items-center justify-center space-x-space-sm transition-all active:scale-[0.99] shadow-md" id="submitBtn" type="submit">
+<span id="btnText">Enter operations center</span>
+<span class="material-symbols-outlined text-lg" id="btnIcon">arrow_forward</span>
+</button>
+</form>
+<div class="mt-space-md pt-space-md bg-surface-container-low p-space-sm rounded flex flex-col sm:flex-row items-center justify-between gap-space-sm">
+<div class="flex items-center space-x-2">
+<span class="font-label-sm text-label-sm uppercase text-outline font-semibold tracking-wider">Ops Test Bar:</span>
+<button class="px-space-sm py-1 bg-surface-container-lowest hover:bg-surface-variant text-on-surface text-label-sm font-label-sm rounded shadow-sm transition-colors" onclick="simulateError()" type="button">
+              Simulate Auth Error
+            </button>
+<button class="px-space-sm py-1 bg-surface-container-lowest hover:bg-surface-variant text-secondary text-label-sm font-label-sm rounded shadow-sm transition-colors" onclick="simulateVerifying()" type="button">
+              Simulate Verifying...
+            </button>
+</div>
+<button class="text-secondary hover:text-on-secondary-container font-label-sm text-label-sm font-semibold flex items-center space-x-1 underline decoration-secondary/30 hover:decoration-secondary transition-all" onclick="openModal()" type="button">
+<span class="material-symbols-outlined text-sm">help_outline</span>
+<span>Need access help?</span>
+</button>
+</div>
+</div>
+</div>
+<div class="text-center text-on-surface-variant font-label-sm text-label-sm flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
+<span class="font-semibold text-primary">Kornet Express Inc.</span>
+<span>•</span>
+<span>Global Logistics Operations</span>
+<span>•</span>
+<span class="text-error font-medium">Authorized personnel only</span>
+<span>•</span>
+<span>Est. 2000 Philippines</span>
+</div>
+</div>
+<div aria-labelledby="modalTitle" aria-modal="true" class="fixed inset-0 z-50 bg-primary/40 backdrop-blur-sm hidden items-center justify-center p-space-md transition-opacity duration-200" id="supportModal" role="dialog">
+<div class="w-full max-w-lg bg-surface-container-lowest rounded-xl shadow-2xl overflow-hidden flex flex-col">
+<div class="h-1 bg-secondary w-full"></div>
+<div class="p-space-lg flex items-start justify-between">
+<div class="flex items-center space-x-space-sm">
+<div class="w-9 h-9 rounded bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed">
+<span class="material-symbols-outlined text-lg">support_agent</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-primary font-bold" id="modalTitle">Access Escalation Dispatch</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Submit authentication ticket to Kornet Systems Operations Desk.</p>
+</div>
+</div>
+<button class="text-outline hover:text-on-surface p-1 rounded hover:bg-surface-variant focus:outline-none" onclick="closeModal()" type="button">
+<span class="material-symbols-outlined text-lg">close</span>
+</button>
+</div>
+<div class="px-space-lg pb-space-lg flex flex-col space-y-space-md">
+<div class="hidden p-space-sm rounded bg-surface-container-high text-secondary flex items-center space-x-space-sm" id="modalSuccess">
+<span class="material-symbols-outlined text-sm">check_circle</span>
+<span class="font-body-sm text-body-sm">Secure ticket dispatched to Operations Control. Expect contact via internal terminal.</span>
+</div>
+<form class="flex flex-col space-y-space-md" id="supportForm" onsubmit="handleSupportSubmit(event)">
+<div class="flex flex-col space-y-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold" for="supportUsername">
+              OPERATOR BADGE / USER ID
+            </label>
+<input class="w-full h-10 px-space-md bg-surface-container-low text-on-surface font-code-md text-code-md rounded focus:outline-none focus:ring-2 focus:ring-secondary" id="supportUsername" placeholder="e.g. OP-MNL-8842 or Station ID" required="" type="text"/>
+</div>
+<div class="flex flex-col space-y-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold" for="supportStation">
+              TERMINAL LOCATION / PORT CODE
+            </label>
+<input class="w-full h-10 px-space-md bg-surface-container-low text-on-surface font-body-md text-body-md rounded focus:outline-none focus:ring-2 focus:ring-secondary" id="supportStation" placeholder="e.g. Port of Manila (MNL) - Air Hub Clark (CRK)" type="text"/>
+</div>
+<div class="flex flex-col space-y-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold" for="issueDescription">
+              DESCRIPTION OF ACCESS ISSUE
+            </label>
+<textarea class="w-full p-space-md bg-surface-container-low text-on-surface font-body-md text-body-md rounded focus:outline-none focus:ring-2 focus:ring-secondary resize-none" id="issueDescription" placeholder="Detail the clearance breakdown (e.g. Hardware token unsynced, manifest clearance lock, duty shift handover)..." required="" rows="3"></textarea>
+</div>
+<div class="p-space-sm bg-surface-container-low rounded text-on-surface-variant font-body-sm text-body-sm flex items-center space-x-2">
+<span class="material-symbols-outlined text-outline text-base">privacy_tip</span>
+<span>All inquiries are logged to corporate audit trail ISO 27001 / PEZA compliancy logs.</span>
+</div>
+<div class="flex items-center justify-end space-x-space-sm pt-space-xs">
+<button class="px-space-md py-2 text-on-surface-variant hover:text-on-surface font-label-lg text-label-lg rounded transition-colors" onclick="closeModal()" type="button">
+              Cancel
+            </button>
+<button class="px-space-lg py-2 bg-primary-container hover:bg-primary text-on-primary font-label-lg text-label-lg rounded font-semibold transition-all shadow-sm flex items-center space-x-1" id="supportSubmitBtn" type="submit">
+<span>Send Secure Access Request</span>
+</button>
+</div>
+</form>
+</div>
+</div>
+</div>
+</div>
+<script>
+  function togglePasswordVisibility() {
+    const passwordInput = document.getElementById('password');
+    const passwordIcon = document.getElementById('passwordIcon');
+    if (!passwordInput || !passwordIcon) return;
+    
+    if (passwordInput.type === 'password') {
+      passwordInput.type = 'text';
+      passwordIcon.textContent = 'visibility_off';
+    } else {
+      passwordInput.type = 'password';
+      passwordIcon.textContent = 'visibility';
+    }
+  }
+
+  function dismissAlert() {
+    const alert = document.getElementById('authAlert');
+    if (alert) alert.classList.add('hidden');
+  }
+
+  function simulateError() {
+    const alert = document.getElementById('authAlert');
+    const alertText = document.getElementById('authAlertText');
+    if (!alert || !alertText) return;
+    
+    alertText.textContent = 'Unable to verify those credentials.';
+    alert.classList.remove('hidden');
+  }
+
+  function simulateVerifying() {
+    const btn = document.getElementById('submitBtn');
+    const btnText = document.getElementById('btnText');
+    const btnIcon = document.getElementById('btnIcon');
+    const alert = document.getElementById('authAlert');
+    if (!btn || !btnText || !btnIcon) return;
+    
+    if (alert) alert.classList.add('hidden');
+    
+    btn.disabled = true;
+    btn.classList.add('opacity-90');
+    btnText.textContent = 'Verifying cryptographic token...';
+    btnIcon.textContent = 'hourglass_empty';
+    btnIcon.classList.add('animate-spin');
+
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.classList.remove('opacity-90');
+      btnText.textContent = 'Enter operations center';
+      btnIcon.textContent = 'arrow_forward';
+      btnIcon.classList.remove('animate-spin');
+      simulateError();
+    }, 1800);
+  }
+
+  function handleAuthSubmit(e) {
+    e.preventDefault();
+    simulateVerifying();
+  }
+
+  function openModal() {
+    const modal = document.getElementById('supportModal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+  }
+
+  function closeModal() {
+    const modal = document.getElementById('supportModal');
+    const modalSuccess = document.getElementById('modalSuccess');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+    if (modalSuccess) modalSuccess.classList.add('hidden');
+  }
+
+  function handleSupportSubmit(e) {
+    e.preventDefault();
+    const modalSuccess = document.getElementById('modalSuccess');
+    const supportSubmitBtn = document.getElementById('supportSubmitBtn');
+    
+    if (supportSubmitBtn) supportSubmitBtn.disabled = true;
+    
+    setTimeout(() => {
+      if (modalSuccess) modalSuccess.classList.remove('hidden');
+      if (supportSubmitBtn) supportSubmitBtn.disabled = false;
+      setTimeout(() => {
+        closeModal();
+        const form = document.getElementById('supportForm');
+        if (form) form.reset();
+      }, 2000);
+    }, 700);
+  }
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeModal();
+  });
+</script></main></body></html>

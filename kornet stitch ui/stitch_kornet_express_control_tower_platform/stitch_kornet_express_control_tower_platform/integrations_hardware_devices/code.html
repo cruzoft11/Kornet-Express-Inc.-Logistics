@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base { html, body { margin: 0; padding: 0; } body { overscroll-behavior: none; } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "primary-fixed": "#dae2ff", "surface-container-lowest": "#ffffff", "outline-variant": "#c5c6d0", "inverse-surface": "#26323b", "on-error": "#ffffff", "outline": "#757780", "secondary": "#0462a0", "primary": "#00061d", "on-background": "#111d25", "tertiary-fixed-dim": "#ffb3ad", "on-secondary-fixed-variant": "#00497b", "surface-variant": "#d7e4f0", "on-error-container": "#93000a", "on-primary-fixed": "#021945", "on-tertiary-fixed-variant": "#930011", "on-secondary-fixed": "#001d35", "on-tertiary": "#ffffff", "surface-dim": "#cfdce7", "surface-container-highest": "#d7e4f0", "on-secondary-container": "#004a7c", "on-primary": "#ffffff", "inverse-primary": "#b4c5fb", "on-surface-variant": "#44464f", "surface-container-high": "#ddeaf6", "inverse-on-surface": "#e6f2fe", "primary-container": "#071d49", "secondary-fixed": "#d0e4ff", "on-surface": "#111d25", "on-secondary": "#ffffff", "surface-container": "#e3effb", "tertiary": "#190001", "error": "#ba1a1a", "on-primary-container": "#7486b8", "on-primary-fixed-variant": "#344573", "secondary-fixed-dim": "#9ccaff", "background": "#f6faff", "surface-tint": "#4c5d8c", "tertiary-container": "#480004", "on-tertiary-container": "#f94040", "surface-bright": "#f6faff", "on-tertiary-fixed": "#410003", "primary-fixed-dim": "#b4c5fb", "secondary-container": "#79bbff", "tertiary-fixed": "#ffdad6", "error-container": "#ffdad6", "surface": "#f6faff", "surface-container-low": "#ebf5ff" }, borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" }, spacing: { "gutter": "1rem", "margin": "1.5rem", "space-xs": "0.25rem", "space-xl": "1.75rem", "space-md": "0.75rem", "space-sm": "0.5rem", "space-lg": "1.25rem" }, fontFamily: { "headline-xl": ["Inter"], "headline-md": ["Inter"], "label-md": ["Inter"], "code-md": ["JetBrains Mono"], "code-lg": ["JetBrains Mono"], "label-sm": ["Inter"], "code-sm": ["JetBrains Mono"], "body-md": ["Inter"], "headline-sm": ["Inter"], "headline-lg": ["Inter"], "body-sm": ["Inter"], "body-lg": ["Inter"], "label-lg": ["Inter"] }, fontSize: { "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "label-md": ["11px", { "lineHeight": "16px", "letterSpacing": "0.03em", "fontWeight": "600" }], "code-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }], "code-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "500" }], "label-sm": ["10px", { "lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "700" }], "code-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.01em", "fontWeight": "500" }], "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }], "headline-sm": ["16px", { "lineHeight": "24px", "fontWeight": "600" }], "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }], "body-lg": ["15px", { "lineHeight": "22px", "fontWeight": "400" }], "label-lg": ["13px", { "lineHeight": "18px", "letterSpacing": "0.01em", "fontWeight": "600" }] } } } };</script></head><body class="bg-background font-body-md text-on-surface antialiased"><main class="w-full bg-background min-h-screen"><div class="flex flex-col w-full">
+<!-- Control Tower Top Bar / Live Telemetry strip -->
+<div class="w-full bg-surface-container-lowest px-margin py-space-md shadow-sm">
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
+<!-- Title & Operational Badge -->
+<div class="flex items-center gap-space-md min-w-0">
+<div class="flex items-center justify-center w-10 h-10 rounded-lg bg-primary-container text-on-primary">
+<span class="material-symbols-outlined text-[22px]">developer_board</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-space-xs">
+<h1 class="font-headline-md text-headline-md text-primary tracking-tight">Integrations &amp; Devices</h1>
+<span class="px-2 py-0.5 rounded text-[10px] font-label-sm uppercase bg-surface-container-high text-secondary tracking-wider font-semibold">Hub v4.8.2</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Hardware Peripherals, Customs Gateways, Carrier EDI Connections, Cloud APIs &amp; Diagnostic Health Monitor</p>
+</div>
+</div>
+<!-- Live Self-Check & Sync Action Bar -->
+<div class="flex flex-wrap items-center gap-space-sm">
+<button class="flex items-center gap-space-xs px-space-md py-space-xs rounded bg-primary-container text-on-primary hover:bg-primary transition-colors text-label-lg font-label-lg shadow-sm" id="btn-self-test" onclick="runDiagnosticTest()">
+<span class="material-symbols-outlined text-[16px]">troubleshoot</span>
+<span>Run Full Diagnostic Self-Test</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-md py-space-xs rounded bg-secondary text-on-secondary hover:bg-on-secondary-fixed-variant transition-colors text-label-lg font-label-lg shadow-sm">
+<span class="material-symbols-outlined text-[16px]">add_link</span>
+<span>+ Pair New Hardware Device</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-sm py-space-xs rounded bg-surface-container-high text-on-surface hover:bg-surface-variant transition-colors text-label-md font-label-md">
+<span class="material-symbols-outlined text-[15px]">download</span>
+<span>Download Agent (.exe / daemon)</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-sm py-space-xs rounded bg-surface-container-high text-on-surface hover:bg-surface-variant transition-colors text-label-md font-label-md">
+<span class="material-symbols-outlined text-[15px]">receipt_long</span>
+<span>Export Audit Log</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-sm py-space-xs rounded bg-surface-container-low text-error hover:bg-error-container transition-colors text-label-md font-label-md" title="Purge dead TCP/IP and POS buffer pools">
+<span class="material-symbols-outlined text-[15px]">clear_all</span>
+<span>Flush Sockets</span>
+</button>
+</div>
+</div>
+<!-- Diagnostic Health Strip (5 Key KPIs) -->
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-space-sm mt-space-md pt-space-sm border-t border-surface-container-high">
+<!-- 1: System Health -->
+<div class="bg-surface-container-low rounded p-space-sm flex items-center justify-between">
+<div>
+<div class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">System Health</div>
+<div class="font-headline-sm text-headline-sm text-primary flex items-baseline gap-1 mt-0.5">
+<span>10</span>
+<span class="text-body-sm font-body-sm text-on-surface-variant">/ 12 Online</span>
+</div>
+<div class="font-code-sm text-code-sm text-error font-medium">2 Require Attention</div>
+</div>
+<div class="w-2.5 h-2.5 rounded-full bg-error ring-4 ring-error-container"></div>
+</div>
+<!-- 2: Gateway Latency -->
+<div class="bg-surface-container-low rounded p-space-sm flex items-center justify-between">
+<div>
+<div class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">Avg Gateway Latency</div>
+<div class="font-headline-sm text-headline-sm text-primary flex items-baseline gap-1 mt-0.5">
+<span class="font-code-lg">42</span>
+<span class="font-code-sm text-on-surface-variant">ms</span>
+</div>
+<div class="font-code-sm text-code-sm text-secondary font-medium">Jitter &lt; 2.1ms (Optimal)</div>
+</div>
+<span class="material-symbols-outlined text-secondary text-[22px]">speed</span>
+</div>
+<!-- 3: Hardware Hub Devices -->
+<div class="bg-surface-container-low rounded p-space-sm flex items-center justify-between">
+<div>
+<div class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">Hardware Hub (USB/HID)</div>
+<div class="font-headline-sm text-headline-sm text-primary flex items-baseline gap-1 mt-0.5">
+<span>8</span>
+<span class="text-body-sm font-body-sm text-on-surface-variant">Units</span>
+</div>
+<div class="font-code-sm text-code-sm text-primary-container font-medium">T1 &amp; Batangas Yard Active</div>
+</div>
+<span class="material-symbols-outlined text-secondary text-[22px]">usb</span>
+</div>
+<!-- 4: BOC Customs EDI Uptime -->
+<div class="bg-surface-container-low rounded p-space-sm flex items-center justify-between">
+<div>
+<div class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">BOC E2M Customs EDI</div>
+<div class="font-headline-sm text-headline-sm text-primary flex items-baseline gap-1 mt-0.5">
+<span class="font-code-lg">99.8%</span>
+</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant">Prod AS2 Tunnel Up</div>
+</div>
+<span class="material-symbols-outlined text-secondary text-[22px]">shield</span>
+</div>
+<!-- 5: SMTP & SMS Queue -->
+<div class="bg-surface-container-low rounded p-space-sm flex items-center justify-between col-span-2 md:col-span-1">
+<div>
+<div class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">Outbound Dispatch Queue</div>
+<div class="font-headline-sm text-headline-sm text-primary flex items-baseline gap-1 mt-0.5">
+<span class="font-code-lg">0</span>
+<span class="text-body-sm font-body-sm text-on-surface-variant">Pending</span>
+</div>
+<div class="font-code-sm text-code-sm text-error font-medium">SMS Token Degraded</div>
+</div>
+<span class="material-symbols-outlined text-error text-[22px]">notifications_paused</span>
+</div>
+</div>
+</div>
+<!-- Operational Diagnostics Banner: Strict Non-Toggle Truthfulness Notice -->
+<div class="px-margin pt-space-md">
+<div class="bg-surface-container-low p-space-sm rounded-lg flex flex-wrap items-center justify-between gap-space-md">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-secondary text-[18px]">verified_user</span>
+<span class="font-body-sm text-body-sm text-on-surface">
+<strong class="font-semibold text-primary">Zero-Trust Telemetry Engine:</strong> System indicators reflect genuine cryptographic handshakes, hardware polling responses, and gateway daemon ping checks. No synthetic toggles.
+        </span>
+</div>
+<div class="flex items-center gap-space-md text-label-sm font-label-sm text-on-surface-variant">
+<span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-[#087443]"></span> Connected</span>
+<span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-[#B7791F]"></span> Config Required</span>
+<span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-error"></span> Error / Degraded</span>
+<span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-outline"></span> Unavailable</span>
+<span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-outline-variant"></span> Disabled</span>
+</div>
+</div>
+</div>
+<!-- Main Integration & Device Grid (8 Enterprise Modules) -->
+<div class="p-margin grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-space-lg">
+<!-- Card 1: Bureau of Customs (BOC) E2M Single Window Portal -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-lg flex flex-col justify-between hover:shadow-md transition-shadow">
+<div>
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded bg-primary-container text-on-primary flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">account_balance</span>
+</div>
+<div>
+<div class="font-headline-sm text-headline-sm text-primary">BOC E2M Single Window</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Government Customs Gateway</div>
+</div>
+</div>
+<!-- Verified Status Badge -->
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-label-sm font-label-sm uppercase bg-[#087443]/10 text-[#087443] font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-[#087443] animate-pulse"></span>
+            CONNECTED
+          </span>
+</div>
+<div class="mt-space-md space-y-space-xs font-code-sm text-code-sm">
+<div class="flex justify-between py-1 bg-surface-container-low px-2 rounded">
+<span class="text-on-surface-variant">Tunnel Protocol</span>
+<span class="text-primary font-medium">AS2 / ebXML Secure Gateway</span>
+</div>
+<div class="flex flex-col py-1 px-2">
+<span class="text-on-surface-variant text-[10px] uppercase">Production Endpoint</span>
+<span class="text-secondary truncate select-all">https://e2m.customs.gov.ph/api/v2/secure-gateway</span>
+</div>
+<div class="grid grid-cols-2 gap-2 py-1 px-2">
+<div>
+<span class="text-on-surface-variant block text-[10px] uppercase">Latency</span>
+<span class="text-primary font-medium">38ms (MNL Dist. 01)</span>
+</div>
+<div>
+<span class="text-on-surface-variant block text-[10px] uppercase">Last Handshake</span>
+<span class="text-primary font-medium">12s ago (#E2M-88912)</span>
+</div>
+</div>
+<div class="flex justify-between py-1 px-2 text-[10px] text-on-surface-variant border-t border-surface-container-high pt-2">
+<span>Cert Exp: 2026-11-04 (SHA-256)</span>
+<span class="text-secondary font-medium">Auto-Renewed</span>
+</div>
+</div>
+</div>
+<div class="mt-space-md pt-space-sm border-t border-surface-container-high flex flex-wrap items-center gap-space-xs">
+<button class="px-space-sm py-1 rounded bg-secondary text-on-secondary hover:bg-on-secondary-fixed-variant transition-colors text-label-md font-label-md flex items-center gap-1" onclick="simulatePing('BOC-E2M', this)">
+<span class="material-symbols-outlined text-[14px]">network_ping</span>
+<span>Test Live Ping</span>
+</button>
+<button class="px-space-sm py-1 rounded bg-surface-container-high text-on-surface hover:bg-surface-variant transition-colors text-label-md font-label-md">
+          View Certificates
+        </button>
+<button class="px-space-sm py-1 rounded bg-surface-container-high text-on-surface hover:bg-surface-variant transition-colors text-label-md font-label-md">
+          Credentials
+        </button>
+</div>
+</div>
+<!-- Card 2: Wacom STU-430 Signature Pad Peripherals -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-lg flex flex-col justify-between hover:shadow-md transition-shadow">
+<div>
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded bg-surface-container-high text-primary flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">draw</span>
+</div>
+<div>
+<div class="font-headline-sm text-headline-sm text-primary">Wacom STU-430 Pads</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Hardware Digitizers</div>
+</div>
+</div>
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-label-sm font-label-sm uppercase bg-[#087443]/10 text-[#087443] font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-[#087443]"></span>
+            CONNECTED
+          </span>
+</div>
+<div class="mt-space-md space-y-space-xs font-code-sm text-code-sm">
+<div class="flex justify-between py-1 bg-surface-container-low px-2 rounded">
+<span class="text-on-surface-variant">Digitizer Spec</span>
+<span class="text-primary font-medium">1024 Pressure, USB 2.0 HID</span>
+</div>
+<div class="grid grid-cols-2 gap-2 py-1 px-2">
+<div>
+<span class="text-on-surface-variant block text-[10px] uppercase">Active Desks</span>
+<span class="text-primary font-medium">12 Units (T1 &amp; Batangas)</span>
+</div>
+<div>
+<span class="text-on-surface-variant block text-[10px] uppercase">Driver Status</span>
+<span class="text-primary font-medium">SignServer v4.2.1</span>
+</div>
+</div>
+<div class="flex justify-between py-1 px-2 text-[10px] text-on-surface-variant bg-surface-container-low rounded">
+<span>Kernel Mode USB Polling</span>
+<span class="text-[#087443] font-semibold">200 Hz Normal</span>
+</div>
+<div class="text-[11px] font-body-sm text-on-surface-variant px-2 pt-1">
+            Biometric pressure curve encryption loaded (RSA 2048-bit POD security).
+          </div>
+</div>
+</div>
+<div class="mt-space-md pt-space-sm border-t border-surface-container-high flex flex-wrap items-center gap-space-xs">
+<button class="px-space-sm py-1 rounded bg-secondary text-on-secondary hover:bg-on-secondary-fixed-variant transition-colors text-label-md font-label-md flex items-center gap-1" onclick="triggerFeedback('Stylus calibration initiated on all 12 desks.', this)">
+<span class="material-symbols-outlined text-[14px]">tune</span>
+<span>Calibrate Stylus</span>
+</button>
+<button class="px-space-sm py-1 rounded bg-surface-container-high text-on-surface hover:bg-surface-variant transition-colors text-label-md font-label-md" onclick="triggerFeedback('Hardware Self-Test sent to digitizer USB hubs.', this)">
+          Run Hardware Self-Test
+        </button>
+</div>
+</div>
+<!-- Card 3: Zebra ZT411 Industrial Weatherproof Barcode & RFID Printer -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-lg flex flex-col justify-between hover:shadow-md transition-shadow">
+<div>
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded bg-surface-container-high text-primary flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">print</span>
+</div>
+<div>
+<div class="font-headline-sm text-headline-sm text-primary">Zebra ZT411 RFID Printer</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Industrial Print Peripheral</div>
+</div>
+</div>
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-label-sm font-label-sm uppercase bg-[#087443]/10 text-[#087443] font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-[#087443]"></span>
+            CONNECTED
+          </span>
+</div>
+<div class="mt-space-md space-y-space-xs font-code-sm text-code-sm">
+<div class="flex justify-between py-1 bg-surface-container-low px-2 rounded">
+<span class="text-on-surface-variant">Interface</span>
+<span class="text-primary font-medium">TCP/IP: 192.168.10.45:9100</span>
+</div>
+<div class="flex justify-between py-1 px-2">
+<span class="text-on-surface-variant">Media Stock</span>
+<span class="text-primary truncate">4x6" Synthetic Polyester Ro-Ro</span>
+</div>
+<div class="grid grid-cols-2 gap-2 py-1 px-2">
+<div>
+<span class="text-on-surface-variant block text-[10px] uppercase">Ribbon Status</span>
+<span class="text-primary font-semibold">78% Remaining</span>
+</div>
+<div>
+<span class="text-on-surface-variant block text-[10px] uppercase">Head Element</span>
+<span class="text-[#087443] font-semibold">Normal (300 DPI)</span>
+</div>
+</div>
+<div class="flex items-center gap-2 px-2 py-1">
+<div class="w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden">
+<div class="bg-secondary h-full rounded-full" style="width: 78%"></div>
+</div>
+<span class="text-[10px] text-on-surface-variant">ZPL II</span>
+</div>
+</div>
+</div>
+<div class="mt-space-md pt-space-sm border-t border-surface-container-high flex flex-wrap items-center gap-space-xs">
+<button class="px-space-sm py-1 rounded bg-secondary text-on-secondary hover:bg-on-secondary-fixed-variant transition-colors text-label-md font-label-md flex items-center gap-1" onclick="triggerFeedback('Test Label with QR &amp; Code 128 queued to 192.168.10.45', this)">
+<span class="material-symbols-outlined text-[14px]">barcode</span>
+<span>Print Test Label</span>
+</button>
+<button class="px-space-sm py-1 rounded bg-surface-container-high text-on-surface hover:bg-surface-variant transition-colors text-label-md font-label-md">
+          Reprobe Media Sensor
+        </button>
+</div>
+</div>
+<!-- Card 4: Honeywell Granit 1991i Wireless Industrial 2D Barcode Scanner -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-lg flex flex-col justify-between hover:shadow-md transition-shadow">
+<div>
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded bg-surface-container-high text-primary flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">qr_code_scanner</span>
+</div>
+<div>
+<div class="font-headline-sm text-headline-sm text-primary">Honeywell Granit 1991i</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Rugged 2D Scanner</div>
+</div>
+</div>
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-label-sm font-label-sm uppercase bg-[#087443]/10 text-[#087443] font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-[#087443]"></span>
+            CONNECTED
+          </span>
+</div>
+<div class="mt-space-md space-y-space-xs font-code-sm text-code-sm">
+<div class="flex justify-between py-1 bg-surface-container-low px-2 rounded">
+<span class="text-on-surface-variant">Radio Link</span>
+<span class="text-primary font-medium">BLE 5.0 → Cradle #04 (HID POS)</span>
+</div>
+<div class="grid grid-cols-2 gap-2 py-1 px-2">
+<div>
+<span class="text-on-surface-variant block text-[10px] uppercase">Battery Level</span>
+<span class="text-primary font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-[#087443]">battery_5_bar</span> 89%
+              </span>
+</div>
+<div>
+<span class="text-on-surface-variant block text-[10px] uppercase">Yard Range</span>
+<span class="text-primary font-medium">15m (Gate 2 Inbound)</span>
+</div>
+</div>
+<div class="py-1 px-2 text-[11px] text-on-surface-variant">
+            Supported: <span class="font-code-sm text-primary">Code 128, QR, Data Matrix, PDF417, VIN ISO 3779</span>
+</div>
+</div>
+</div>
+<div class="mt-space-md pt-space-sm border-t border-surface-container-high flex flex-wrap items-center gap-space-xs">
+<button class="px-space-sm py-1 rounded bg-secondary text-on-secondary hover:bg-on-secondary-fixed-variant transition-colors text-label-md font-label-md flex items-center gap-1" onclick="triggerFeedback('Locate command sent. Scanner #04 beeping at 85dB.', this)">
+<span class="material-symbols-outlined text-[14px]">volume_up</span>
+<span>Trigger Beep &amp; Locate</span>
+</button>
+<button class="px-space-sm py-1 rounded bg-surface-container-high text-on-surface hover:bg-surface-variant transition-colors text-label-md font-label-md">
+          Pair Replacement
+        </button>
+</div>
+</div>
+<!-- Card 5: Ocean & Air Carrier EDI Gateway (ANSI X12 / EDIFACT) -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-lg flex flex-col justify-between hover:shadow-md transition-shadow">
+<div>
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded bg-primary-container text-on-primary flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">directions_boat</span>
+</div>
+<div>
+<div class="font-headline-sm text-headline-sm text-primary">Ocean &amp; Air Carrier EDI</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">ANSI X12 / EDIFACT Gateway</div>
+</div>
+</div>
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-label-sm font-label-sm uppercase bg-[#087443]/10 text-[#087443] font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-[#087443]"></span>
+            CONNECTED
+          </span>
+</div>
+<div class="mt-space-md space-y-space-xs font-code-sm text-code-sm">
+<div class="flex justify-between py-1 bg-surface-container-low px-2 rounded">
+<span class="text-on-surface-variant">Active Standards</span>
+<span class="text-primary font-medium">EDI 304, 310, 315 &amp; IATA CIMP</span>
+</div>
+<div class="py-1 px-2">
+<span class="text-on-surface-variant block text-[10px] uppercase">Active Partner Feeds</span>
+<span class="text-primary font-medium">Maersk API, CMA CGM Direct, PAL Cargo, SIA Cargo</span>
+</div>
+<div class="grid grid-cols-2 gap-2 py-1 px-2 bg-surface-container-low rounded">
+<div>
+<span class="text-on-surface-variant block text-[10px] uppercase">24h Frame Drops</span>
+<span class="text-[#087443] font-semibold">0 frames (100% ack)</span>
+</div>
+<div>
+<span class="text-on-surface-variant block text-[10px] uppercase">Throughput</span>
+<span class="text-primary font-semibold">1,492 msgs / hr</span>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-space-md pt-space-sm border-t border-surface-container-high flex flex-wrap items-center gap-space-xs">
+<button class="px-space-sm py-1 rounded bg-secondary text-on-secondary hover:bg-on-secondary-fixed-variant transition-colors text-label-md font-label-md flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">segment</span>
+<span>Inspect Message Queue</span>
+</button>
+<button class="px-space-sm py-1 rounded bg-surface-container-high text-on-surface hover:bg-surface-variant transition-colors text-label-md font-label-md">
+          EDI Specification
+        </button>
+</div>
+</div>
+<!-- Card 6: Kornet Consignee SMTP & SMS Dispatcher Gateway (ERROR / DEGRADED) -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-lg flex flex-col justify-between border-2 border-error/40 hover:shadow-md transition-shadow">
+<div>
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded bg-error-container text-error flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">sms_failed</span>
+</div>
+<div>
+<div class="font-headline-sm text-headline-sm text-primary">Consignee SMTP &amp; SMS</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Milestone Dispatcher</div>
+</div>
+</div>
+<!-- ERROR STATUS BADGE -->
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-label-sm font-label-sm uppercase bg-error/10 text-error font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-error animate-ping"></span>
+            ERROR / DEGRADED
+          </span>
+</div>
+<div class="mt-space-md bg-error-container/30 p-space-sm rounded">
+<div class="font-label-sm text-label-sm text-error uppercase font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">warning</span>
+            Authentication Token Expired
+          </div>
+<p class="font-body-sm text-body-sm text-on-surface mt-1">
+            SMS Gateway (Smart/Globe Telecom API) token expired at <span class="font-code-sm font-semibold">13:40 PHT</span>. Consignee automated SMS alerts paused; SMTP email delivery functioning normally.
+          </p>
+<div class="mt-2 text-[11px] font-code-sm text-error bg-surface-container-lowest p-1.5 rounded border border-error/20">
+            Dependent Impact: Consignee SMS tracking milestone dispatch temporarily disabled until token renewed.
+          </div>
+</div>
+</div>
+<div class="mt-space-md pt-space-sm border-t border-surface-container-high flex flex-wrap items-center gap-space-xs">
+<button class="px-space-sm py-1 rounded bg-error text-on-error hover:bg-on-error-container transition-colors text-label-md font-label-md flex items-center gap-1 font-semibold" onclick="renewCarrierToken(this)">
+<span class="material-symbols-outlined text-[14px]">autorenew</span>
+<span>Renew Carrier Token</span>
+</button>
+<button class="px-space-sm py-1 rounded bg-surface-container-high text-on-surface hover:bg-surface-variant transition-colors text-label-md font-label-md">
+          View Diagnostics
+        </button>
+<button class="px-space-sm py-1 rounded bg-surface-container-high text-on-surface hover:bg-surface-variant transition-colors text-label-md font-label-md">
+          Switch to Backup SMS
+        </button>
+</div>
+</div>
+<!-- Card 7: Intermodal Telemetry & GPS Sensor Gateway (CONFIGURATION REQUIRED) -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-lg flex flex-col justify-between border-2 border-[#B7791F]/30 hover:shadow-md transition-shadow">
+<div>
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded bg-[#B7791F]/10 text-[#B7791F] flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">sensors</span>
+</div>
+<div>
+<div class="font-headline-sm text-headline-sm text-primary">Intermodal IoT Telemetry</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Cold Chain &amp; Vehicle GPS</div>
+</div>
+</div>
+<!-- CONFIGURATION REQUIRED BADGE -->
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-label-sm font-label-sm uppercase bg-[#B7791F]/10 text-[#B7791F] font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-[#B7791F]"></span>
+            CONFIG REQUIRED
+          </span>
+</div>
+<div class="mt-space-md space-y-space-xs font-code-sm text-code-sm">
+<div class="flex justify-between py-1 bg-surface-container-low px-2 rounded">
+<span class="text-on-surface-variant">Hardware Units</span>
+<span class="text-primary font-medium">TempTale Geo &amp; CalAmp LMU-3030</span>
+</div>
+<div class="bg-[#B7791F]/10 p-2 rounded text-on-surface">
+<div class="text-[11px] font-semibold text-[#B7791F] mb-1">Listener Binding Incomplete</div>
+<p class="font-body-sm text-body-sm">
+              API Secret &amp; Webhook Listener URL must be authenticated for Zone 4 Batangas Corridor reefer telemetry stream.
+            </p>
+</div>
+<div class="flex justify-between py-1 px-2 text-[10px] text-on-surface-variant">
+<span>Discovered Devices: 24 active</span>
+<span class="text-[#B7791F] font-medium">Telemetry Buffered</span>
+</div>
+</div>
+</div>
+<div class="mt-space-md pt-space-sm border-t border-surface-container-high flex flex-wrap items-center gap-space-xs">
+<button class="px-space-sm py-1 rounded bg-[#B7791F] text-on-primary hover:bg-[#8f5e17] transition-colors text-label-md font-label-md flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">tune</span>
+<span>Complete Configuration Wizard</span>
+</button>
+<button class="px-space-sm py-1 rounded bg-surface-container-high text-on-surface hover:bg-surface-variant transition-colors text-label-md font-label-md">
+          Setup Guide
+        </button>
+</div>
+</div>
+<!-- Card 8: Land Bank of the Philippines Corporate Payment Bridge (UNAVAILABLE) -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-lg flex flex-col justify-between opacity-90 hover:opacity-100 hover:shadow-md transition-all">
+<div>
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded bg-surface-container-high text-outline flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">account_balance_wallet</span>
+</div>
+<div>
+<div class="font-headline-sm text-headline-sm text-primary">Land Bank Corporate Bridge</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Duties &amp; Freight Remittance</div>
+</div>
+</div>
+<!-- UNAVAILABLE BADGE -->
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-label-sm font-label-sm uppercase bg-surface-container-high text-outline font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+            UNAVAILABLE
+          </span>
+</div>
+<div class="mt-space-md space-y-space-xs font-code-sm text-code-sm">
+<div class="bg-surface-container-low p-2 rounded text-on-surface-variant font-body-sm text-body-sm">
+            Corporate API endpoint in offline maintenance window scheduled by bank until <strong class="text-primary font-code-sm">18:00 PHT</strong>. Batch check printing unaffected via manual check register.
+          </div>
+<div class="flex justify-between py-1 px-2 text-[10px]">
+<span class="text-on-surface-variant">Maintenance Advisory #</span>
+<span class="font-code-sm text-primary">LBP-MNL-2025-081</span>
+</div>
+<div class="flex justify-between py-1 px-2 text-[10px] bg-surface-container-low rounded">
+<span class="text-on-surface-variant">Fallback Protocol</span>
+<span class="font-code-sm text-secondary font-medium">BOC Pass-Thru e-Fund Direct</span>
+</div>
+</div>
+</div>
+<div class="mt-space-md pt-space-sm border-t border-surface-container-high flex flex-wrap items-center gap-space-xs">
+<button class="px-space-sm py-1 rounded bg-surface-container-high text-on-surface hover:bg-surface-variant transition-colors text-label-md font-label-md flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">info</span>
+<span>View Advisory</span>
+</button>
+<button class="px-space-sm py-1 rounded bg-surface-container-high text-on-surface hover:bg-surface-variant transition-colors text-label-md font-label-md">
+          Check Schedule
+        </button>
+</div>
+</div>
+<!-- Peripheral Hardware Visual Telemetry Card (Rich Visual & Hardware Topology) -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-lg flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between">
+<div class="font-headline-sm text-headline-sm text-primary">Local Hardware Bus Map</div>
+<span class="text-label-sm font-label-sm uppercase bg-surface-container-high px-2 py-0.5 rounded text-on-surface-variant font-code-sm">DAEMON: localhost:9042</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Live physical topology across Manila Pier 14 Terminal &amp; Batangas CFS Yard.</p>
+<!-- Visual Bus Diagram (Vector Data Graphic) -->
+<div class="mt-space-md bg-surface-container-low p-space-md rounded-lg">
+<div class="flex items-center justify-between font-code-sm text-code-sm text-on-surface mb-2 pb-1 border-b border-surface-container-high">
+<span class="flex items-center gap-1 text-secondary font-semibold">
+<span class="material-symbols-outlined text-[16px]">hub</span> KORNET-IO-HUB #01
+            </span>
+<span class="text-[10px] text-[#087443] font-bold">POLLING 1000ms</span>
+</div>
+<div class="space-y-1.5 font-code-sm text-[11px]">
+<div class="flex items-center justify-between bg-surface-container-lowest px-2 py-1 rounded">
+<span class="flex items-center gap-1 text-on-surface">
+<span class="material-symbols-outlined text-[14px] text-primary">usb</span> Port 01: Zebra ZT411
+              </span>
+<span class="text-[#087443] font-medium">9100/RAW • ACK</span>
+</div>
+<div class="flex items-center justify-between bg-surface-container-lowest px-2 py-1 rounded">
+<span class="flex items-center gap-1 text-on-surface">
+<span class="material-symbols-outlined text-[14px] text-primary">usb</span> Port 02: Wacom Digitizers
+              </span>
+<span class="text-[#087443] font-medium">12/12 HID ONLINE</span>
+</div>
+<div class="flex items-center justify-between bg-surface-container-lowest px-2 py-1 rounded">
+<span class="flex items-center gap-1 text-on-surface">
+<span class="material-symbols-outlined text-[14px] text-primary">bluetooth</span> Port 03: Honeywell Granit
+              </span>
+<span class="text-[#087443] font-medium">Cradle #04 SYN</span>
+</div>
+<div class="flex items-center justify-between bg-surface-container-lowest px-2 py-1 rounded opacity-60">
+<span class="flex items-center gap-1 text-on-surface">
+<span class="material-symbols-outlined text-[14px] text-outline">usb</span> Port 04: Weighbridge Scale
+              </span>
+<span class="text-outline uppercase text-[10px]">Disabled (Manual)</span>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-space-md pt-space-sm border-t border-surface-container-high flex items-center justify-between">
+<span class="text-label-sm font-label-sm text-on-surface-variant">Host: Kornet-Disp-Daemon v2.1</span>
+<button class="text-label-md font-label-md text-secondary hover:underline flex items-center gap-1" onclick="triggerFeedback('Restarting daemon peripheral polling thread...', this)">
+<span class="material-symbols-outlined text-[14px]">refresh</span> Restart Polling
+        </button>
+</div>
+</div>
+</div>
+<!-- Operational Audit & Raw Gateway Communication Logs Terminal -->
+<div class="px-margin pb-margin">
+<div class="bg-primary text-surface-bright rounded-xl shadow-md p-space-lg">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm pb-space-sm border-b border-surface-tint/30">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-secondary-container text-[20px]">terminal</span>
+<div>
+<div class="font-headline-sm text-headline-sm text-surface-bright">Live Diagnostic Log &amp; Packet Feed</div>
+<div class="font-code-sm text-code-sm text-primary-fixed-dim">Real-time socket readouts, EDI transactions, and driver events</div>
+</div>
+</div>
+<div class="flex items-center gap-space-sm">
+<span class="flex items-center gap-1.5 font-code-sm text-code-sm text-surface-tint">
+<span class="w-2 h-2 rounded-full bg-[#087443] animate-pulse"></span> STREAM ACTIVE
+          </span>
+<button class="px-2 py-1 rounded bg-primary-container text-surface-bright hover:bg-surface-tint/40 text-label-sm font-label-sm" onclick="clearConsole()">Clear Terminal</button>
+</div>
+</div>
+<!-- Realtime Output Console Screen -->
+<div class="mt-space-md font-code-sm text-code-sm space-y-1.5 overflow-x-auto max-h-56 pr-2 select-all" id="terminal-feed">
+<div class="flex items-start gap-2 text-surface-dim">
+<span class="text-secondary-fixed-dim font-semibold">14:32:01</span>
+<span class="text-secondary-container font-semibold">[BOC-E2M]</span>
+<span>ACK received for Single Window Inward Manifest <span class="text-surface-bright font-semibold">#MNL-2025-0492</span>. Status: PASSED CUSTOMS VALIDATION (200 OK, latency: 38ms).</span>
+</div>
+<div class="flex items-start gap-2 text-surface-dim">
+<span class="text-secondary-fixed-dim font-semibold">14:31:45</span>
+<span class="text-secondary-container font-semibold">[WACOM-DRV]</span>
+<span>Stylus touch event captured on Desk #02 (Batangas Yard). Coordinate payload: X:1420 Y:0881 P:612. Hash signed.</span>
+</div>
+<div class="flex items-start gap-2 text-surface-dim">
+<span class="text-secondary-fixed-dim font-semibold">14:31:12</span>
+<span class="text-secondary-container font-semibold">[ZEBRA-ZT411]</span>
+<span>ZPL II render job (Container Seal Label #KNT-908112) completed. Remaining ribbon length calibrated at 78%.</span>
+</div>
+<div class="flex items-start gap-2 text-surface-dim">
+<span class="text-secondary-fixed-dim font-semibold">14:30:10</span>
+<span class="text-error font-semibold">[SMS-GATEWAY]</span>
+<span class="text-error">HTTP 401 Unauthorized returned by Telco OAuth endpoint. Token expired. Consignee SMS queue paused to avoid billing penalization.</span>
+</div>
+<div class="flex items-start gap-2 text-surface-dim">
+<span class="text-secondary-fixed-dim font-semibold">14:28:44</span>
+<span class="text-secondary-container font-semibold">[EDI-CARRIER]</span>
+<span>Ingested ANSI X12 EDI 315 Status Event (Container TCKU992014) from Maersk Line API. Database state updated.</span>
+</div>
+</div>
+<div class="mt-space-sm pt-space-xs border-t border-surface-tint/20 flex items-center justify-between text-label-sm font-label-sm text-surface-tint">
+<span>Channel: /var/log/kornet/gateways.log (Read-Only)</span>
+<span>Filter: SHOW ALL SEVERITIES [DEBUG, INFO, WARN, CRIT]</span>
+</div>
+</div>
+</div>
+<!-- Micro-interaction feedback notification toast container -->
+<div class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none bg-primary text-surface-bright px-4 py-3 rounded-lg shadow-xl border border-secondary flex items-center gap-3" id="toast-notify">
+<span class="material-symbols-outlined text-secondary-container text-[20px]" id="toast-icon">check_circle</span>
+<span class="font-body-sm text-body-sm font-medium" id="toast-msg">Operation dispatched</span>
+</div>
+</div>
+<script>
+  function showToast(message, icon = 'check_circle') {
+    const toast = document.getElementById('toast-notify');
+    const msgEl = document.getElementById('toast-msg');
+    const iconEl = document.getElementById('toast-icon');
+    if (!toast) return;
+
+    msgEl.textContent = message;
+    iconEl.textContent = icon;
+    toast.classList.remove('translate-y-20', 'opacity-0');
+    toast.classList.add('translate-y-0', 'opacity-100');
+
+    setTimeout(() => {
+      toast.classList.remove('translate-y-0', 'opacity-100');
+      toast.classList.add('translate-y-20', 'opacity-0');
+    }, 3800);
+  }
+
+  function simulatePing(target, btn) {
+    const originalText = btn.innerHTML;
+    btn.innerHTML = `<span class="material-symbols-outlined text-[14px] animate-spin">refresh</span> Pinging...`;
+    btn.disabled = true;
+
+    setTimeout(() => {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+      showToast(`${target} Handshake Verified: 34ms round-trip. Gateway Responsive.`, 'verified');
+      appendLog(`[${target}] Live Diagnostic Ping successful. TLS 1.3 Handshake completed in 34ms.`);
+    }, 900);
+  }
+
+  function triggerFeedback(msg, btn) {
+    showToast(msg, 'done_all');
+    appendLog(`[OPERATIONS] User initiated action: ${msg}`);
+  }
+
+  function renewCarrierToken(btn) {
+    const originalText = btn.innerHTML;
+    btn.innerHTML = `<span class="material-symbols-outlined text-[14px] animate-spin">sync</span> Refreshing...`;
+    btn.disabled = true;
+
+    setTimeout(() => {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+      showToast('Carrier OAuth token refreshed successfully. Resuming outbound SMS dispatch queue.', 'check_circle');
+      appendLog(`[SMS-GATEWAY] OAuth2 Token re-authenticated via Telecom Gateway. Outbound SMS queue active.`);
+    }, 1400);
+  }
+
+  function runDiagnosticTest() {
+    const btn = document.getElementById('btn-self-test');
+    if (!btn) return;
+    const orig = btn.innerHTML;
+    btn.innerHTML = `<span class="material-symbols-outlined text-[16px] animate-spin">progress_activity</span> Polling 12 Hardware &amp; Gateway Nodes...`;
+    btn.disabled = true;
+
+    setTimeout(() => {
+      btn.innerHTML = orig;
+      btn.disabled = false;
+      showToast('Diagnostic Complete: 10 Operational, 1 Degraded (SMS), 1 Scheduled Offline (LandBank)', 'troubleshoot');
+      appendLog('[SELF-TEST] Full Diagnostic Self-Test finished. USB Hubs: 8/8 OK. EDI: Synced. Latency: 42ms.');
+    }, 1600);
+  }
+
+  function clearConsole() {
+    const feed = document.getElementById('terminal-feed');
+    if (feed) {
+      feed.innerHTML = `<div class="text-surface-tint text-code-sm italic">Terminal cleared by operator. Listening for next packet sequence...</div>`;
+      showToast('Log console buffer cleared.', 'cleaning_services');
+    }
+  }
+
+  function appendLog(line) {
+    const feed = document.getElementById('terminal-feed');
+    if (!feed) return;
+    const now = new Date();
+    const timeStr = now.toTimeString().split(' ')[0];
+    const logItem = document.createElement('div');
+    logItem.className = 'flex items-start gap-2 text-surface-bright animate-fadeIn';
+    logItem.innerHTML = `<span class="text-secondary-fixed-dim font-semibold">${timeStr}</span><span class="text-secondary-container font-semibold">[CLI]</span><span>${line}</span>`;
+    feed.insertBefore(logItem, feed.firstChild);
+  }
+</script></main></body></html>

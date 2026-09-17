@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base { html, body { margin: 0; padding: 0; } body { overscroll-behavior: none; } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "primary-fixed": "#dae2ff", "surface-container-lowest": "#ffffff", "outline-variant": "#c5c6d0", "inverse-surface": "#26323b", "on-error": "#ffffff", "outline": "#757780", "secondary": "#0462a0", "primary": "#00061d", "on-background": "#111d25", "tertiary-fixed-dim": "#ffb3ad", "on-secondary-fixed-variant": "#00497b", "surface-variant": "#d7e4f0", "on-error-container": "#93000a", "on-primary-fixed": "#021945", "on-tertiary-fixed-variant": "#930011", "on-secondary-fixed": "#001d35", "on-tertiary": "#ffffff", "surface-dim": "#cfdce7", "surface-container-highest": "#d7e4f0", "on-secondary-container": "#004a7c", "on-primary": "#ffffff", "inverse-primary": "#b4c5fb", "on-surface-variant": "#44464f", "surface-container-high": "#ddeaf6", "inverse-on-surface": "#e6f2fe", "primary-container": "#071d49", "secondary-fixed": "#d0e4ff", "on-surface": "#111d25", "on-secondary": "#ffffff", "surface-container": "#e3effb", "tertiary": "#190001", "error": "#ba1a1a", "on-primary-container": "#7486b8", "on-primary-fixed-variant": "#344573", "secondary-fixed-dim": "#9ccaff", "background": "#f6faff", "surface-tint": "#4c5d8c", "tertiary-container": "#480004", "on-tertiary-container": "#f94040", "surface-bright": "#f6faff", "on-tertiary-fixed": "#410003", "primary-fixed-dim": "#b4c5fb", "secondary-container": "#79bbff", "tertiary-fixed": "#ffdad6", "error-container": "#ffdad6", "surface": "#f6faff", "surface-container-low": "#ebf5ff" }, borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" }, spacing: { "gutter": "1rem", "margin": "1.5rem", "space-xs": "0.25rem", "space-xl": "1.75rem", "space-md": "0.75rem", "space-sm": "0.5rem", "space-lg": "1.25rem" }, fontFamily: { "headline-xl": ["Inter"], "headline-md": ["Inter"], "label-md": ["Inter"], "code-md": ["JetBrains Mono"], "code-lg": ["JetBrains Mono"], "label-sm": ["Inter"], "code-sm": ["JetBrains Mono"], "body-md": ["Inter"], "headline-sm": ["Inter"], "headline-lg": ["Inter"], "body-sm": ["Inter"], "body-lg": ["Inter"], "label-lg": ["Inter"] }, fontSize: { "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "label-md": ["11px", { "lineHeight": "16px", "letterSpacing": "0.03em", "fontWeight": "600" }], "code-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }], "code-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "500" }], "label-sm": ["10px", { "lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "700" }], "code-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.01em", "fontWeight": "500" }], "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }], "headline-sm": ["16px", { "lineHeight": "24px", "fontWeight": "600" }], "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }], "body-lg": ["15px", { "lineHeight": "22px", "fontWeight": "400" }], "label-lg": ["13px", { "lineHeight": "18px", "letterSpacing": "0.01em", "fontWeight": "600" }] } } } };</script></head><body class="bg-background font-body-md text-on-surface antialiased"><main class="w-full bg-background min-h-screen"><div class="flex flex-col w-full">
+<!-- Top Operational Context Header -->
+<header class="w-full bg-surface-container-lowest shadow-sm px-6 py-4 flex flex-col gap-3">
+<div class="flex flex-wrap items-center justify-between gap-4">
+<div class="flex items-center gap-3.5">
+<div class="w-10 h-10 rounded bg-primary-container flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-headline-sm">account_balance</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h1 class="font-headline-md text-headline-md text-primary tracking-tight">Accounting Bridge &amp; Disbursements</h1>
+<span class="bg-surface-container-high text-secondary px-2 py-0.5 rounded font-label-sm text-label-sm uppercase tracking-wider">CAS v4.2 Ready</span>
+<span class="bg-secondary/10 text-secondary px-2 py-0.5 rounded font-code-sm text-code-sm">SYS-NODE: MNL-FIN-01</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Operational Ledger Sync, Charge Verification, Accounts Payable/Receivable Posting &amp; Disbursement Checks</p>
+</div>
+</div>
+<!-- Quick Session Telemetry -->
+<div class="flex items-center gap-6 bg-surface-container-low px-4 py-2 rounded">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-outline uppercase">Tenant Context</span>
+<span class="font-code-md text-code-md font-medium text-on-surface">X-Company-Id: MNL-HQ</span>
+</div>
+<div class="h-6 w-px bg-outline-variant/30"></div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-outline uppercase">Fiscal Period</span>
+<span class="font-code-md text-code-md font-medium text-on-surface">Q1-2025 (Active Batch #084)</span>
+</div>
+<div class="h-6 w-px bg-outline-variant/30"></div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-outline uppercase">Sync Protocol</span>
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+<span class="font-code-sm text-code-sm text-secondary font-medium">BOC e2m Linked</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Navigation Tabs -->
+<div class="flex items-center justify-between border-t-0 pt-2">
+<nav class="flex items-center gap-1">
+<button class="px-3.5 py-2 font-label-md text-label-md rounded bg-primary text-on-primary flex items-center gap-2 shadow-sm">
+<span>Staged Ledger Lines (Pending Posting)</span>
+<span class="bg-secondary text-on-primary font-code-sm text-code-sm px-1.5 py-0.2 rounded-full">18</span>
+</button>
+<button class="px-3.5 py-2 font-label-md text-label-md rounded text-on-surface-variant hover:bg-surface-container transition-colors flex items-center gap-1.5">
+<span>Trial Posting Validation</span>
+</button>
+<button class="px-3.5 py-2 font-label-md text-label-md rounded text-on-surface-variant hover:bg-surface-container transition-colors flex items-center gap-1.5">
+<span>Checks &amp; Disbursements Register</span>
+<span class="bg-tertiary-container text-on-tertiary-container font-code-sm text-code-sm px-1.5 py-0.2 rounded-full">6 Due</span>
+</button>
+<button class="px-3.5 py-2 font-label-md text-label-md rounded text-on-surface-variant hover:bg-surface-container transition-colors flex items-center gap-1.5">
+<span>Final Posted Journal Entries</span>
+</button>
+<button class="px-3.5 py-2 font-label-md text-label-md rounded text-on-surface-variant hover:bg-surface-container transition-colors flex items-center gap-1.5">
+<span>GL Audit Log</span>
+</button>
+</nav>
+<div class="flex items-center gap-2">
+<span class="font-code-sm text-code-sm text-outline">Last Reconciled: 2025-02-23 09:44:12 PHT</span>
+</div>
+</div>
+</header>
+<!-- Content Field -->
+<div class="p-6 flex flex-col gap-6">
+<!-- KPI Summary Cards Strip -->
+<section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3.5">
+<!-- KPI 1 -->
+<div class="bg-surface-container-lowest p-4 rounded shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-outline">
+<span class="font-label-sm text-label-sm uppercase tracking-wider">Pending Bridge Items</span>
+<span class="material-symbols-outlined text-code-lg text-secondary">sync_alt</span>
+</div>
+<div class="mt-2">
+<div class="font-code-lg text-headline-sm font-bold text-primary tracking-tight">18 Operations Lines</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant mt-1">₱1,482,900.00 <span class="text-outline">/ $24,150 USD</span></div>
+</div>
+<div class="mt-3 flex items-center gap-1.5 text-secondary font-label-sm text-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span>Awaiting GL commitment batch</span>
+</div>
+</div>
+<!-- KPI 2 -->
+<div class="bg-surface-container-lowest p-4 rounded shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-outline">
+<span class="font-label-sm text-label-sm uppercase tracking-wider">Staged Accounts Receivable</span>
+<span class="material-symbols-outlined text-code-lg text-secondary">arrow_downward</span>
+</div>
+<div class="mt-2">
+<div class="font-code-lg text-headline-sm font-bold text-primary tracking-tight">₱2,140,500.00</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant mt-1">9 Commercial Invoices Ready</div>
+</div>
+<div class="mt-3 flex items-center gap-1.5 text-secondary font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-body-sm text-secondary">verified</span>
+<span>Customer credit terms verified</span>
+</div>
+</div>
+<!-- KPI 3 -->
+<div class="bg-surface-container-lowest p-4 rounded shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-outline">
+<span class="font-label-sm text-label-sm uppercase tracking-wider">Staged Accounts Payable</span>
+<span class="material-symbols-outlined text-code-lg text-error">arrow_upward</span>
+</div>
+<div class="mt-2">
+<div class="font-code-lg text-headline-sm font-bold text-error tracking-tight">₱1,658,200.00</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant mt-1">14 Carrier &amp; Port Vouchers</div>
+</div>
+<div class="mt-3 flex items-center gap-1.5 text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-body-sm text-outline">receipt_long</span>
+<span>BOC, Port Terminals, Drayage</span>
+</div>
+</div>
+<!-- KPI 4 -->
+<div class="bg-surface-container-lowest p-4 rounded shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-outline">
+<span class="font-label-sm text-label-sm uppercase tracking-wider">Queue Operational Margin</span>
+<span class="material-symbols-outlined text-code-lg text-secondary">trending_up</span>
+</div>
+<div class="mt-2">
+<div class="flex items-baseline gap-2">
+<span class="font-code-lg text-headline-sm font-bold text-primary tracking-tight">+26.4%</span>
+<span class="font-label-sm text-label-sm text-secondary bg-surface-container px-1.5 py-0.5 rounded font-bold">Target &gt;18%</span>
+</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant mt-1">₱482,300.00 Surplus Net</div>
+</div>
+<div class="mt-3 flex items-center gap-1.5 text-secondary font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-body-sm">check_circle</span>
+<span>All shipment margins cleared</span>
+</div>
+</div>
+<!-- KPI 5 -->
+<div class="bg-surface-container-lowest p-4 rounded shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-outline">
+<span class="font-label-sm text-label-sm uppercase tracking-wider">Unbalanced Flags</span>
+<span class="material-symbols-outlined text-code-lg text-secondary">scale</span>
+</div>
+<div class="mt-2">
+<div class="flex items-baseline gap-2">
+<span class="font-code-lg text-headline-sm font-bold text-primary tracking-tight">0 Anomalies</span>
+<span class="font-label-sm text-label-sm text-on-primary bg-secondary px-1.5 py-0.5 rounded">PERFECT</span>
+</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant mt-1">Sum Debit = Sum Credit (Balanced)</div>
+</div>
+<div class="mt-3 flex items-center gap-1.5 text-outline font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-body-sm text-secondary">lock</span>
+<span>SOX &amp; CAS Compliance Pass</span>
+</div>
+</div>
+</section>
+<!-- Operational Controls Toolbar -->
+<section class="bg-surface-container-lowest p-3.5 rounded shadow-sm flex flex-wrap items-center justify-between gap-3">
+<div class="flex flex-wrap items-center gap-2">
+<button class="bg-secondary text-on-secondary px-3.5 py-2 rounded font-label-md text-label-md flex items-center gap-2 hover:bg-secondary-fixed-dim transition-colors shadow-sm">
+<span class="material-symbols-outlined text-headline-sm">rule</span>
+<span>Execute Trial Post (Test Balance)</span>
+</button>
+<button class="bg-primary text-on-primary px-3.5 py-2 rounded font-label-md text-label-md flex items-center gap-2 hover:bg-primary-container transition-colors shadow-sm">
+<span class="material-symbols-outlined text-headline-sm">lock</span>
+<span>Final Post to General Ledger</span>
+</button>
+<button class="bg-error text-on-error px-3.5 py-2 rounded font-label-md text-label-md flex items-center gap-2 hover:opacity-90 transition-opacity shadow-sm">
+<span class="material-symbols-outlined text-headline-sm">payments</span>
+<span>+ Issue Disbursement Check</span>
+</button>
+</div>
+<div class="flex flex-wrap items-center gap-2">
+<button class="bg-surface-container-low text-on-surface px-3 py-1.5 rounded font-label-md text-label-md hover:bg-surface-container transition-colors flex items-center gap-1.5">
+<span class="material-symbols-outlined text-body-lg">receipt_long</span>
+<span>Export BIR CAS Format</span>
+</button>
+<button class="bg-surface-container-low text-on-surface px-3 py-1.5 rounded font-label-md text-label-md hover:bg-surface-container transition-colors flex items-center gap-1.5">
+<span class="material-symbols-outlined text-body-lg">print</span>
+<span>Print Voucher Batch</span>
+</button>
+<button class="bg-surface-container-low text-on-surface px-3 py-1.5 rounded font-label-md text-label-md hover:bg-surface-container transition-colors flex items-center gap-1.5">
+<span class="material-symbols-outlined text-body-lg">compare_arrows</span>
+<span>Reconcile Statement</span>
+</button>
+</div>
+</section>
+<!-- Master-Detail Work Section (65% / 35%) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+<!-- Left Column: Staged Accounting Bridge Table (65%) -->
+<div class="lg:col-span-8 flex flex-col gap-3 bg-surface-container-lowest rounded shadow-sm overflow-hidden">
+<!-- Table Top Filtering Bar -->
+<div class="p-4 bg-surface-container-lowest flex flex-wrap items-center justify-between gap-3">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-primary">Staged Ledger Lines</span>
+<span class="bg-surface-container text-on-surface-variant font-code-sm text-code-sm px-2 py-0.5 rounded">Batch #2025-084-MNL</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="relative">
+<input class="h-8 w-64 bg-surface-container-low rounded px-3 pl-8 text-body-sm font-body-sm text-on-surface focus:outline-none focus:bg-surface-container-lowest" placeholder="Filter voucher, BOL, vendor, or GL..." type="text"/>
+<span class="material-symbols-outlined text-body-sm text-outline absolute left-2.5 top-2">search</span>
+</div>
+<select class="h-8 bg-surface-container-low text-body-sm font-body-sm text-on-surface rounded px-2.5 focus:outline-none">
+<option>All Modules (Air/Ocean/Port)</option>
+<option>Ocean FCL / LCL</option>
+<option>Airfreight Import/Export</option>
+<option>Customs Clearance / Port</option>
+</select>
+</div>
+</div>
+<!-- Ledger Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
+<th class="py-2.5 px-3 w-8 text-center">
+<input checked="" class="rounded border-0 text-primary focus:ring-0" type="checkbox"/>
+</th>
+<th class="py-2.5 px-3">Batch / Voucher</th>
+<th class="py-2.5 px-3">Source Ref / Mode</th>
+<th class="py-2.5 px-3">Operational Party</th>
+<th class="py-2.5 px-3">GL Account &amp; Line</th>
+<th class="py-2.5 px-3 text-right">Debit (PHP)</th>
+<th class="py-2.5 px-3 text-right">Credit (PHP)</th>
+<th class="py-2.5 px-3 text-center">Verification Status</th>
+<th class="py-2.5 px-3 text-right">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y-0 text-body-sm">
+<!-- Line 1 (Active Focused Row - BOC Disbursement) -->
+<tr class="bg-surface-container-high/60 transition-colors">
+<td class="py-2.5 px-3 text-center">
+<input checked="" class="rounded border-0 text-primary focus:ring-0" type="checkbox"/>
+</td>
+<td class="py-2.5 px-3">
+<div class="font-code-sm text-code-sm font-semibold text-secondary">VCH-2025-0914</div>
+<div class="font-code-sm text-[10px] text-outline">09:12:44 PHT</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="font-code-sm text-code-sm font-semibold text-primary">OCN-2025-0492</div>
+<div class="font-label-sm text-label-sm text-secondary">Ocean FCL (Manila South)</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="font-body-sm text-body-sm font-medium text-on-surface">Bureau of Customs E2M</div>
+<div class="font-code-sm text-code-sm text-outline">TIN: 000-842-115-000</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="font-code-sm text-code-sm font-medium text-primary">2010-05 Port Duties Payable</div>
+<div class="font-body-sm text-body-sm text-outline truncate max-w-[140px]">Container TGHU-940212-0</div>
+</td>
+<td class="py-2.5 px-3 text-right font-code-sm text-code-sm text-error font-medium">₱412,890.00</td>
+<td class="py-2.5 px-3 text-right font-code-sm text-code-sm text-outline">-</td>
+<td class="py-2.5 px-3 text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded font-label-sm text-label-sm bg-secondary/10 text-secondary font-bold">
+                    Margin Cleared (+26.4%)
+                  </span>
+</td>
+<td class="py-2.5 px-3 text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1 rounded hover:bg-surface-container text-secondary" title="Inspect Ledger Detail">
+<span class="material-symbols-outlined text-headline-sm">visibility</span>
+</button>
+<button class="p-1 rounded hover:bg-surface-container text-outline" title="Edit GL Line">
+<span class="material-symbols-outlined text-headline-sm">edit_note</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Line 2 - Ocean Carrier AP -->
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-2.5 px-3 text-center">
+<input checked="" class="rounded border-0 text-primary focus:ring-0" type="checkbox"/>
+</td>
+<td class="py-2.5 px-3">
+<div class="font-code-sm text-code-sm font-semibold text-secondary">VCH-2025-0915</div>
+<div class="font-code-sm text-[10px] text-outline">09:14:02 PHT</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="font-code-sm text-code-sm font-semibold text-primary">OCN-2025-0492</div>
+<div class="font-label-sm text-label-sm text-secondary">Ocean FCL (SGS Import)</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="font-body-sm text-body-sm font-medium text-on-surface">Maersk Line Filipinas Inc.</div>
+<div class="font-code-sm text-code-sm text-outline">TIN: 004-991-232-000</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="font-code-sm text-code-sm font-medium text-primary">5010-02 Carrier Ocean Cost</div>
+<div class="font-body-sm text-body-sm text-outline truncate max-w-[140px]">Freight 2x40HC SGS-MNL</div>
+</td>
+<td class="py-2.5 px-3 text-right font-code-sm text-code-sm text-error font-medium">₱284,500.00</td>
+<td class="py-2.5 px-3 text-right font-code-sm text-code-sm text-outline">-</td>
+<td class="py-2.5 px-3 text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded font-label-sm text-label-sm bg-tertiary-fixed text-on-tertiary-fixed-variant font-bold">
+                    Pending 2307 Check
+                  </span>
+</td>
+<td class="py-2.5 px-3 text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1 rounded hover:bg-surface-container text-outline">
+<span class="material-symbols-outlined text-headline-sm">visibility</span>
+</button>
+<button class="p-1 rounded hover:bg-surface-container text-outline">
+<span class="material-symbols-outlined text-headline-sm">edit_note</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Line 3 - AR Billing Client -->
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-2.5 px-3 text-center">
+<input checked="" class="rounded border-0 text-primary focus:ring-0" type="checkbox"/>
+</td>
+<td class="py-2.5 px-3">
+<div class="font-code-sm text-code-sm font-semibold text-secondary">INV-2025-1102</div>
+<div class="font-code-sm text-[10px] text-outline">09:18:20 PHT</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="font-code-sm text-code-sm font-semibold text-primary">OCN-2025-0492</div>
+<div class="font-label-sm text-label-sm text-secondary">Commercial Invoice</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="font-body-sm text-body-sm font-medium text-on-surface">Universal Electronics MNL</div>
+<div class="font-code-sm text-code-sm text-outline">TIN: 219-550-998-000</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="font-code-sm text-code-sm font-medium text-primary">4010-01 Freight Revenue Ocean</div>
+<div class="font-body-sm text-body-sm text-outline truncate max-w-[140px]">All-In Forwarding Billing</div>
+</td>
+<td class="py-2.5 px-3 text-right font-code-sm text-code-sm text-outline">-</td>
+<td class="py-2.5 px-3 text-right font-code-sm text-code-sm text-secondary font-medium">₱948,200.00</td>
+<td class="py-2.5 px-3 text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded font-label-sm text-label-sm bg-surface-container-high text-on-surface font-bold">
+                    Verified by Dispatch
+                  </span>
+</td>
+<td class="py-2.5 px-3 text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1 rounded hover:bg-surface-container text-outline">
+<span class="material-symbols-outlined text-headline-sm">visibility</span>
+</button>
+<button class="p-1 rounded hover:bg-surface-container text-outline">
+<span class="material-symbols-outlined text-headline-sm">edit_note</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Line 4 - Air Freight Import PairCargo Terminal -->
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-2.5 px-3 text-center">
+<input checked="" class="rounded border-0 text-primary focus:ring-0" type="checkbox"/>
+</td>
+<td class="py-2.5 px-3">
+<div class="font-code-sm text-code-sm font-semibold text-secondary">VCH-2025-0916</div>
+<div class="font-code-sm text-[10px] text-outline">09:22:15 PHT</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="font-code-sm text-code-sm font-semibold text-primary">AWB-079-9812-4410</div>
+<div class="font-label-sm text-label-sm text-secondary">Air Freight (NAIA Zone)</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="font-body-sm text-body-sm font-medium text-on-surface">PairCargo Terminal Center</div>
+<div class="font-code-sm text-code-sm text-outline">TIN: 001-229-874-000</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="font-code-sm text-code-sm font-medium text-primary">5020-04 NAIA Whse &amp; Handling</div>
+<div class="font-body-sm text-body-sm text-outline truncate max-w-[140px]">Tarmac &amp; ULD Strip</div>
+</td>
+<td class="py-2.5 px-3 text-right font-code-sm text-code-sm text-error font-medium">₱46,750.00</td>
+<td class="py-2.5 px-3 text-right font-code-sm text-code-sm text-outline">-</td>
+<td class="py-2.5 px-3 text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded font-label-sm text-label-sm bg-surface-container-high text-on-surface font-bold">
+                    Verified by Dispatch
+                  </span>
+</td>
+<td class="py-2.5 px-3 text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1 rounded hover:bg-surface-container text-outline">
+<span class="material-symbols-outlined text-headline-sm">visibility</span>
+</button>
+<button class="p-1 rounded hover:bg-surface-container text-outline">
+<span class="material-symbols-outlined text-headline-sm">edit_note</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Line 5 - Fleet Drayage Internal Distribution -->
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-2.5 px-3 text-center">
+<input checked="" class="rounded border-0 text-primary focus:ring-0" type="checkbox"/>
+</td>
+<td class="py-2.5 px-3">
+<div class="font-code-sm text-code-sm font-semibold text-secondary">VCH-2025-0917</div>
+<div class="font-code-sm text-[10px] text-outline">09:30:51 PHT</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="font-code-sm text-code-sm font-semibold text-primary">PND-2025-0814</div>
+<div class="font-label-sm text-label-sm text-secondary">Fleet Drayage Manila-Laguna</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="font-body-sm text-body-sm font-medium text-on-surface">Kornet Dedicated Fleet Hub</div>
+<div class="font-code-sm text-code-sm text-outline">TRK-Plate: NBO-4421</div>
+</td>
+<td class="py-2.5 px-3">
+<div class="font-code-sm text-code-sm font-medium text-primary">5030-01 Drayage Diesel &amp; Toll</div>
+<div class="font-body-sm text-body-sm text-outline truncate max-w-[140px]">SLEX / Calamba Direct</div>
+</td>
+<td class="py-2.5 px-3 text-right font-code-sm text-code-sm text-error font-medium">₱18,200.00</td>
+<td class="py-2.5 px-3 text-right font-code-sm text-code-sm text-outline">-</td>
+<td class="py-2.5 px-3 text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded font-label-sm text-label-sm bg-secondary/10 text-secondary font-bold">
+                    Margin Cleared (+31.2%)
+                  </span>
+</td>
+<td class="py-2.5 px-3 text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1 rounded hover:bg-surface-container text-outline">
+<span class="material-symbols-outlined text-headline-sm">visibility</span>
+</button>
+<button class="p-1 rounded hover:bg-surface-container text-outline">
+<span class="material-symbols-outlined text-headline-sm">edit_note</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination & Batch Total Summary Bar -->
+<div class="p-4 bg-surface-container-low flex flex-wrap items-center justify-between gap-4">
+<div class="flex items-center gap-2">
+<span class="font-code-sm text-code-sm text-on-surface-variant">Showing 5 of 18 Pending Staged Entries</span>
+<span class="text-outline">|</span>
+<span class="font-label-sm text-label-sm text-outline uppercase">Auto-Reconcile Hash: 994a-e01c-bb29</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-baseline gap-2">
+<span class="font-label-sm text-label-sm text-outline uppercase">Staged Batch Debits:</span>
+<span class="font-code-md text-code-md font-bold text-error">₱762,340.00</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="font-label-sm text-label-sm text-outline uppercase">Staged Batch Credits:</span>
+<span class="font-code-md text-code-md font-bold text-secondary">₱948,200.00</span>
+</div>
+<button class="px-3 py-1 bg-surface-container-lowest text-on-surface font-label-sm text-label-sm rounded shadow-sm hover:bg-surface-container-high transition-colors">
+              Next 10 Lines →
+            </button>
+</div>
+</div>
+</div>
+<!-- Right Column: Disbursement Check & Payment Drawer (35%) -->
+<div class="lg:col-span-4 flex flex-col gap-4">
+<!-- Active Voucher Preview Card -->
+<div class="bg-surface-container-lowest rounded shadow-sm overflow-hidden flex flex-col">
+<!-- Drawer Header -->
+<div class="bg-primary-container p-4 text-on-primary flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-headline-sm text-secondary-fixed">fact_check</span>
+<div>
+<h2 class="font-headline-sm text-headline-sm">Disbursement Check Authorization</h2>
+<div class="font-code-sm text-code-sm text-on-primary-container">Active Voucher: VCH-2025-0914</div>
+</div>
+</div>
+<span class="bg-error text-on-error font-code-sm text-code-sm px-2 py-0.5 rounded font-bold uppercase">URGENT BOC</span>
+</div>
+<!-- Physical Check Voucher Simulation Mockup -->
+<div class="p-5 flex flex-col gap-4">
+<!-- Simulated Security Bank Check Surface -->
+<div class="bg-surface-container-low rounded p-4 relative overflow-hidden">
+<div class="flex items-center justify-between text-outline">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-headline-sm text-primary">account_balance</span>
+<div class="leading-tight">
+<span class="font-label-md text-label-md font-bold text-primary block">LAND BANK OF THE PHILIPPINES</span>
+<span class="font-code-sm text-[10px] text-outline block">PORT OF MANILA AUTOMATED BOC DISBURSEMENT</span>
+</div>
+</div>
+<div class="text-right">
+<span class="font-code-sm text-code-sm font-bold text-primary">CHK-0029104</span>
+<span class="font-label-sm text-[9px] text-outline block">Acct ending **4920</span>
+</div>
+</div>
+<!-- Date & Payee Section -->
+<div class="mt-4 pt-3 border-t-0 flex flex-col gap-2">
+<div class="flex justify-between items-baseline">
+<span class="font-label-sm text-[10px] text-outline uppercase font-semibold">PAY TO THE ORDER OF:</span>
+<span class="font-code-sm text-code-sm text-on-surface">DATE: 2025-02-23</span>
+</div>
+<div class="font-headline-sm text-headline-sm font-bold text-primary tracking-tight">
+                  BUREAU OF CUSTOMS - DISTRICT PORT OF MANILA
+                </div>
+</div>
+<!-- Amount in Numbers & Words -->
+<div class="mt-2 bg-surface-container-lowest p-2.5 rounded flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-[9px] text-outline uppercase">PESOS IN WORDS:</span>
+<span class="font-body-sm text-body-sm italic font-medium text-primary">
+                    Four Hundred Twelve Thousand Eight Hundred Ninety Pesos Only
+                  </span>
+</div>
+<div class="text-right">
+<span class="font-code-lg text-headline-sm font-bold text-error">₱412,890.00</span>
+<span class="font-code-sm text-[9px] text-outline block">PHP CURRENCY</span>
+</div>
+</div>
+<!-- Operational Reference Stamp -->
+<div class="mt-3 flex items-center justify-between pt-2 border-t-0 font-code-sm text-[10px] text-on-surface-variant">
+<div>MEMO: OCN-2025-0492 / CONT: TGHU-940212-0</div>
+<div class="text-secondary font-bold">NON-NEGOTIABLE / GOVT TREASURY</div>
+</div>
+</div>
+<!-- Tax Withholding (BIR 2307) Details Grid -->
+<div class="bg-surface-container-lowest rounded p-3 text-body-sm flex flex-col gap-2">
+<div class="flex items-center justify-between font-label-md text-label-md text-primary">
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-body-md text-secondary">description</span>
+                  BIR Form 2307 Withholding Computation
+                </span>
+<span class="font-code-sm text-code-sm bg-surface-container px-1.5 py-0.5 rounded font-semibold text-secondary">Tax Code: WC160</span>
+</div>
+<div class="grid grid-cols-2 gap-2 pt-1 font-code-sm text-code-sm">
+<div class="text-outline">Gross Assessed Base:</div>
+<div class="text-right text-on-surface">₱421,147.80</div>
+<div class="text-outline">Creditable Withholding (2%):</div>
+<div class="text-right text-error font-medium">- ₱8,257.80</div>
+<div class="text-outline font-bold">Net Check Disbursement:</div>
+<div class="text-right text-primary font-bold">₱412,890.00</div>
+</div>
+</div>
+<!-- Approver Sign-off Matrix -->
+<div class="flex flex-col gap-2">
+<span class="font-label-sm text-label-sm text-outline uppercase font-semibold">Dual Authorization Sign-off</span>
+<div class="grid grid-cols-2 gap-2">
+<!-- Signer 1: Dispatch Lead -->
+<div class="bg-surface-container-low p-2.5 rounded flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-[9px] text-outline uppercase">Lead Dispatcher</span>
+<span class="material-symbols-outlined text-body-md text-secondary">check_circle</span>
+</div>
+<div class="font-body-sm text-body-sm font-semibold text-on-surface mt-1">Capt. R. Mendoza</div>
+</div>
+<div class="mt-2 pt-1 border-t-0 font-code-sm text-[10px] text-secondary font-medium">
+                    SIGNED 09:15 PHT
+                  </div>
+</div>
+<!-- Signer 2: Finance Controller -->
+<div class="bg-surface-container-high p-2.5 rounded flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-[9px] text-outline uppercase">Finance Controller</span>
+<span class="material-symbols-outlined text-body-md text-tertiary-container">pending</span>
+</div>
+<div class="font-body-sm text-body-sm font-semibold text-on-surface mt-1">M. Tan, CPA</div>
+</div>
+<div class="mt-2 pt-1 border-t-0 font-code-sm text-[10px] text-error font-medium">
+                    PENDING APPROVAL
+                  </div>
+</div>
+</div>
+</div>
+<!-- Pre-Post Safety Checklist -->
+<div class="bg-surface-container-low p-3 rounded flex flex-col gap-2">
+<span class="font-label-sm text-label-sm text-outline uppercase font-semibold">Safety &amp; Compliance Clearance</span>
+<label class="flex items-start gap-2 cursor-pointer">
+<input checked="" class="mt-0.5 rounded text-primary" disabled="" type="checkbox"/>
+<span class="font-body-sm text-body-sm text-on-surface">Operational file margin exceeds 18% threshold (Actual: 26.4%)</span>
+</label>
+<label class="flex items-start gap-2 cursor-pointer">
+<input checked="" class="mt-0.5 rounded text-primary" disabled="" type="checkbox"/>
+<span class="font-body-sm text-body-sm text-on-surface">All customs holds resolved with BOC E2M release ref</span>
+</label>
+<label class="flex items-start gap-2 cursor-pointer">
+<input checked="" class="mt-0.5 rounded text-primary" disabled="" type="checkbox"/>
+<span class="font-body-sm text-body-sm text-on-surface">Validated against tenant isolation header (X-Company-Id: MNL-HQ)</span>
+</label>
+</div>
+<!-- Action Buttons -->
+<div class="flex flex-col gap-2 pt-2">
+<button class="w-full bg-primary text-on-primary py-2.5 rounded font-label-md text-label-md flex items-center justify-center gap-2 hover:bg-primary-container transition-colors shadow-sm">
+<span class="material-symbols-outlined text-headline-sm">verified_user</span>
+<span>Authorize &amp; Print Check CHK-0029104</span>
+</button>
+<div class="grid grid-cols-2 gap-2">
+<button class="w-full bg-surface-container-low text-error py-2 rounded font-label-md text-label-md hover:bg-error-container transition-colors flex items-center justify-center gap-1">
+<span class="material-symbols-outlined text-body-lg">undo</span>
+<span>Reject &amp; Return</span>
+</button>
+<button class="w-full bg-surface-container-low text-secondary py-2 rounded font-label-md text-label-md hover:bg-surface-container transition-colors flex items-center justify-center gap-1">
+<span class="material-symbols-outlined text-body-lg">download</span>
+<span>Form 2307 PDF</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Carrier Account Aging Micro Card -->
+<div class="bg-surface-container-lowest p-4 rounded shadow-sm flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-outline uppercase font-semibold">Bureau of Customs Account Status</span>
+<span class="font-code-sm text-code-sm text-secondary font-bold">PORT-MANILA-01</span>
+</div>
+<div class="flex items-center justify-between">
+<div>
+<div class="font-code-md text-code-md font-bold text-primary">₱2,840,110.00</div>
+<div class="font-body-sm text-body-sm text-outline">Direct Credit Advance Line</div>
+</div>
+<div class="text-right">
+<div class="font-code-md text-code-md font-bold text-secondary">₱1,950,550.00</div>
+<div class="font-body-sm text-body-sm text-outline">Remaining Terminal Limit</div>
+</div>
+</div>
+<!-- Tiny Bar Indicator -->
+<div class="w-full bg-surface-container-low rounded-full h-1.5 overflow-hidden">
+<div class="bg-secondary h-1.5 rounded-full" style="width: 31.3%"></div>
+</div>
+<div class="flex justify-between font-code-sm text-[10px] text-outline">
+<span>Utilization: 31.3%</span>
+<span>Next Settlement: Feb 28, 2025</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div></main></body></html>

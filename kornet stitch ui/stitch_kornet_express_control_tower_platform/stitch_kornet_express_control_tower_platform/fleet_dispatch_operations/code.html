@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base { html, body { margin: 0; padding: 0; } body { overscroll-behavior: none; } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "primary-fixed": "#dae2ff", "surface-container-lowest": "#ffffff", "outline-variant": "#c5c6d0", "inverse-surface": "#26323b", "on-error": "#ffffff", "outline": "#757780", "secondary": "#0462a0", "primary": "#00061d", "on-background": "#111d25", "tertiary-fixed-dim": "#ffb3ad", "on-secondary-fixed-variant": "#00497b", "surface-variant": "#d7e4f0", "on-error-container": "#93000a", "on-primary-fixed": "#021945", "on-tertiary-fixed-variant": "#930011", "on-secondary-fixed": "#001d35", "on-tertiary": "#ffffff", "surface-dim": "#cfdce7", "surface-container-highest": "#d7e4f0", "on-secondary-container": "#004a7c", "on-primary": "#ffffff", "inverse-primary": "#b4c5fb", "on-surface-variant": "#44464f", "surface-container-high": "#ddeaf6", "inverse-on-surface": "#e6f2fe", "primary-container": "#071d49", "secondary-fixed": "#d0e4ff", "on-surface": "#111d25", "on-secondary": "#ffffff", "surface-container": "#e3effb", "tertiary": "#190001", "error": "#ba1a1a", "on-primary-container": "#7486b8", "on-primary-fixed-variant": "#344573", "secondary-fixed-dim": "#9ccaff", "background": "#f6faff", "surface-tint": "#4c5d8c", "tertiary-container": "#480004", "on-tertiary-container": "#f94040", "surface-bright": "#f6faff", "on-tertiary-fixed": "#410003", "primary-fixed-dim": "#b4c5fb", "secondary-container": "#79bbff", "tertiary-fixed": "#ffdad6", "error-container": "#ffdad6", "surface": "#f6faff", "surface-container-low": "#ebf5ff" }, borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" }, spacing: { "gutter": "1rem", "margin": "1.5rem", "space-xs": "0.25rem", "space-xl": "1.75rem", "space-md": "0.75rem", "space-sm": "0.5rem", "space-lg": "1.25rem" }, fontFamily: { "headline-xl": ["Inter"], "headline-md": ["Inter"], "label-md": ["Inter"], "code-md": ["JetBrains Mono"], "code-lg": ["JetBrains Mono"], "label-sm": ["Inter"], "code-sm": ["JetBrains Mono"], "body-md": ["Inter"], "headline-sm": ["Inter"], "headline-lg": ["Inter"], "body-sm": ["Inter"], "body-lg": ["Inter"], "label-lg": ["Inter"] }, fontSize: { "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "label-md": ["11px", { "lineHeight": "16px", "letterSpacing": "0.03em", "fontWeight": "600" }], "code-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }], "code-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "500" }], "label-sm": ["10px", { "lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "700" }], "code-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.01em", "fontWeight": "500" }], "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }], "headline-sm": ["16px", { "lineHeight": "24px", "fontWeight": "600" }], "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }], "body-lg": ["15px", { "lineHeight": "22px", "fontWeight": "400" }], "label-lg": ["13px", { "lineHeight": "18px", "letterSpacing": "0.01em", "fontWeight": "600" }] } } } };</script></head><body class="bg-background font-body-md text-on-surface antialiased"><main class="w-full bg-background min-h-screen"><div class="flex flex-col w-full text-on-surface">
+<!-- Operational Breadcrumb & Top Hub Strip -->
+<div class="w-full bg-primary text-on-primary px-margin py-space-sm flex flex-wrap items-center justify-between gap-gutter shadow-sm">
+<div class="flex items-center gap-space-md">
+<div class="flex items-center justify-center w-7 h-7 rounded bg-secondary text-on-secondary shadow-sm">
+<span class="material-symbols-outlined text-headline-sm">local_shipping</span>
+</div>
+<div class="flex items-baseline gap-space-sm">
+<span class="font-headline-sm text-headline-sm tracking-tight text-surface-bright">Fleet &amp; Dispatch Operations</span>
+<span class="font-code-sm text-code-sm text-surface-variant/80">| HUB: MNL-GATEWAY-T2 • DISPATCH CH-04 [VHF 142.850]</span>
+</div>
+</div>
+<div class="flex items-center gap-space-lg text-body-sm">
+<div class="flex items-center gap-space-xs font-code-sm text-code-sm bg-primary-container/60 px-space-sm py-0.5 rounded text-surface-bright">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+<span>GEOFENCE ENGINE ACTIVE (PH-ZONE 4)</span>
+</div>
+<div class="flex items-center gap-space-xs font-code-sm text-code-sm text-surface-variant">
+<span class="material-symbols-outlined text-body-md">schedule</span>
+<span id="utc-clock">2026-09-16 14:32:10 PHT</span>
+</div>
+</div>
+</div>
+<!-- Sub-header & Real-time Operational KPIs Bar -->
+<div class="w-full bg-surface-container-low px-margin py-space-md shadow-sm">
+<div class="flex flex-wrap items-center justify-between gap-gutter mb-space-md">
+<div>
+<h1 class="font-headline-lg text-headline-lg tracking-tight text-primary">Fleet &amp; Dispatch Control Tower</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">
+          Land Transportation Dispatch, GPS Telemetry &amp; Digital Proof of Delivery Capture • NCR &amp; Calabarzon Industrial Corridor
+        </p>
+</div>
+<!-- Action Toolbar -->
+<div class="flex flex-wrap items-center gap-space-sm">
+<button class="flex items-center gap-space-xs bg-primary hover:bg-primary-container text-on-primary px-space-lg py-space-sm rounded font-label-lg text-label-lg shadow-sm transition">
+<span class="material-symbols-outlined text-headline-sm">add_road</span>
+<span>Create Dispatch Route</span>
+</button>
+<button class="flex items-center gap-space-xs bg-secondary hover:bg-on-secondary-container text-on-secondary px-space-md py-space-sm rounded font-label-lg text-label-lg shadow-sm transition">
+<span class="material-symbols-outlined text-headline-sm">post_add</span>
+<span>New P/D Work Order</span>
+</button>
+<button class="flex items-center gap-space-xs bg-surface-container-lowest hover:bg-surface-container text-on-surface px-space-md py-space-sm rounded font-label-md text-label-md shadow-sm transition">
+<span class="material-symbols-outlined text-body-lg">group_add</span>
+<span>Batch Driver Assignment</span>
+</button>
+<button class="flex items-center gap-space-xs bg-surface-container-lowest hover:bg-surface-container text-on-surface px-space-md py-space-sm rounded font-label-md text-label-md shadow-sm transition">
+<span class="material-symbols-outlined text-body-lg">print</span>
+<span>Print Manifest</span>
+</button>
+<button class="flex items-center gap-space-xs bg-surface-container-lowest hover:bg-surface-container text-on-surface px-space-md py-space-sm rounded font-label-md text-label-md shadow-sm transition">
+<span class="material-symbols-outlined text-body-lg">usb</span>
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span>Hardware Hub</span>
+</button>
+<button class="flex items-center justify-center bg-surface-container-lowest hover:bg-surface-container text-on-surface w-9 h-9 rounded shadow-sm transition" title="Export Dispatch Log">
+<span class="material-symbols-outlined text-body-lg">download</span>
+</button>
+</div>
+</div>
+<!-- Summary KPI Band -->
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-space-md">
+<!-- Metric 1 -->
+<div class="bg-surface-container-lowest p-space-md rounded shadow-sm flex items-center justify-between">
+<div>
+<div class="font-label-sm text-label-sm uppercase text-on-surface-variant">Active Fleet On Road</div>
+<div class="font-headline-lg text-headline-lg text-primary mt-0.5">22 <span class="font-code-md text-code-md text-on-surface-variant font-normal">/ 26</span></div>
+<div class="font-label-sm text-label-sm text-secondary flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-body-sm">speed</span>
+            84.6% Equipment In Service
+          </div>
+</div>
+<div class="w-10 h-10 rounded bg-secondary/10 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-headline-sm">local_shipping</span>
+</div>
+</div>
+<!-- Metric 2 -->
+<div class="bg-surface-container-lowest p-space-md rounded shadow-sm flex items-center justify-between">
+<div>
+<div class="font-label-sm text-label-sm uppercase text-on-surface-variant">Pending Staged Dispatches</div>
+<div class="font-headline-lg text-headline-lg text-primary mt-0.5">09 <span class="font-label-sm text-label-sm text-on-surface-variant font-normal">Routes</span></div>
+<div class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-body-sm">assignment_late</span>
+            CFS Yard 1 &amp; Pier 4
+          </div>
+</div>
+<div class="w-10 h-10 rounded bg-surface-container-high flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined text-headline-sm">pending_actions</span>
+</div>
+</div>
+<!-- Metric 3 -->
+<div class="bg-surface-container-lowest p-space-md rounded shadow-sm flex items-center justify-between">
+<div>
+<div class="font-label-sm text-label-sm uppercase text-on-surface-variant">In-Transit Delivery Runs</div>
+<div class="font-headline-lg text-headline-lg text-primary mt-0.5">14 <span class="font-label-sm text-label-sm text-on-surface-variant font-normal">Live</span></div>
+<div class="font-label-sm text-label-sm text-secondary flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-body-sm">alt_route</span>
+            SLEX • CAVITEX • STAR Toll
+          </div>
+</div>
+<div class="w-10 h-10 rounded bg-secondary/10 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-headline-sm">navigation</span>
+</div>
+</div>
+<!-- Metric 4 -->
+<div class="bg-surface-container-lowest p-space-md rounded shadow-sm flex items-center justify-between">
+<div>
+<div class="font-label-sm text-label-sm uppercase text-on-surface-variant">Completed PODs Today</div>
+<div class="font-headline-lg text-headline-lg text-primary mt-0.5">48 <span class="font-label-sm text-label-sm text-on-surface-variant font-normal">Delivered</span></div>
+<div class="font-label-sm text-label-sm text-secondary flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-body-sm">check_circle</span>
+            100% On-Time SLA
+          </div>
+</div>
+<div class="w-10 h-10 rounded bg-surface-container-high flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-headline-sm">task_alt</span>
+</div>
+</div>
+<!-- Metric 5 -->
+<div class="bg-surface-container-lowest p-space-md rounded shadow-sm flex items-center justify-between">
+<div>
+<div class="font-label-sm text-label-sm uppercase text-on-surface-variant">Hardware Signature Pads</div>
+<div class="font-headline-lg text-headline-lg text-primary mt-0.5">12 <span class="font-label-sm text-label-sm text-on-surface-variant font-normal">Connected</span></div>
+<div class="font-label-sm text-label-sm text-secondary flex items-center gap-1 mt-0.5">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+            Wacom STU Drivers OK
+          </div>
+</div>
+<div class="w-10 h-10 rounded bg-secondary/10 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-headline-sm">draw</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Operational Navigation Tabs & Quick Filter Strip -->
+<div class="w-full bg-surface-container px-margin pt-space-xs flex flex-wrap items-center justify-between gap-gutter shadow-sm">
+<div class="flex items-center gap-space-xs overflow-x-auto">
+<button class="px-space-md py-space-sm rounded-t bg-surface-container-lowest text-primary font-label-lg text-label-lg shadow-sm flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-body-lg">route</span>
+<span>Dispatch Routes &amp; Runs (Active 14)</span>
+<span class="px-1.5 py-0.2 rounded bg-secondary text-on-secondary font-code-sm text-code-sm">14</span>
+</button>
+<button class="px-space-md py-space-sm text-on-surface-variant hover:text-primary hover:bg-surface-container-low font-label-lg text-label-lg flex items-center gap-space-xs transition">
+<span class="material-symbols-outlined text-body-lg">badge</span>
+<span>Driver Roster &amp; Status</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container-highest font-code-sm text-code-sm">26</span>
+</button>
+<button class="px-space-md py-space-sm text-on-surface-variant hover:text-primary hover:bg-surface-container-low font-label-lg text-label-lg flex items-center gap-space-xs transition">
+<span class="material-symbols-outlined text-body-lg">rv_hookup</span>
+<span>Fleet Equipment &amp; Tractors</span>
+</button>
+<button class="px-space-md py-space-sm text-on-surface-variant hover:text-primary hover:bg-surface-container-low font-label-lg text-label-lg flex items-center gap-space-xs transition">
+<span class="material-symbols-outlined text-body-lg">verified</span>
+<span>Digital POD Capture Queue</span>
+<span class="px-1.5 py-0.2 rounded bg-tertiary-fixed text-tertiary font-code-sm text-code-sm">3 Pending</span>
+</button>
+</div>
+<!-- Search & Fast Filters -->
+<div class="flex items-center gap-space-sm pb-space-xs">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-2.5 top-2 text-on-surface-variant text-body-md">search</span>
+<input class="bg-surface-container-lowest text-on-surface pl-8 pr-3 py-1.5 rounded text-body-sm font-body-sm w-72 focus:outline-none focus:bg-surface shadow-sm" placeholder="Search Route, Plate, Driver, Container..." type="text"/>
+</div>
+<button class="bg-surface-container-lowest hover:bg-surface-container-high text-on-surface p-1.5 rounded shadow-sm" title="Filter by Region">
+<span class="material-symbols-outlined text-body-lg">tune</span>
+</button>
+</div>
+</div>
+<!-- Main Workspace: Two Integrated Columns -->
+<div class="w-full px-margin py-space-md grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- LEFT PANE (60% Width ~ col-span-7 or col-span-7 / 12) - Live Dispatch Route Ledger -->
+<div class="lg:col-span-7 flex flex-col gap-space-md">
+<div class="bg-surface-container-lowest rounded shadow-sm overflow-hidden flex flex-col">
+<!-- Panel Header -->
+<div class="p-space-md bg-surface-container-low flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-secondary text-headline-sm">alt_route</span>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-primary">Live Dispatch Route Ledger &amp; Telemetry Pipeline</h2>
+<span class="font-code-sm text-code-sm text-on-surface-variant">CORRIDOR: PORT OF MANILA • SOUTH HARBOR • BATANGAS PORT • CALABARZON</span>
+</div>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="text-on-surface-variant hover:text-primary p-1 rounded" title="Refresh Feed">
+<span class="material-symbols-outlined text-body-lg">refresh</span>
+</button>
+<span class="px-2 py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed font-code-sm text-code-sm">STREAM: SYNCED</span>
+</div>
+</div>
+<!-- Dispatch Table -->
+<div class="w-full overflow-x-auto">
+<table class="w-full text-left">
+<thead>
+<tr class="bg-surface-container font-label-sm text-label-sm uppercase text-on-surface-variant tracking-wider">
+<th class="py-space-sm px-space-md">Route ID</th>
+<th class="py-space-sm px-space-md">Assigned Tractor / Equipment</th>
+<th class="py-space-sm px-space-md">Driver &amp; License</th>
+<th class="py-space-sm px-space-md">Route Routing</th>
+<th class="py-space-sm px-space-md">Linked Cargo / Container</th>
+<th class="py-space-sm px-space-md">Trip Stage</th>
+<th class="py-space-sm px-space-md">ETA / SLA</th>
+<th class="py-space-sm px-space-md text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container text-body-sm font-body-sm">
+<!-- Active Highlighted Row: RT-2025-0814 -->
+<tr class="bg-secondary-fixed/20 hover:bg-secondary-fixed/30 transition cursor-pointer">
+<td class="py-space-sm px-space-md font-code-md text-code-md font-semibold text-secondary whitespace-nowrap">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-secondary animate-ping"></span>
+<span>RT-2025-0814</span>
+</div>
+<span class="text-label-sm font-label-sm text-on-surface-variant">PRIORITY RUN</span>
+</td>
+<td class="py-space-sm px-space-md whitespace-nowrap">
+<div class="font-headline-sm text-body-md font-semibold text-primary">TRK-04 Tractor 10W</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant">Plate: <span class="bg-surface-container px-1 rounded font-semibold text-on-surface">NCF-8812</span> (Heavy Flatbed)</div>
+</td>
+<td class="py-space-sm px-space-md whitespace-nowrap">
+<div class="font-body-md font-medium text-primary">E. Villanueva</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant">Lic: N01-12-88491</div>
+</td>
+<td class="py-space-sm px-space-md whitespace-nowrap">
+<div class="text-primary font-medium">Manila South Harbor CFS</div>
+<div class="flex items-center gap-1 text-secondary text-label-md">
+<span class="material-symbols-outlined text-body-sm">arrow_forward</span>
+<span>Laguna Technopark Gate 4</span>
+</div>
+</td>
+<td class="py-space-sm px-space-md whitespace-nowrap">
+<div class="font-code-md text-code-md text-primary font-medium">OCN-2025-0492</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant">40HC / TGHU-940212-0</div>
+</td>
+<td class="py-space-sm px-space-md whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                    At Receiver Dock
+                  </span>
+<div class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">Unloading Bay 03</div>
+</td>
+<td class="py-space-sm px-space-md whitespace-nowrap">
+<div class="text-secondary font-semibold font-code-sm text-code-sm">ON-TIME</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">SLA Closes 15:00</div>
+</td>
+<td class="py-space-sm px-space-md text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-1">
+<button class="bg-primary text-on-primary p-1.5 rounded hover:bg-primary-container shadow-sm" title="Inspect Digital POD Capture">
+<span class="material-symbols-outlined text-body-md">draw</span>
+</button>
+<button class="bg-surface-container-high text-on-surface p-1.5 rounded hover:bg-surface-variant shadow-sm" title="VoIP Dispatch Call">
+<span class="material-symbols-outlined text-body-md">phone_in_talk</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-low transition">
+<td class="py-space-sm px-space-md font-code-md text-code-md text-on-surface font-semibold whitespace-nowrap">
+<div>RT-2025-0815</div>
+<span class="text-label-sm font-label-sm text-on-surface-variant">STANDARD DRAY</span>
+</td>
+<td class="py-space-sm px-space-md whitespace-nowrap">
+<div class="text-body-md font-semibold text-primary">TRK-09 Wing Van 6W</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant">Plate: <span class="bg-surface-container px-1 rounded font-semibold text-on-surface">NBE-4910</span></div>
+</td>
+<td class="py-space-sm px-space-md whitespace-nowrap">
+<div class="font-body-md font-medium text-primary">L. Dantes</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant">Lic: N03-08-33109</div>
+</td>
+<td class="py-space-sm px-space-md whitespace-nowrap">
+<div class="text-primary font-medium">Batangas Pier Container Yard</div>
+<div class="flex items-center gap-1 text-on-surface-variant text-label-md">
+<span class="material-symbols-outlined text-body-sm">arrow_forward</span>
+<span>Valenzuela Gateway Hub</span>
+</div>
+</td>
+<td class="py-space-sm px-space-md whitespace-nowrap">
+<div class="font-code-md text-code-md text-primary font-medium">DOM-2025-1108</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant">LCL Palletized (24 Skids)</div>
+</td>
+<td class="py-space-sm px-space-md whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>
+                    In-Transit Tollway
+                  </span>
+<div class="font-code-sm text-code-sm text-on-surface-variant mt-0.5">SLEX KM 38 Northbound</div>
+</td>
+<td class="py-space-sm px-space-md whitespace-nowrap">
+<div class="text-tertiary-container font-semibold font-code-sm text-code-sm">+18m Delay</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">Alabang Toll Queue</div>
+</td>
+<td class="py-space-sm px-space-md text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-1">
+<button class="bg-surface-container-high text-on-surface p-1.5 rounded hover:bg-surface-variant shadow-sm" title="View Waybill">
+<span class="material-symbols-outlined text-body-md">description</span>
+</button>
+<button class="bg-surface-container-high text-on-surface p-1.5 rounded hover:bg-surface-variant shadow-sm" title="VoIP Dispatch Call">
+<span class="material-symbols-outlined text-body-md">phone_in_talk</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-low transition">
+<td class="py-space-sm px-space-md font-code-md text-code-md text-on-surface font-semibold whitespace-nowrap">
+<div>RT-2025-0816</div>
+<span class="text-label-sm font-label-sm text-on-surface-variant">HAZMAT CLASS 3</span>
+</td>
+<td class="py-space-sm px-space-md whitespace-nowrap">
+<div class="text-body-md font-semibold text-primary">TRK-12 Car Carrier 8-Bay</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant">Plate: <span class="bg-surface-container px-1 rounded font-semibold text-on-surface">CA-9021</span></div>
+</td>
+<td class="py-space-sm px-space-md whitespace-nowrap">
+<div class="font-body-md font-medium text-primary">G. Santos</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant">Lic: N12-99-40192</div>
+</td>
+<td class="py-space-sm px-space-md whitespace-nowrap">
+<div class="text-primary font-medium">Subic Bay Freeport Zone</div>
+<div class="flex items-center gap-1 text-on-surface-variant text-label-md">
+<span class="material-symbols-outlined text-body-sm">arrow_forward</span>
+<span>Santa Rosa Auto Plant</span>
+</div>
+</td>
+<td class="py-space-sm px-space-md whitespace-nowrap">
+<div class="font-code-md text-code-md text-primary font-medium">OCN-2025-0518</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant">RoRo Unit Auto Lot #4</div>
+</td>
+<td class="py-space-sm px-space-md whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm">
+                    Dispatched / Staging
+                  </span>
+<div class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">Gate Pass Cleared</div>
+</td>
+<td class="py-space-sm px-space-md whitespace-nowrap">
+<div class="text-secondary font-semibold font-code-sm text-code-sm">ON-SCHEDULE</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">ETA 18:30 PHT</div>
+</td>
+<td class="py-space-sm px-space-md text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-1">
+<button class="bg-surface-container-high text-on-surface p-1.5 rounded hover:bg-surface-variant shadow-sm" title="View Waybill">
+<span class="material-symbols-outlined text-body-md">description</span>
+</button>
+<button class="bg-surface-container-high text-on-surface p-1.5 rounded hover:bg-surface-variant shadow-sm" title="VoIP Dispatch Call">
+<span class="material-symbols-outlined text-body-md">phone_in_talk</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-low transition">
+<td class="py-space-sm px-space-md font-code-md text-code-md text-on-surface font-semibold whitespace-nowrap">
+<div>RT-2025-0817</div>
+<span class="text-label-sm font-label-sm text-on-surface-variant">COLD CHAIN -20C</span>
+</td>
+<td class="py-space-sm px-space-md whitespace-nowrap">
+<div class="text-body-md font-semibold text-primary">TRK-06 Reefer Van 40FT</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant">Plate: <span class="bg-surface-container px-1 rounded font-semibold text-on-surface">NDF-3301</span></div>
+</td>
+<td class="py-space-sm px-space-md whitespace-nowrap">
+<div class="font-body-md font-medium text-primary">M. Macaraeg</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant">Lic: N02-14-11822</div>
+</td>
+<td class="py-space-sm px-space-md whitespace-nowrap">
+<div class="text-primary font-medium">MICT South Harbor Yard</div>
+<div class="flex items-center gap-1 text-on-surface-variant text-label-md">
+<span class="material-symbols-outlined text-body-sm">arrow_forward</span>
+<span>Carmona Cold Storage Complex</span>
+</div>
+</td>
+<td class="py-space-sm px-space-md whitespace-nowrap">
+<div class="font-code-md text-code-md text-primary font-medium">AIR-2025-0899</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant">Biopharma Serum (Insulated)</div>
+</td>
+<td class="py-space-sm px-space-md whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                    In-Transit (Telemetry OK)
+                  </span>
+<div class="font-code-sm text-code-sm text-on-surface-variant mt-0.5">Temp: -20.4°C Steady</div>
+</td>
+<td class="py-space-sm px-space-md whitespace-nowrap">
+<div class="text-secondary font-semibold font-code-sm text-code-sm">ON-TIME</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">ETA 15:45 PHT</div>
+</td>
+<td class="py-space-sm px-space-md text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-1">
+<button class="bg-surface-container-high text-on-surface p-1.5 rounded hover:bg-surface-variant shadow-sm" title="Reefer Telemetry">
+<span class="material-symbols-outlined text-body-md">thermostat</span>
+</button>
+<button class="bg-surface-container-high text-on-surface p-1.5 rounded hover:bg-surface-variant shadow-sm" title="VoIP Dispatch Call">
+<span class="material-symbols-outlined text-body-md">phone_in_talk</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-surface-container-low transition opacity-90">
+<td class="py-space-sm px-space-md font-code-md text-code-md text-on-surface font-semibold whitespace-nowrap">
+<div>RT-2025-0812</div>
+<span class="text-label-sm font-label-sm text-on-surface-variant">DELIVERY COMPLETE</span>
+</td>
+<td class="py-space-sm px-space-md whitespace-nowrap">
+<div class="text-body-md font-semibold text-primary">TRK-02 Tractor 10W</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant">Plate: <span class="bg-surface-container px-1 rounded font-semibold text-on-surface">NAA-7119</span></div>
+</td>
+<td class="py-space-sm px-space-md whitespace-nowrap">
+<div class="font-body-md font-medium text-primary">A. De Guzman</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant">Lic: N01-09-54810</div>
+</td>
+<td class="py-space-sm px-space-md whitespace-nowrap">
+<div class="text-primary font-medium">Bataan Refinery Terminal</div>
+<div class="flex items-center gap-1 text-on-surface-variant text-label-md">
+<span class="material-symbols-outlined text-body-sm">arrow_forward</span>
+<span>Pasig Chemical Depot</span>
+</div>
+</td>
+<td class="py-space-sm px-space-md whitespace-nowrap">
+<div class="font-code-md text-code-md text-primary font-medium">OCN-2025-0480</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant">ISO Tank TGHU-220911-3</div>
+</td>
+<td class="py-space-sm px-space-md whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-label-md text-secondary">verified</span>
+                    POD Captured &amp; Settled
+                  </span>
+<div class="font-code-sm text-code-sm text-on-surface-variant mt-0.5">Closed at 13:58 PHT</div>
+</td>
+<td class="py-space-sm px-space-md whitespace-nowrap">
+<div class="text-secondary font-semibold font-code-sm text-code-sm">RESOLVED</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">Bridge Cost Transferred</div>
+</td>
+<td class="py-space-sm px-space-md text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-1">
+<button class="bg-surface-container-high text-on-surface p-1.5 rounded hover:bg-surface-variant shadow-sm" title="View Archived POD">
+<span class="material-symbols-outlined text-body-md">visibility</span>
+</button>
+<button class="bg-surface-container-high text-on-surface p-1.5 rounded hover:bg-surface-variant shadow-sm" title="Print DR Copy">
+<span class="material-symbols-outlined text-body-md">receipt_long</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer / Telemetry Status -->
+<div class="p-space-sm bg-surface-container-low flex flex-wrap items-center justify-between text-label-md font-label-md text-on-surface-variant">
+<div class="flex items-center gap-space-md">
+<span>Showing 5 of 14 Active Route Runs</span>
+<span class="w-1 h-1 rounded-full bg-on-surface-variant"></span>
+<span>All vehicles equipped with GPS Transponders &amp; Speed Limiters (Max 80 km/h)</span>
+</div>
+<div class="flex items-center gap-space-xs font-code-sm text-code-sm">
+<span>PAGASA WEATHER: LIGHT RAIN IN CALAMBA CORRIDOR (ADVISORY SENT)</span>
+</div>
+</div>
+</div>
+<!-- Live Corridor Geo-Map Telemetry Visualization -->
+<div class="bg-surface-container-lowest rounded shadow-sm p-space-md flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-headline-sm">satellite_alt</span>
+<h3 class="font-headline-sm text-headline-sm text-primary">Corridor Telemetry &amp; Geo-Tracking (NCR - SLEX - STAR Hub)</h3>
+</div>
+<span class="font-code-sm text-code-sm bg-surface-container px-2 py-0.5 rounded text-on-surface">22 GPS Nodes Online</span>
+</div>
+<div class="w-full h-56 rounded bg-surface-container relative overflow-hidden flex items-end p-space-md" data-location="Manila Port South Harbor to Laguna Technopark Philippines" style="">
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 via-primary/20 to-transparent pointer-events-none"></div>
+<div class="relative z-10 flex flex-wrap items-center justify-between w-full gap-space-sm text-on-primary">
+<div class="flex items-center gap-space-sm">
+<span class="w-3 h-3 rounded-full bg-secondary animate-ping"></span>
+<div>
+<div class="font-headline-sm text-body-lg text-white">TRK-04 (NCF-8812) • RT-2025-0814</div>
+<div class="font-code-sm text-code-sm text-surface-variant">LAT: 14.2812° N, LON: 121.0841° E • Speed: 0 km/h (Docked at Gate 4)</div>
+</div>
+</div>
+<div class="flex items-center gap-space-xs bg-surface-container-lowest/20 backdrop-blur px-space-sm py-1 rounded text-white font-code-sm text-code-sm">
+<span class="material-symbols-outlined text-body-md">lock</span>
+<span>ELECTRONIC SEAL #KNT-9912 INTACT</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- RIGHT PANE (40% Width ~ col-span-5) - Digital Proof of Delivery (POD) Touch Capture Terminal -->
+<div class="lg:col-span-5 flex flex-col gap-space-md">
+<div class="bg-surface-container-lowest rounded shadow-sm overflow-hidden flex flex-col">
+<!-- Terminal Header -->
+<div class="p-space-md bg-primary text-on-primary flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded bg-secondary flex items-center justify-center text-on-secondary">
+<span class="material-symbols-outlined text-headline-sm">stylus</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-surface-bright">Live Digital POD Capture Terminal</h2>
+<div class="font-code-sm text-code-sm text-surface-variant/90">ACTIVE DISPATCH: RT-2025-0814 • CLIENT: LAGUNA TECH</div>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-secondary text-on-secondary font-code-sm text-code-sm">STAGE: AT DOCK</span>
+</div>
+<div class="p-space-md flex flex-col gap-space-md">
+<!-- Route Verification Meta Card -->
+<div class="p-space-sm bg-surface-container-low rounded flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase text-on-surface-variant">Consignee &amp; Waybill Spec</span>
+<span class="font-code-sm text-code-sm font-semibold text-secondary">BOL #MNL-LT-99214-D</span>
+</div>
+<div class="font-headline-sm text-headline-sm text-primary">Laguna Technopark Inc. • Sub-Assembly Plant 4</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Gate 4 Receiving Yard, Binan Laguna Industrial Estate, 4024</div>
+<div class="grid grid-cols-2 gap-space-sm mt-space-xs pt-space-xs border-t border-surface-container">
+<div>
+<span class="font-label-sm text-label-sm text-on-surface-variant block">Driver in Charge:</span>
+<span class="font-body-md text-body-md font-medium text-on-surface">E. Villanueva (TRK-04)</span>
+</div>
+<div>
+<span class="font-label-sm text-label-sm text-on-surface-variant block">Security Container Seal:</span>
+<span class="font-code-md text-code-md font-semibold text-primary">#KNT-9912 (MATCHED)</span>
+</div>
+</div>
+</div>
+<!-- Hardware Device Status Indicator -->
+<div class="p-space-sm rounded bg-surface-container-low flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary animate-pulse"></span>
+<div>
+<div class="font-label-md text-label-md text-primary font-semibold">Wacom STU-430 Digital Pad • USB Port 2</div>
+<div class="font-code-sm text-code-sm text-secondary">Connected • Pressure Sens 1024 Levels • Stylus Active</div>
+</div>
+</div>
+<button class="font-label-sm text-label-sm text-secondary hover:underline" onclick="toggleFallbackTouch()">
+              Switch to Touch/Mouse
+            </button>
+</div>
+<!-- Interactive Digital Signature Canvas Box -->
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<label class="font-label-sm text-label-sm uppercase text-on-surface-variant font-semibold">
+                Receiver Authorized Signature (Digital Pen or Stylus)
+              </label>
+<button class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary flex items-center gap-1" onclick="clearSignatureCanvas()">
+<span class="material-symbols-outlined text-body-sm">ink_eraser</span>
+<span>Clear Canvas</span>
+</button>
+</div>
+<div class="relative w-full h-44 bg-surface-container-lowest rounded shadow-sm overflow-hidden flex flex-col justify-between p-space-sm">
+<!-- Grid Background for Security Authentic feel -->
+<div class="absolute inset-0 opacity-5 pointer-events-none bg-[radial-gradient(#071D49_1px,transparent_1px)] [background-size:16px_16px]"></div>
+<!-- SVG Realistic Signature Display & Interactive Drawing Surface -->
+<svg class="w-full h-28 absolute inset-0 z-10 select-none cursor-crosshair" id="sig-svg">
+<!-- Pre-rendered smooth vector path simulating Engr. Ramon Castillo signature -->
+<path d="M 45 75 Q 70 30 110 50 T 170 65 Q 200 40 240 70 T 310 55 Q 360 85 410 45 M 80 65 Q 120 110 260 80 M 160 55 L 180 85 M 280 40 L 290 80" fill="none" stroke="#071D49" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+</svg>
+<!-- Live Watermark Overlay inside Box -->
+<div class="relative z-0 flex items-start justify-between pointer-events-none opacity-40">
+<span class="font-code-sm text-code-sm uppercase tracking-wider text-on-surface-variant">KORNET SECURE POD #2026-991204</span>
+<span class="font-code-sm text-code-sm text-on-surface-variant">IMMUTABLE TIME LOCK</span>
+</div>
+<!-- Baseline Signing Guide Line -->
+<div class="relative z-0 w-full border-b border-dashed border-surface-variant my-auto pointer-events-none"></div>
+<!-- Signed Entity & Geofence Telemetry Stamp -->
+<div class="relative z-10 flex flex-wrap items-center justify-between text-label-sm font-code-sm text-code-sm text-on-surface-variant bg-surface-container-lowest/80 backdrop-blur px-2 py-1 rounded">
+<div class="text-primary font-medium">Signee: Engr. Ramon Castillo (Logistics Mgr)</div>
+<div class="text-secondary">GPS LOCK: 14.2812° N, 121.0841° E • 14:32:10 PHT</div>
+</div>
+</div>
+</div>
+<!-- Receiver Identity Verification Form -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-sm">
+<div class="flex flex-col gap-1">
+<label class="font-label-sm text-label-sm uppercase text-on-surface-variant">Signatory Full Legal Name</label>
+<input class="bg-surface-container text-on-surface px-space-sm py-1.5 rounded font-body-sm text-body-sm font-medium focus:outline-none focus:bg-surface-container-high shadow-sm" type="text" value="Engr. Ramon Castillo"/>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-sm text-label-sm uppercase text-on-surface-variant">Government ID / Company Badge #</label>
+<input class="bg-surface-container text-on-surface px-space-sm py-1.5 rounded font-code-sm text-code-sm font-medium focus:outline-none focus:bg-surface-container-high shadow-sm" type="text" value="LTI-ENG-049 (SSS: 03-994102-1)"/>
+</div>
+</div>
+<!-- Cargo Integrity & Seal Verification Check -->
+<div class="p-space-sm bg-surface-container-low rounded flex flex-col gap-space-xs">
+<label class="flex items-center gap-space-sm cursor-pointer select-none">
+<input checked="" class="w-4 h-4 rounded text-primary focus:ring-0 cursor-pointer" type="checkbox"/>
+<span class="font-label-md text-label-md text-primary font-semibold">
+                Cargo Received Complete, In Good Order &amp; Container Seal Verified Intact (#KNT-9912)
+              </span>
+</label>
+<div class="text-body-sm font-body-sm text-on-surface-variant pl-6">
+              Exception / Discrepancy Remarks: <span class="text-secondary font-medium font-code-sm text-code-sm">ZERO EXCEPTIONS • CLEAN DISCHARGE</span>
+</div>
+</div>
+<!-- Photo Evidence Strip -->
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase text-on-surface-variant font-semibold">
+                Delivery Site Photo Verification (3 Required Captures)
+              </span>
+<span class="font-code-sm text-code-sm text-secondary">3 of 3 Uploaded</span>
+</div>
+<div class="grid grid-cols-3 gap-space-sm">
+<!-- Thumbnail 1 -->
+<div class="group relative rounded overflow-hidden shadow-sm bg-surface-container h-24">
+<img class="w-full h-full object-cover group-hover:scale-105 transition duration-200" data-alt="Close up photograph of heavy-duty industrial shipping container high security bolt seal showing etched serial number KNT 9912 locked in place on modern maritime metal container door with blue painted industrial texture." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDaz1vUIe_Fml9tblqjrGmySmkyGZfaU_WksOsEOsteQwpY3uOtO3cB4WDTm823bx0tnX-Erc6iJgS5I1Q03LIr9I3Ggt81UgPJdLwtkx5SSm9mOt9xiTkNHftEUMJ5kHSelSfYcWx-HjD0EKWQ4x9Z7lvcK1ksYd4w4_xEzq1sJ2ho86chHJBxNt4lMrw4JsFTFlq62-79bsxINSNZRy-CWaMZ04aK3PAgrBmfTnGdOgSHWK37aPpbKA"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent flex items-end p-1.5">
+<span class="font-code-sm text-code-sm text-white truncate">1. Seal Intact (#9912)</span>
+</div>
+</div>
+<!-- Thumbnail 2 -->
+<div class="group relative rounded overflow-hidden shadow-sm bg-surface-container h-24">
+<img class="w-full h-full object-cover group-hover:scale-105 transition duration-200" data-alt="Wide high angle industrial photograph of large modern tractor trailer unloading at busy logistics bay dock in industrial park warehouse with forklift and logistics workers in safety vests under daylight." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDCzGsbatHoDBk34X6J3TViT4f0KBSC-CjjwL00VrdcPHM0gvXE0f_0-qXGuV7bPjYSDlXVWOnr1v7bUWbikqQJB5zPY5-ykU0Mlr5pKXMRtspDVfYAsdVblvUorSqHRzkWKytgQuMVSh253bQKGwnePL0sNxA8isZHSi9veaFU-m3yxjivjmkCrwZ2NUSKYBCpKl5p4hIOkbg1fkRWTzMr9R_A2sVlWLXaJC-kd-8GEuIxRexmIZfqpQ"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent flex items-end p-1.5">
+<span class="font-code-sm text-code-sm text-white truncate">2. Unloading Bay 03</span>
+</div>
+</div>
+<!-- Thumbnail 3 -->
+<div class="group relative rounded overflow-hidden shadow-sm bg-surface-container h-24">
+<img class="w-full h-full object-cover group-hover:scale-105 transition duration-200" data-alt="Close up macro photograph of a signed paper delivery receipt document with formal logistics stamps, blue ink signatures, and company seals resting on logistics clipboard in bright daylight warehouse." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBAgNNtaLN98nrfrBtY0-QJGMickeNPvLyDvQSvP2fqTrY53k5uta4K64Z0DNNOsabBlHEwt8-vIkE6cbodDqCTYPkJgcPBdiAxvq81hLeaBITSX-x9taSDNWqfatG0TAaaZGPZmGzf8CRE0-7HZVAifB_xT79MFnVRvtAquMpTnmyCGykIRcysje6xqjxEuwYG6nBo8-g7HKV1yCSf2RcjmpF3X4723ueKGKSeDzSOHdJFyPM4vtclxQ"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent flex items-end p-1.5">
+<span class="font-code-sm text-code-sm text-white truncate">3. Signed Hardcopy DR</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Buttons Bar -->
+<div class="flex flex-col gap-space-sm pt-space-xs border-t border-surface-container">
+<div class="flex items-center gap-space-sm">
+<button class="flex-1 bg-primary hover:bg-primary-container text-on-primary py-space-sm px-space-md rounded font-label-lg text-label-lg shadow-sm flex items-center justify-center gap-space-xs transition" id="post-pod-btn" onclick="triggerPODConfirmation()">
+<span class="material-symbols-outlined text-headline-sm">verified</span>
+<span>Confirm &amp; Post Verified POD</span>
+</button>
+<button class="bg-surface-container-high hover:bg-surface-variant text-on-surface px-space-md py-space-sm rounded font-label-md text-label-md shadow-sm transition flex items-center gap-1" title="Print Delivery Receipt PDF">
+<span class="material-symbols-outlined text-body-lg">receipt_long</span>
+<span>Print DR</span>
+</button>
+</div>
+<button class="w-full bg-secondary-fixed hover:bg-secondary-fixed-dim text-on-secondary-fixed py-1.5 px-space-md rounded font-label-md text-label-md shadow-sm flex items-center justify-center gap-space-xs transition">
+<span class="material-symbols-outlined text-body-md">account_balance_wallet</span>
+<span>Transfer Drayage Surcharge &amp; Detention Hours to Accounting Bridge</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Persistent Bottom Status & Geofence Telemetry Bar -->
+<div class="w-full bg-surface-container-high px-margin py-space-xs flex flex-wrap items-center justify-between gap-space-md text-label-sm font-label-sm text-on-surface-variant shadow-inner mt-space-md">
+<div class="flex items-center gap-space-md">
+<div class="flex items-center gap-1 text-secondary">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="font-code-sm text-code-sm font-semibold">GEOFENCE DAEMON 4.19</span>
+</div>
+<span>22 Fleet Transponders Polling Every 10s</span>
+<span class="w-1 h-1 rounded-full bg-on-surface-variant"></span>
+<span>Base Station: Kornet Operations Tower (South Harbor Manila)</span>
+</div>
+<div class="flex items-center gap-space-lg font-code-sm text-code-sm">
+<span>LATENCY: 42ms</span>
+<span>API GATEWAY: ONLINE</span>
+<span>SECURE AUDIT LOG: SHA-256 VERIFIED</span>
+</div>
+</div>
+<!-- Inline Interaction Scripts for Simulation -->
+<script>
+    function clearSignatureCanvas() {
+      const svg = document.getElementById('sig-svg');
+      if (svg) {
+        svg.innerHTML = '<text x="30" y="70" fill="#757780" font-family="Inter" font-size="13" font-style="italic">Canvas cleared. Ready for stylus or touch input...</text>';
+      }
+    }
+
+    function toggleFallbackTouch() {
+      alert("Fallback touch capture enabled. Signatory may now sign using any connected touchscreen or mouse device.");
+    }
+
+    function triggerPODConfirmation() {
+      const btn = document.getElementById('post-pod-btn');
+      if (btn) {
+        btn.classList.remove('bg-primary');
+        btn.classList.add('bg-secondary');
+        btn.innerHTML = '<span class="material-symbols-outlined text-headline-sm">done_all</span><span>POD Verified & Sealed (Immutable Log #9912)</span>';
+        setTimeout(() => {
+          alert("Proof of Delivery (POD) for Route RT-2025-0814 successfully committed to Kornet Core Manifest & Billing Bridge.");
+        }, 200);
+      }
+    }
+  </script>
+</div></main></body></html>

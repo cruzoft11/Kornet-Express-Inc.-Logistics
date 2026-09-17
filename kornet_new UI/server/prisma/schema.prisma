@@ -1,0 +1,414 @@
+// Kornet Express Logistics — data model
+// SQLite via Prisma. JSON-shaped fields are stored as strings for portability.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────  AUTH  ─────────────────────────────
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  fullName     String
+  email        String?
+  role         String   @default("operator") // superadmin | manager | operator | accountant | viewer
+  active       Boolean  @default(true)
+  canAccessFs  Boolean  @default(false)
+  companies    String   @default("[]") // JSON array of company codes ([] = all)
+  lastLoginAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  refreshTokens RefreshToken[]
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model SupportTicket {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?
+  subject   String
+  message   String
+  status    String   @default("open")
+  createdAt DateTime @default(now())
+}
+
+// ─────────────────────────────  TENANTS  ─────────────────────────────
+model Company {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  legalName String?
+  address   String?
+  phone     String?
+  email     String?
+  tin       String?
+  branch    String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ─────────────────────────────  FREIGHT  ─────────────────────────────
+model Shipment {
+  id               String    @id @default(cuid())
+  companyCode      String
+  fileNo           String
+  mode             String    @default("ocean") // ocean | air
+  status           String    @default("Draft")
+  direction        String    @default("Export") // Export | Import | Domestic
+  bookingNo        String?
+  blAwbNo          String?
+  shipperName      String?
+  shipperAddress   String?
+  consigneeName    String?
+  consigneeAddress String?
+  notifyParty      String?
+  originPort       String?
+  destinationPort  String?
+  carrier          String?
+  vesselOrFlight   String?
+  voyageOrFlightNo String?
+  etd              DateTime?
+  eta              DateTime?
+  containerNo      String?
+  containerType    String?
+  commodity        String?
+  packages         Int       @default(0)
+  grossWeightKg    Float     @default(0)
+  volumeCbm        Float     @default(0)
+  chargeableWeight Float     @default(0)
+  incoterm         String?
+  currency         String    @default("PHP")
+  remarks          String?
+  billingLines     String    @default("[]") // JSON
+  costLines        String    @default("[]") // JSON
+  createdBy        String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@unique([companyCode, fileNo])
+  @@index([companyCode, mode])
+}
+
+// ─────────────────────────────  VEHICLES (RORO / vehicle import)  ─────
+model Vehicle {
+  id                  String    @id @default(cuid())
+  companyCode         String
+  vin                 String
+  year                Int?
+  make                String?
+  model               String?
+  bodyClass           String?
+  color               String?
+  engine              String?
+  status              String    @default("Expected") // Expected|Received|Ready to Ship|Pre-Loaded|Loaded|Shipped|Hold
+  titleStatus         String    @default("Pending") // Pending|Received|Missing
+  shipperName         String?
+  consigneeName       String?
+  warehouse           String?
+  originPort          String?
+  destinationPort     String?
+  bookingNo           String?
+  customsHold         Boolean   @default(false)
+  lienReleaseCleared  Boolean   @default(false)
+  odometer            Int?
+  remarks             String?
+  history             String    @default("[]") // JSON of inspection/status events
+  createdBy           String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([companyCode])
+}
+
+// ─────────────────────────────  P/D ORDERS (pickup & delivery)  ──────
+model PdOrder {
+  id            String   @id @default(cuid())
+  companyCode   String
+  orderNo       String
+  barcode       String?
+  status        String   @default("Open") // Open|Assigned|In Transit|Delivered|Cancelled
+  type          String   @default("Pickup") // Pickup|Delivery
+  shipperName   String?
+  consigneeName String?
+  originAddr    String?
+  destAddr      String?
+  warehouse     String?
+  division      String?
+  driverName    String?
+  driverPlate   String?
+  equipment     String?
+  scheduledAt   DateTime?
+  cargoItems    String   @default("[]") // JSON
+  linkedFileNo  String?
+  wrNo          String?
+  remarks       String?
+  createdBy     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([companyCode, orderNo])
+  @@index([companyCode])
+}
+
+// ─────────────────────────────  QUOTES  ─────────────────────────────
+model Quote {
+  id            String   @id @default(cuid())
+  companyCode   String
+  quoteNo       String
+  status        String   @default("Draft") // Draft|Sent|Accepted|Rejected|Expired
+  mode          String   @default("ocean")
+  customerName  String?
+  originPort    String?
+  destinationPort String?
+  commodity     String?
+  validUntil    DateTime?
+  currency      String   @default("PHP")
+  lines         String   @default("[]") // JSON of rate lines
+  total         Float    @default(0)
+  remarks       String?
+  createdBy     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([companyCode, quoteNo])
+  @@index([companyCode])
+}
+
+// ─────────────────────────────  FLEET  ─────────────────────────────
+model Driver {
+  id          String   @id @default(cuid())
+  companyCode String
+  name        String
+  licenseNo   String?
+  phone       String?
+  plateHint   String?
+  status      String   @default("Available") // Available|On Trip|Off Duty
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyCode])
+}
+
+model FleetVehicle {
+  id          String   @id @default(cuid())
+  companyCode String
+  plateNo     String
+  type        String? // Truck|Trailer|Van|Chassis
+  make        String?
+  capacity    String?
+  status      String   @default("Available") // Available|In Use|Maintenance
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyCode])
+}
+
+model DispatchRoute {
+  id            String   @id @default(cuid())
+  companyCode   String
+  routeNo       String
+  stage         String   @default("Draft") // Draft|Dispatched|In Transit|Arrived|Completed
+  origin        String?
+  destination   String?
+  driverName    String?
+  vehiclePlate  String?
+  cargoRef      String?
+  scheduledAt   DateTime?
+  podSignature  String? // base64 signature (data URL)
+  podSignedBy   String?
+  podSignedAt   DateTime?
+  stops         String   @default("[]") // JSON
+  remarks       String?
+  createdBy     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([companyCode, routeNo])
+  @@index([companyCode])
+}
+
+// ─────────────────────────────  ACCOUNTING BRIDGE  ──────────────────
+model CheckDisbursement {
+  id           String   @id @default(cuid())
+  companyCode  String
+  checkNo      String
+  status       String   @default("Draft") // Draft|Printed|Posted|Void
+  payee        String?
+  bank         String?
+  amount       Float    @default(0)
+  currency     String   @default("PHP")
+  glAccount    String?
+  memo         String?
+  jeNo         String?
+  postedAt     DateTime?
+  createdBy    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([companyCode])
+}
+
+model BridgeItem {
+  id           String   @id @default(cuid())
+  companyCode  String
+  refNo        String
+  type         String   @default("AR Invoice") // AR Invoice|AP Cost|Miscellaneous Invoice
+  status       String   @default("Staged") // Staged|Trial Verified|Posted
+  sourceFileNo String?
+  party        String?
+  glAccount    String?
+  debit        Float    @default(0)
+  credit       Float    @default(0)
+  currency     String   @default("PHP")
+  memo         String?
+  postedAt     DateTime?
+  createdBy    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([companyCode])
+}
+
+// ─────────────────────────────  TRACKING  ─────────────────────────────
+model TrackingItem {
+  id           String   @id @default(cuid())
+  companyCode  String
+  trackingNo   String
+  refType      String   @default("Shipment") // Shipment|PD|Vehicle
+  refFileNo    String?
+  status       String   @default("In Transit")
+  shipperName  String?
+  consigneeName String?
+  origin       String?
+  destination  String?
+  milestones   String   @default("[]") // JSON [{ status, location, note, at }]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([companyCode, trackingNo])
+  @@index([companyCode])
+}
+
+model WebAccount {
+  id           String   @id @default(cuid())
+  companyCode  String
+  customerName String
+  username     String
+  email        String?
+  active       Boolean  @default(true)
+  canTrack     Boolean  @default(true)
+  canDownloadPod Boolean @default(true)
+  canUploadDocs  Boolean @default(false)
+  canViewInvoices Boolean @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([companyCode, username])
+  @@index([companyCode])
+}
+
+// ─────────────────────────────  DIRECTORIES  ─────────────────────────
+model Carrier {
+  id          String   @id @default(cuid())
+  companyCode String
+  name        String
+  scac        String?
+  mode        String   @default("ocean") // ocean|air|land
+  contact     String?
+  createdAt   DateTime @default(now())
+
+  @@index([companyCode])
+}
+
+model Port {
+  id          String   @id @default(cuid())
+  companyCode String
+  code        String
+  name        String
+  country     String   @default("PH")
+  type        String   @default("sea") // sea|air|inland
+  createdAt   DateTime @default(now())
+
+  @@index([companyCode])
+}
+
+model BillingCode {
+  id          String   @id @default(cuid())
+  companyCode String
+  code        String
+  description String
+  glAccount   String?
+  defaultRate Float    @default(0)
+  taxable     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@index([companyCode])
+}
+
+// ─────────────────────────────  ATTACHMENTS  ─────────────────────────
+model Attachment {
+  id          String   @id @default(cuid())
+  companyCode String
+  entityType  String
+  entityId    String
+  fileName    String
+  mimeType    String?
+  sizeBytes   Int      @default(0)
+  dataUrl     String   // base64 data URL (client-uploaded)
+  uploadedBy  String?
+  createdAt   DateTime @default(now())
+
+  @@index([companyCode, entityType, entityId])
+}
+
+// ─────────────────────────────  INTEGRATIONS / DEVICES  ──────────────
+model Integration {
+  id           String   @id @default(cuid())
+  companyCode  String
+  key          String   // barcode-scanner | signature-pad | label-printer | boc-e2m | carrier-api
+  name         String
+  category     String   // hardware | government | carrier | printing
+  status       String   @default("disconnected") // disconnected | connected | error
+  config       String   @default("{}") // JSON credentials / settings (non-secret metadata)
+  lastCheckedAt DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([companyCode, key])
+  @@index([companyCode])
+}
+
+// ─────────────────────────────  AUDIT  ─────────────────────────────
+model AuditLog {
+  id          String   @id @default(cuid())
+  companyCode String
+  userId      String?
+  username    String?
+  action      String
+  entity      String?
+  entityId    String?
+  detail      String   @default("{}") // JSON
+  createdAt   DateTime @default(now())
+
+  @@index([companyCode])
+  @@index([entity, entityId])
+}

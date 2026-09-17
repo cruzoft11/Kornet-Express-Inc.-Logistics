@@ -1,0 +1,30 @@
+# Node dependencies
+node_modules/
+*/node_modules/
+*/*/node_modules/
+
+# Production build outputs
+dist/
+*/dist/
+build/
+*/build/
+
+# Local databases & logs
+*.db-journal
+*.sqlite-journal
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files (keep samples/defaults)
+.env.local
+.env.*.local
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.tmp
