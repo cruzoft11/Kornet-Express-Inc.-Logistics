@@ -35,4 +35,6 @@ Thumbs.db
 !.env.example
 *.db
 *.sqlite
+*.backup*
+prisma/data/backups/
 
