@@ -135,7 +135,7 @@ model Port {
   type        String   @default("sea")
   iata        String?
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  updatedAt   DateTime @default(now()) @updatedAt
 
   @@unique([companyCode, code])
   @@index([companyCode])
@@ -172,7 +172,7 @@ model BillingCode {
   taxable         Boolean  @default(true)
   active          Boolean  @default(true)
   createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  updatedAt       DateTime @default(now()) @updatedAt
 
   @@unique([companyCode, code])
   @@index([companyCode])
@@ -325,6 +325,21 @@ model Shipment {
   consigneeAddress       String?
   notifyName             String?
   notifyAddress          String?
+  blAwbNo                String?
+  notifyParty            String?
+  originPort             String?
+  destinationPort        String?
+  carrier                String?
+  vesselOrFlight         String?
+  voyageOrFlightNo       String?
+  containerNo            String?
+  containerType          String?
+  packages               Int            @default(0)
+  grossWeightKg          Float          @default(0)
+  volumeCbm              Float          @default(0)
+  chargeableWeight       Float          @default(0)
+  billingLines           String         @default("[]")
+  costLines              String         @default("[]")
   version                Int            @default(1)
   deletedAt              DateTime?
   createdBy              String?
@@ -731,6 +746,10 @@ model CheckDisbursement {
   status         String               @default("DRAFT")
   jeNo           String?
   postedAt       DateTime?
+  payee          String?
+  bank           String?
+  glAccount      String?
+  memo           String?
   version        Int                  @default(1)
   deletedAt      DateTime?
   createdBy      String?
@@ -791,6 +810,12 @@ model BridgeItem {
   fsJvNo      String?
   postedAt    DateTime?
   postedBy    String?
+  type        String?
+  sourceFileNo String?
+  glAccount   String?
+  debit       Float?
+  credit      Float?
+  currency    String?
   createdBy   String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -1023,6 +1048,25 @@ model StatusEvent {
   @@index([entityType, entityId])
 }
 
+model TrackingItem {
+  id           String   @id @default(cuid())
+  companyCode  String
+  trackingNo   String
+  refType      String   @default("Shipment")
+  refFileNo    String?
+  status       String   @default("In Transit")
+  shipperName  String?
+  consigneeName String?
+  origin       String?
+  destination  String?
+  milestones   String   @default("[]")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+
+  @@index([companyCode])
+  @@index([trackingNo])
+}
+
 model WebAccount {
   id              String    @id @default(cuid())
   companyCode     String
@@ -1035,6 +1079,7 @@ model WebAccount {
   canDownloadPod  Boolean   @default(true)
   canUploadDocs   Boolean   @default(false)
   canViewInvoices Boolean   @default(false)
+  createdBy       String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   users           WebUser[]
