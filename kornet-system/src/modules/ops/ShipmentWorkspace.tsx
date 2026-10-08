@@ -6,11 +6,17 @@ import {
   ArrowLeft,
   Columns2,
   Copy,
+  FileCheck,
   FilePlus2,
+  FileText,
   LayoutGrid,
   Maximize2,
+  Navigation,
+  Plane,
   Save,
+  ShieldCheck,
   Ship,
+  Sparkles,
   TrendingUp,
   Truck,
 } from 'lucide-react'
@@ -54,7 +60,6 @@ import {
   computeChargeLine,
   financialTotals,
   isAirMode,
-  isOceanMode,
   newCargoLine,
   STATUS_STEPS,
 } from './utils'
@@ -171,7 +176,6 @@ export function ShipmentWorkspace({ mode }: ShipmentWorkspaceProps) {
   const [milestone, setMilestone] = useState({ code: 'BKD', location: '', notes: '', isPublic: true })
   const debouncedSearch = useDebouncedValue(filters.q || '')
   const air = isAirMode(mode || draft.mode || '')
-  const ocean = isOceanMode(mode || draft.mode || '')
   const { dirty, markClean } = useDirtySnapshot({ draft, cargo, containers, charges, docs })
 
   useEffect(() => {
@@ -442,73 +446,289 @@ export function ShipmentWorkspace({ mode }: ShipmentWorkspaceProps) {
     setLayout('editor')
   }
 
-  // Renders the 11-Tab File Editor Card
-  const renderEditorCard = () => (
-    <Card className="w-full min-w-0 border-border/80 shadow-xs">
-      <CardHeader className="border-b bg-card/60 pb-4">
-        {draft.id ? (
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-xl font-bold tracking-tight text-foreground">{draft.fileNo}</span>
-                  {mode && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setLayout('table')}
-                      className="text-xs text-muted-foreground hover:text-foreground"
-                    >
-                      <ArrowLeft className="mr-1 size-3.5" /> Back to Table
-                    </Button>
-                  )}
+  // Renders the Specialized File Editor Card
+  const renderEditorCard = () => {
+    const activeFileMode = (draft.mode || (mode ? shipmentModeParts(mode).mode : air ? 'AIR' : 'OCEAN')).toUpperCase()
+    const isModeDomestic = activeFileMode.includes('DOMESTIC')
+    const isModeAir = !isModeDomestic && activeFileMode.includes('AIR')
+    const isModeOcean = !isModeDomestic && !isModeAir
+
+    const processStages = isModeDomestic
+      ? [
+          { id: 'st-general', num: '1', title: 'Parties & Dispatch', targetTab: 'general', icon: Truck },
+          { id: 'st-cargo', num: '2', title: 'Cargo Manifest', targetTab: 'cargo', icon: FileText },
+          { id: 'st-docs', num: '3', title: 'Delivery Receipts (DR)', targetTab: 'docs', icon: FileCheck },
+          { id: 'st-charges', num: '4', title: 'Trucking Rates & Margin', targetTab: 'charges', icon: TrendingUp },
+          { id: 'st-timeline', num: '5', title: 'Delivery Milestones', targetTab: 'timeline', icon: Navigation },
+          { id: 'st-acct', num: '6', title: 'Invoicing & Close', targetTab: 'accounting', icon: ShieldCheck },
+        ]
+      : isModeAir
+      ? [
+          { id: 'st-general', num: '1', title: 'Flight & AWB Booking', targetTab: 'general', icon: Plane },
+          ...(draft.direction === 'IMPORT' ? [{ id: 'st-imp', num: '2', title: 'Airport Customs', targetTab: 'import', icon: ShieldCheck }] : []),
+          { id: 'st-cargo', num: draft.direction === 'IMPORT' ? '3' : '2', title: 'Air Cargo (Volumetric)', targetTab: 'cargo', icon: FileText },
+          { id: 'st-docs', num: draft.direction === 'IMPORT' ? '4' : '3', title: 'Air Waybills (AWB)', targetTab: 'docs', icon: FileCheck },
+          { id: 'st-charges', num: draft.direction === 'IMPORT' ? '5' : '4', title: 'Tariffs & Margin', targetTab: 'charges', icon: TrendingUp },
+          { id: 'st-timeline', num: draft.direction === 'IMPORT' ? '6' : '5', title: 'Flight Milestones', targetTab: 'timeline', icon: Navigation },
+          { id: 'st-acct', num: draft.direction === 'IMPORT' ? '7' : '6', title: 'Invoicing & Close', targetTab: 'accounting', icon: ShieldCheck },
+        ]
+      : [
+          { id: 'st-general', num: '1', title: 'Vessel & Route', targetTab: 'general', icon: Ship },
+          ...(draft.direction === 'IMPORT' ? [{ id: 'st-imp', num: '2', title: 'Port Customs', targetTab: 'import', icon: ShieldCheck }] : []),
+          { id: 'st-cargo', num: draft.direction === 'IMPORT' ? '3' : '2', title: 'Cargo Specs', targetTab: 'cargo', icon: FileText },
+          { id: 'st-containers', num: draft.direction === 'IMPORT' ? '4' : '3', title: 'Container Stuffing', targetTab: 'containers', icon: Columns2 },
+          { id: 'st-docs', num: draft.direction === 'IMPORT' ? '5' : '4', title: 'Bills of Lading (B/L)', targetTab: 'docs', icon: FileCheck },
+          { id: 'st-charges', num: draft.direction === 'IMPORT' ? '6' : '5', title: 'Tariffs & Margin', targetTab: 'charges', icon: TrendingUp },
+          { id: 'st-timeline', num: draft.direction === 'IMPORT' ? '7' : '6', title: 'Vessel Milestones', targetTab: 'timeline', icon: Navigation },
+          { id: 'st-acct', num: draft.direction === 'IMPORT' ? '8' : '7', title: 'Invoicing & Close', targetTab: 'accounting', icon: ShieldCheck },
+        ]
+
+    const dynamicTabs = [
+      {
+        value: 'general',
+        label: isModeDomestic ? 'Dispatch & Route' : isModeAir ? 'Flight & Route' : 'Vessel & Route',
+        content: (
+          <GeneralTab
+            draft={draft}
+            mode={activeFileMode}
+            air={isModeAir}
+            update={updateDraft}
+            onNext={() => setTab(draft.direction === 'IMPORT' && !isModeDomestic ? 'import' : 'cargo')}
+          />
+        ),
+      },
+      ...(draft.direction === 'IMPORT' && !isModeDomestic
+        ? [
+            {
+              value: 'import',
+              label: isModeAir ? 'Airport Customs (BOC)' : 'Port Customs (BOC)',
+              content: (
+                <ImportTab
+                  draft={draft}
+                  update={updateDraft}
+                  disabled={false}
+                  onNext={() => setTab('cargo')}
+                />
+              ),
+            },
+          ]
+        : []),
+      {
+        value: 'cargo',
+        label: isModeDomestic ? 'Cargo Manifest' : isModeAir ? 'Air Cargo Specs' : 'Cargo Specs',
+        content: (
+          <CargoTab
+            air={isModeAir}
+            mode={activeFileMode}
+            cargo={computedCargo}
+            setCargo={setCargo}
+            totals={cargoSummary}
+            pasteText={pasteText}
+            setPasteText={setPasteText}
+            onNext={() => setTab(isModeOcean ? 'containers' : 'docs')}
+          />
+        ),
+      },
+      ...(isModeOcean
+        ? [
+            {
+              value: 'containers',
+              label: 'Container Stuffing',
+              content: (
+                <ContainersTab
+                  ocean={isModeOcean}
+                  shipmentId={String(draft.id || '')}
+                  containers={containers}
+                  setContainers={setContainers}
+                  onNext={() => setTab('docs')}
+                />
+              ),
+            },
+          ]
+        : []),
+      {
+        value: 'docs',
+        label: isModeDomestic ? 'Delivery Receipts (DR)' : isModeAir ? 'Air Waybills (AWB)' : 'Bills of Lading (B/L)',
+        content: (
+          <DocsTab
+            air={isModeAir}
+            mode={activeFileMode}
+            draft={draft}
+            cargo={computedCargo}
+            docs={docs}
+            setDocs={setDocs}
+            onNext={() => setTab('charges')}
+          />
+        ),
+      },
+      {
+        value: 'charges',
+        label: isModeDomestic ? 'Trucking Rates & Margin' : isModeAir ? 'Air Tariffs & Margin' : 'Tariffs & Margin',
+        content: (
+          <ChargesTab
+            draft={draft}
+            air={isModeAir}
+            cargo={computedCargo}
+            containers={containers}
+            charges={computedCharges}
+            setCharges={setCharges}
+            applyTariffs={() => simpleAction.mutate('tariffs')}
+            loading={simpleAction.isPending}
+            totals={moneyTotals}
+          />
+        ),
+      },
+      {
+        value: 'timeline',
+        label: isModeDomestic ? 'Delivery Milestones' : isModeAir ? 'Flight Milestones' : 'Vessel Milestones',
+        content: (
+          <TimelineTab
+            events={eventsQuery.data?.data ?? []}
+            milestone={milestone}
+            setMilestone={setMilestone}
+            add={() => milestoneMutation.mutate()}
+            status={(status) => statusMutation.mutate(status)}
+          />
+        ),
+      },
+      {
+        value: 'documents',
+        label: 'Printouts',
+        content: <DocumentsTab air={isModeAir} print={printDocument} />,
+      },
+      {
+        value: 'accounting',
+        label: 'Accounting Bridge',
+        content: (
+          <AccountingTab
+            fileId={draft.id}
+            generateInvoices={() => simpleAction.mutate('invoice')}
+            generateAp={() => simpleAction.mutate('ap')}
+            loading={simpleAction.isPending}
+          />
+        ),
+      },
+      {
+        value: 'close',
+        label: 'Close Gate',
+        content: (
+          <CloseTab
+            status={draft.status}
+            openClose={() => setCloseOpen(true)}
+            reopenReason={reopenReason}
+            setReopenReason={setReopenReason}
+            reopen={() => reopenMutation.mutate()}
+          />
+        ),
+      },
+      {
+        value: 'audit',
+        label: 'Audit Trail',
+        content: <AuditTab draft={draft} />,
+      },
+    ]
+
+    return (
+      <Card className="w-full min-w-0 border-border/80 shadow-xs">
+        <CardHeader className="border-b bg-card/60 pb-4">
+          {draft.id ? (
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xl font-bold tracking-tight text-foreground">{draft.fileNo}</span>
+                    {mode && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setLayout('table')}
+                        className="text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        <ArrowLeft className="mr-1 size-3.5" /> Back to Table
+                      </Button>
+                    )}
+                  </div>
+                  <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                    {draft.mode} {draft.direction} · {draft.loadType} · Lane: {draft.polCode || '—'} → {draft.podCode || '—'}
+                  </p>
                 </div>
-                <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                  {draft.mode} {draft.direction} · {draft.loadType} · Lane: {draft.polCode || '—'} → {draft.podCode || '—'}
-                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <StatusPill status={draft.status || 'DRAFT'} />
+                  <StatusPill status={draft.mode || 'MODE'} tone="info" />
+                  <MarginBadge bill={moneyTotals.bill} cost={moneyTotals.cost} />
+                </div>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <StatusPill status={draft.status || 'DRAFT'} />
-                <StatusPill status={draft.mode || 'MODE'} tone="info" />
-                <MarginBadge bill={moneyTotals.bill} cost={moneyTotals.cost} />
+              <div className="w-full min-w-0 overflow-x-auto py-1 custom-scrollbar">
+                <Stepper steps={STATUS_STEPS} current={workflowIndex(draft.status)} />
               </div>
             </div>
-            <div className="w-full min-w-0 overflow-x-auto py-1 custom-scrollbar">
-              <Stepper steps={STATUS_STEPS} current={workflowIndex(draft.status)} />
+          ) : (
+            <CardTitle className="text-base">No file selected</CardTitle>
+          )}
+        </CardHeader>
+        <CardContent className="w-full min-w-0 pt-4">
+          {!draft.id && !mode ? (
+            <EmptyState
+              title="Open a shipment file"
+              description="Use a mode list route or pass /logistics/files/:id after converting a quote."
+            />
+          ) : (
+            <div className="space-y-4">
+              {/* Interactive Process Flow Stage Navigator */}
+              <div className="rounded-xl border bg-muted/30 p-2.5 shadow-2xs">
+                <div className="flex items-center justify-between px-2 pb-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <span className="flex items-center gap-1.5">
+                    <Sparkles className="size-3.5 text-primary" />
+                    {isModeDomestic
+                      ? 'Straightforward Domestic Trucking Flow'
+                      : isModeAir
+                      ? 'Straightforward IATA Air Cargo Flow'
+                      : 'Straightforward Ocean Freight Flow'}
+                  </span>
+                  <span className="text-[10px] font-normal text-muted-foreground">
+                    Click any stage to navigate directly
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5 overflow-x-auto p-0.5 custom-scrollbar">
+                  {processStages.map((st) => {
+                    const isActive = tab === st.targetTab
+                    const Icon = st.icon
+                    return (
+                      <button
+                        key={st.id}
+                        type="button"
+                        onClick={() => setTab(st.targetTab)}
+                        className={`group flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all duration-150 ${
+                          isActive
+                            ? 'border-primary bg-primary text-primary-foreground shadow-xs'
+                            : 'border-border/60 bg-card text-foreground hover:border-primary/50 hover:bg-muted/60'
+                        }`}
+                      >
+                        <span
+                          className={`flex size-4.5 items-center justify-center rounded-full text-[10px] font-bold ${
+                            isActive
+                              ? 'bg-primary-foreground/20 text-primary-foreground'
+                              : 'bg-muted text-muted-foreground group-hover:text-foreground'
+                          }`}
+                        >
+                          {st.num}
+                        </span>
+                        <Icon className="size-3.5 shrink-0" />
+                        <span className="whitespace-nowrap">{st.title}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Dynamic Mode-Tailored Tabs */}
+              <Tabs value={tab} onValueChange={setTab} tabs={dynamicTabs} />
             </div>
-          </div>
-        ) : (
-          <CardTitle className="text-base">No file selected</CardTitle>
-        )}
-      </CardHeader>
-      <CardContent className="w-full min-w-0 pt-4">
-        {!draft.id && !mode ? (
-          <EmptyState
-            title="Open a shipment file"
-            description="Use a mode list route or pass /logistics/files/:id after converting a quote."
-          />
-        ) : (
-          <Tabs
-            value={tab}
-            onValueChange={setTab}
-            tabs={[
-              { value: 'general', label: 'General & Route', content: <GeneralTab draft={draft} air={air} update={updateDraft} /> },
-              { value: 'import', label: 'Import info', content: <ImportTab draft={draft} update={updateDraft} disabled={draft.direction !== 'IMPORT'} /> },
-              { value: 'cargo', label: 'Cargo', content: <CargoTab air={air} cargo={computedCargo} setCargo={setCargo} totals={cargoSummary} pasteText={pasteText} setPasteText={setPasteText} /> },
-              { value: 'containers', label: 'Containers', content: <ContainersTab ocean={ocean} shipmentId={String(draft.id || '')} containers={containers} setContainers={setContainers} /> },
-              { value: 'docs', label: 'Transport Docs', content: <DocsTab air={air} draft={draft} cargo={computedCargo} docs={docs} setDocs={setDocs} /> },
-              { value: 'charges', label: 'Charges & Margin', content: <ChargesTab draft={draft} air={air} cargo={computedCargo} containers={containers} charges={computedCharges} setCharges={setCharges} applyTariffs={() => simpleAction.mutate('tariffs')} loading={simpleAction.isPending} totals={moneyTotals} /> },
-              { value: 'timeline', label: 'Status & Timeline', content: <TimelineTab events={eventsQuery.data?.data ?? []} milestone={milestone} setMilestone={setMilestone} add={() => milestoneMutation.mutate()} status={(status) => statusMutation.mutate(status)} /> },
-              { value: 'documents', label: 'Printouts', content: <DocumentsTab air={air} print={printDocument} /> },
-              { value: 'accounting', label: 'Accounting Bridge', content: <AccountingTab fileId={draft.id} generateInvoices={() => simpleAction.mutate('invoice')} generateAp={() => simpleAction.mutate('ap')} loading={simpleAction.isPending} /> },
-              { value: 'close', label: 'Close Gate', content: <CloseTab status={draft.status} openClose={() => setCloseOpen(true)} reopenReason={reopenReason} setReopenReason={setReopenReason} reopen={() => reopenMutation.mutate()} /> },
-              { value: 'audit', label: 'Audit Trail', content: <AuditTab draft={draft} /> },
-            ]}
-          />
-        )}
-      </CardContent>
-    </Card>
-  )
+          )}
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <div className="w-full min-w-0 space-y-4">
