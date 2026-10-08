@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { resolveCompanyCode } from '../config/companies'
 import { useCompanyStore } from './companyStore'
 
 export type Role = 'superadmin' | 'manager' | 'operator' | 'accountant' | 'viewer'
@@ -64,12 +65,8 @@ function toUser(u: ApiUser): User {
 function applyCompanyForUser(u: ApiUser) {
   const companyStore = useCompanyStore.getState()
   companyStore.fetchCompanies().catch(() => {})
-  if (u.companies.length > 0) {
-    const current = companyStore.selectedCompanyCode
-    if (!current || !u.companies.includes(current)) {
-      companyStore.setSelectedCompany(u.companies[0])
-    }
-  }
+  const companyCode = resolveCompanyCode(companyStore.selectedCompanyCode, u.companies)
+  if (companyCode !== companyStore.selectedCompanyCode) companyStore.setSelectedCompany(companyCode)
 }
 
 const CLEARED = {

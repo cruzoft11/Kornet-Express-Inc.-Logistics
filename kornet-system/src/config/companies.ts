@@ -43,6 +43,19 @@ export const COMPANIES: Company[] = [
 export const COMPANY_HEADER_NAME = 'X-Company-Code'
 export const DEFAULT_COMPANY_CODE: CompanyCode = 'KORNET'
 
+export function normalizeCompanyCode(value: unknown): string | null {
+  if (typeof value !== 'string') return null
+  const code = value.trim()
+  return code && !/^(undefined|null)$/i.test(code) ? code : null
+}
+
+export function resolveCompanyCode(selected: unknown, assigned: readonly unknown[] = []): string {
+  const validAssigned = assigned.map(normalizeCompanyCode).filter((code): code is string => Boolean(code))
+  const selectedCode = normalizeCompanyCode(selected)
+  if (selectedCode && (!validAssigned.length || validAssigned.includes(selectedCode))) return selectedCode
+  return validAssigned[0] ?? DEFAULT_COMPANY_CODE
+}
+
 export function getCompanyByCode(code?: string | null): Company | null {
   if (!code) return null
   

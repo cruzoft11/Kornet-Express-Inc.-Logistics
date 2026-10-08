@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
+import * as L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 import { KORNET_BRANCHES, PhilippineBranch } from '../../stores/logisticsStore'
 import { useSettingsStore } from '../../stores/settingsStore'
-
-declare const L: any
 
 interface BranchGeoPin {
   branch: PhilippineBranch
@@ -274,26 +274,8 @@ export default function PhilippineLeafletMap({
   const tileLayersRef = useRef<any[]>([])
 
   const darkMode = useSettingsStore((s) => s.darkMode)
-  const [isLeafletReady, setIsLeafletReady] = useState(false)
   const [assetFilter, setAssetFilter] = useState<'all' | 'truck' | 'ship' | 'plane'>('all')
   const [selectedAsset, setSelectedAsset] = useState<LiveAsset | null>(null)
-
-  // Ensure Leaflet library is available
-  useEffect(() => {
-    if (typeof window !== 'undefined' && (window as any).L) {
-      setIsLeafletReady(true)
-      return
-    }
-
-    const interval = setInterval(() => {
-      if ((window as any).L) {
-        setIsLeafletReady(true)
-        clearInterval(interval)
-      }
-    }, 80)
-
-    return () => clearInterval(interval)
-  }, [])
 
   // Listen for reset map view event from action bar
   useEffect(() => {
@@ -309,10 +291,9 @@ export default function PhilippineLeafletMap({
 
   // Initialize Leaflet Map Instance
   useEffect(() => {
-    if (!isLeafletReady || !mapContainerRef.current || mapInstanceRef.current) return
+    if (!mapContainerRef.current || mapInstanceRef.current) return
 
-    const L = (window as any).L
-    const phBounds = [
+    const phBounds: L.LatLngBoundsExpression = [
       [4.0, 115.0], // South-West Philippine maritime EEZ boundary
       [22.0, 129.0] // North-East boundary including Batanes
     ]
@@ -342,15 +323,14 @@ export default function PhilippineLeafletMap({
       layerGroupRef.current = null
       tileLayersRef.current = []
     }
-  }, [isLeafletReady])
+  }, [])
 
   // Base Tile Layer Switcher: 100% Watermark-Free Tiles
   // Light Mode: OpenStreetMap Standard (Crisp high-contrast roads, towns, and ports)
   // Dark Mode: Esri Dark Gray Base + Reference Overlay (High-contrast white/cyan labels with zero watermark)
   useEffect(() => {
     const map = mapInstanceRef.current
-    if (!map || !(window as any).L) return
-    const L = (window as any).L
+    if (!map) return
 
     // Remove old tile layers
     tileLayersRef.current.forEach((layer) => {
@@ -390,14 +370,13 @@ export default function PhilippineLeafletMap({
 
       tileLayersRef.current = [streetLayer]
     }
-  }, [darkMode, isLeafletReady])
+  }, [darkMode])
 
   // Render High-Accuracy Routes, Hubs (Option 2), and Real Telemetry
   useEffect(() => {
     const map = mapInstanceRef.current
     const layerGroup = layerGroupRef.current
-    if (!map || !layerGroup || !(window as any).L) return
-    const L = (window as any).L
+    if (!map || !layerGroup) return
 
     layerGroup.clearLayers()
 
@@ -610,7 +589,7 @@ export default function PhilippineLeafletMap({
         className: darkMode ? 'leaflet-custom-dark-tooltip' : 'leaflet-custom-light-tooltip'
       })
     })
-  }, [selectedBranch, activeLayer, darkMode, assetFilter, selectedAsset, isLeafletReady])
+  }, [selectedBranch, activeLayer, darkMode, assetFilter, selectedAsset])
 
   return (
     <div className="relative w-full h-full flex flex-col">

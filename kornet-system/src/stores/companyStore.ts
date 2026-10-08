@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { type CompanyCode } from '../config/companies'
+import { DEFAULT_COMPANY_CODE, normalizeCompanyCode, type CompanyCode } from '../config/companies'
 import { useAuthStore } from './authStore'
 
 export interface CompanyOption {
@@ -29,8 +29,8 @@ export const useCompanyStore = create<CompanyState>()(
       selectedCompanyCode: 'KORNET',
       companies: [{ code: 'KORNET', name: 'Kornet Express Freight & Logistics' }],
       loading: false,
-      setSelectedCompany: (code: CompanyCode | string) => set({ selectedCompanyCode: code }),
-      clearSelectedCompany: () => set({ selectedCompanyCode: 'KORNET' }),
+      setSelectedCompany: (code: CompanyCode | string) => set({ selectedCompanyCode: normalizeCompanyCode(code) ?? DEFAULT_COMPANY_CODE }),
+      clearSelectedCompany: () => set({ selectedCompanyCode: DEFAULT_COMPANY_CODE }),
       setCompanies: (companies) => set({ companies }),
       fetchCompanies: async () => {
         const token = useAuthStore.getState().accessToken
@@ -54,6 +54,14 @@ export const useCompanyStore = create<CompanyState>()(
     }),
     {
       name: 'kornet-company-storage',
+      merge: (persistedState, currentState) => {
+        const persisted = persistedState as Partial<CompanyState>
+        return {
+          ...currentState,
+          ...persisted,
+          selectedCompanyCode: normalizeCompanyCode(persisted.selectedCompanyCode) ?? DEFAULT_COMPANY_CODE,
+        }
+      },
     },
   ),
 )

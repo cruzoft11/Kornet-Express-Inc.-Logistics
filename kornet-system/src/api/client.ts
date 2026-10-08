@@ -1,5 +1,5 @@
 import axios, { type AxiosRequestConfig } from 'axios';
-import { COMPANY_HEADER_NAME } from '../config/companies';
+import { COMPANY_HEADER_NAME, resolveCompanyCode } from '../config/companies';
 import { useAuthStore } from '../stores/authStore';
 import { useCompanyStore } from '../stores/companyStore';
 
@@ -22,11 +22,12 @@ api.interceptors.request.use((config) => {
   }
 
   if (!isAuthRoute) {
-    const company = useCompanyStore.getState().selectedCompanyCode;
-    if (company) {
-      config.headers = config.headers ?? {};
-      config.headers[COMPANY_HEADER_NAME] = company;
-    }
+    const company = resolveCompanyCode(
+      useCompanyStore.getState().selectedCompanyCode,
+      useAuthStore.getState().user?.companies,
+    );
+    config.headers = config.headers ?? {};
+    config.headers[COMPANY_HEADER_NAME] = company;
   }
   return config;
 });

@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import axios from 'axios'
 import App from './App'
 import './index.css'
-import { COMPANY_HEADER_NAME } from './config/companies'
+import { COMPANY_HEADER_NAME, resolveCompanyCode } from './config/companies'
 import { useSavingStore } from './stores/savingStore'
 import { useAuthStore } from './stores/authStore'
 import { useCompanyStore } from './stores/companyStore'
@@ -44,8 +44,10 @@ function installApiAuthInterceptor() {
       headers.set('Authorization', `Bearer ${accessToken}`)
     }
     if (!isAuthRoute(requestUrl)) {
-      const company = useCompanyStore.getState().selectedCompanyCode
-      if (company && !headers.has(COMPANY_HEADER_NAME)) headers.set(COMPANY_HEADER_NAME, company)
+      headers.set(
+        COMPANY_HEADER_NAME,
+        resolveCompanyCode(useCompanyStore.getState().selectedCompanyCode, useAuthStore.getState().user?.companies),
+      )
     }
 
     const firstResponse = await originalFetch(input, { ...init, headers })
@@ -57,8 +59,10 @@ function installApiAuthInterceptor() {
     const retryHeaders = new Headers(init?.headers ?? {})
     retryHeaders.set('Authorization', `Bearer ${newAccessToken}`)
     if (!isAuthRoute(requestUrl)) {
-      const company = useCompanyStore.getState().selectedCompanyCode
-      if (company) retryHeaders.set(COMPANY_HEADER_NAME, company)
+      retryHeaders.set(
+        COMPANY_HEADER_NAME,
+        resolveCompanyCode(useCompanyStore.getState().selectedCompanyCode, useAuthStore.getState().user?.companies),
+      )
     }
     return originalFetch(input, { ...init, headers: retryHeaders })
   }
@@ -73,11 +77,11 @@ function installApiAuthInterceptor() {
       ;(config.headers as Record<string, string>).Authorization = `Bearer ${accessToken}`
     }
     if (!isAuthRoute(requestUrl)) {
-      const company = useCompanyStore.getState().selectedCompanyCode
-      if (company) {
-        config.headers = config.headers ?? {}
-        ;(config.headers as Record<string, string>)[COMPANY_HEADER_NAME] = company
-      }
+      config.headers = config.headers ?? {}
+      ;(config.headers as Record<string, string>)[COMPANY_HEADER_NAME] = resolveCompanyCode(
+        useCompanyStore.getState().selectedCompanyCode,
+        useAuthStore.getState().user?.companies,
+      )
     }
     if (config.method === 'post' || config.method === 'put' || config.method === 'patch') {
       useSavingStore.getState().setStatus('saving')

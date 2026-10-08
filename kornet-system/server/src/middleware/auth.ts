@@ -1,6 +1,6 @@
 ﻿import type { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken } from '../lib/auth.js';
-import { unauthorized, forbidden, badRequest } from '../lib/http.js';
+import { unauthorized, forbidden } from '../lib/http.js';
 import { prisma } from '../db.js';
 
 const ROLE_ALIASES: Record<string, string> = {
@@ -45,8 +45,10 @@ export function requireRole(...roles: string[]) {
 
 /** Derive company from authenticated user; optional X-Company-Code is validated. */
 export async function requireCompany(req: Request, _res: Response, next: NextFunction) {
-  const requested = (req.headers['x-company-code'] as string | undefined)?.trim().toUpperCase();
-  if (requested === 'UNDEFINED' || requested === 'NULL') return next(badRequest('Invalid X-Company-Code header'));
+  const rawRequested = (req.headers['x-company-code'] as string | undefined)?.trim();
+  const requested = rawRequested && !/^(undefined|null)$/i.test(rawRequested)
+    ? rawRequested.toUpperCase()
+    : undefined;
 
   try {
     const user = await prisma.user.findUnique({
