@@ -1,4 +1,4 @@
-﻿import { apiDelete, apiGet, apiPatch, apiPost } from './client'
+import { apiDelete, apiGet, apiPatch, apiPost } from './client'
 
 export interface FsEnvelope<T> { data: T; count?: number }
 export interface FsListEnvelope<T> { data: T[]; count?: number }
@@ -44,11 +44,15 @@ export const ledgerApi = {
   postJournal: (kind: string, refNo: string) => apiPost<unknown>(`/fs/journals/${kind}/post`, { refNo }),
   trialPost: (body: unknown) => apiPost<unknown>('/fs/trial-post', body),
   finalPost: (body: unknown) => apiPost<unknown>('/fs/final-post', body),
-  posting: () => apiPost<unknown>('/fs/posting'),
+  posting: () => apiPost<{ success: boolean; recordsPosted: number; errors?: string[]; message: string }>('/fs/posting'),
+  recomputeBalances: () => apiPost<{ success: boolean; recordsPosted: number; message: string }>('/fs/post'),
   reverse: (refNo: string, date: string) => apiPost<unknown>('/fs/reverse', { refNo, date }),
   report: (type: string, params?: Record<string, unknown>) => apiGet<FsReport>(`/fs/reports/${type}`, { params }),
   monthEndChecklist: () => apiGet<FsEnvelope<FsChecklist>>('/fs/month-end/checklist'),
-  closeMonth: () => apiPost<unknown>('/fs/month-end/close'),
+  closeMonth: (body?: { force?: boolean; reason?: string }) => apiPost<{ success: boolean; currentMonth: number; currentYear: number; begDate: string; endDate: string }>('/fs/month-end/close', body),
+  advanceChecks: () => list<FsVoucherMaster>('/fs/advance-checks'),
+  transferAdvanceCdb: (params?: { fromDate?: string; toDate?: string }) => apiPost<{ success: boolean; transferredCount: number; message: string }>('/fs/transfer-advance-cdb', {}, { params }),
+  unbalancedVouchers: () => apiGet<{ data: Array<{ ckNo: string; balance: number }>; count: number }>('/fs/vouchers/unbalanced'),
   createBridgeCheck: (body: unknown) => apiPost<unknown>('/fs/bridge/create-check', body),
 }
 
