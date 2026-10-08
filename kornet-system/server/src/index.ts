@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import morgan from 'morgan';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -13,13 +14,15 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
+app.disable('x-powered-by');
+app.use(helmet());
 app.use(
   cors({
-    origin: env.corsOrigins.length ? env.corsOrigins : true,
+    origin: env.corsOrigins.length ? env.corsOrigins : false,
     credentials: true,
   }),
 );
-app.use(express.json({ limit: '15mb' }));
+app.use(express.json({ limit: env.jsonBodyLimit }));
 app.use(express.urlencoded({ extended: true }));
 if (env.isDev) app.use(morgan('dev'));
 

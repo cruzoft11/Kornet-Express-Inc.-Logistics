@@ -7,3 +7,11 @@ build/
 .env.local
 .DS_Store
 Thumbs.db
+
+# Local secrets and database files
+.env
+.env.*
+!.env.example
+*.db
+*.sqlite
+

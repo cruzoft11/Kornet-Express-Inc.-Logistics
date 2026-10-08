@@ -28,3 +28,13 @@ Thumbs.db
 .idea/
 *.swp
 *.tmp
+
+# Local secrets and database files
+.env
+.env.*
+!.env.example
+*.db
+*.sqlite
+*.backup*
+prisma/data/backups/
+

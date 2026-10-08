@@ -1,130 +1,55 @@
-/** @type {import('tailwindcss').Config} */
+﻿/** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   darkMode: 'class',
   theme: {
-    container: {
-      center: true,
-      padding: '2rem',
-      screens: { '2xl': '1440px' },
-    },
+    container: { center: true, padding: '1rem', screens: { '2xl': '1440px' } },
     extend: {
       colors: {
-        // shadcn/ui semantic tokens (driven by CSS variables in index.css)
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
-        primary: {
-          DEFAULT: 'hsl(var(--primary))',
-          foreground: 'hsl(var(--primary-foreground))',
-        },
-        secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))',
-        },
-        destructive: {
-          DEFAULT: 'hsl(var(--destructive))',
-          foreground: 'hsl(var(--destructive-foreground))',
-        },
-        muted: {
-          DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))',
-        },
-        accent: {
-          DEFAULT: 'hsl(var(--accent))',
-          foreground: 'hsl(var(--accent-foreground))',
-        },
-        popover: {
-          DEFAULT: 'hsl(var(--popover))',
-          foreground: 'hsl(var(--popover-foreground))',
-        },
-        card: {
-          DEFAULT: 'hsl(var(--card))',
-          foreground: 'hsl(var(--card-foreground))',
-        },
-        // Kornet brand palette (from the radar/signal mark)
-        kornet: {
-          50: '#eef6ff',
-          100: '#d9eaff',
-          200: '#bcdcff',
-          300: '#8ec6ff',
-          400: '#59a6ff',
-          500: '#2e86de',
-          600: '#1e6fd9',
-          700: '#1a59b4',
-          800: '#1b4a91',
-          900: '#1c4076',
-          950: '#132848',
-        },
-        // Logistics status semantic helpers
-        status: {
-          success: 'hsl(var(--success))',
-          warning: 'hsl(var(--warning))',
-          info: 'hsl(var(--info))',
+        card: { DEFAULT: 'hsl(var(--card))', foreground: 'hsl(var(--card-foreground))' },
+        popover: { DEFAULT: 'hsl(var(--popover))', foreground: 'hsl(var(--popover-foreground))' },
+        primary: { DEFAULT: 'hsl(var(--primary))', foreground: 'hsl(var(--primary-foreground))' },
+        secondary: { DEFAULT: 'hsl(var(--secondary))', foreground: 'hsl(var(--secondary-foreground))' },
+        muted: { DEFAULT: 'hsl(var(--muted))', foreground: 'hsl(var(--muted-foreground))' },
+        accent: { DEFAULT: 'hsl(var(--accent))', foreground: 'hsl(var(--accent-foreground))' },
+        destructive: { DEFAULT: 'hsl(var(--destructive))', foreground: 'hsl(var(--destructive-foreground))' },
+        success: { DEFAULT: 'hsl(var(--success))', foreground: 'hsl(var(--success-foreground))' },
+        warning: { DEFAULT: 'hsl(var(--warning))', foreground: 'hsl(var(--warning-foreground))' },
+        info: { DEFAULT: 'hsl(var(--info))', foreground: 'hsl(var(--info-foreground))' },
+        navy: { DEFAULT: 'hsl(var(--navy))', foreground: 'hsl(var(--navy-foreground))' },
+        surface: {
+          DEFAULT: 'hsl(var(--surface))',
+          raised: 'hsl(var(--surface-raised))',
+          sunken: 'hsl(var(--surface-sunken))',
         },
       },
       borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
+        xs: 'var(--radius-xs)', sm: 'var(--radius-sm)', md: 'var(--radius-md)',
+        lg: 'var(--radius-lg)', xl: 'var(--radius-xl)', '2xl': 'var(--radius-2xl)'
       },
       fontFamily: {
-        sans: ['"IBM Plex Sans"', 'system-ui', 'sans-serif'],
-        headline: ['"IBM Plex Sans"', 'system-ui', 'sans-serif'],
-        body: ['"IBM Plex Sans"', 'system-ui', 'sans-serif'],
-        label: ['"IBM Plex Sans"', 'system-ui', 'sans-serif'],
-        mono: ['"IBM Plex Mono"', 'ui-monospace', 'monospace'],
+        sans: ['InterVariable', 'Geist Sans', 'Inter', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'Geist Mono', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+        display: ['Geist Sans', 'InterVariable', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
-        glow: '0 0 0 1px hsl(var(--primary) / 0.1), 0 8px 30px -6px hsl(var(--primary) / 0.35)',
-        'card-hover': '0 10px 40px -12px rgba(2, 24, 61, 0.28)',
+        xs: 'var(--shadow-xs)', sm: 'var(--shadow-sm)', md: 'var(--shadow-md)',
+        lg: 'var(--shadow-lg)', xl: 'var(--shadow-xl)', inset: 'var(--shadow-inset)',
       },
-      backgroundImage: {
-        'kornet-radial':
-          'radial-gradient(1200px 600px at 100% -10%, hsl(var(--primary) / 0.14), transparent 60%)',
-        'grid-faint':
-          'linear-gradient(to right, hsl(var(--border) / 0.5) 1px, transparent 1px), linear-gradient(to bottom, hsl(var(--border) / 0.5) 1px, transparent 1px)',
-      },
+      transitionTimingFunction: { smooth: 'cubic-bezier(0.22, 1, 0.36, 1)' },
+      zIndex: { base: '0', docked: '10', dropdown: '30', sticky: '40', overlay: '50', modal: '60', toast: '70' },
       keyframes: {
-        'slide-in-right': {
-          '0%': { transform: 'translateX(100%)', opacity: '0' },
-          '100%': { transform: 'translateX(0)', opacity: '1' },
-        },
-        'accordion-down': {
-          from: { height: '0' },
-          to: { height: 'var(--radix-accordion-content-height)' },
-        },
-        'accordion-up': {
-          from: { height: 'var(--radix-accordion-content-height)' },
-          to: { height: '0' },
-        },
-        'fade-in': {
-          from: { opacity: '0' },
-          to: { opacity: '1' },
-        },
-        'radar-sweep': {
-          '0%': { transform: 'rotate(0deg)', opacity: '0.7' },
-          '100%': { transform: 'rotate(360deg)', opacity: '0.7' },
-        },
-        shimmer: {
-          '100%': { transform: 'translateX(100%)' },
-        },
+        shimmer: { '100%': { transform: 'translateX(100%)' } },
+        'fade-in': { from: { opacity: '0' }, to: { opacity: '1' } },
+        'slide-up': { from: { opacity: '0', transform: 'translateY(8px)' }, to: { opacity: '1', transform: 'translateY(0)' } },
       },
-      animation: {
-        'slide-in-right': 'slide-in-right 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-        'accordion-down': 'accordion-down 0.2s ease-out',
-        'accordion-up': 'accordion-up 0.2s ease-out',
-        'fade-in': 'fade-in 0.3s ease-out',
-        'radar-sweep': 'radar-sweep 4s linear infinite',
-        shimmer: 'shimmer 1.6s infinite',
-      },
+      animation: { shimmer: 'shimmer 1.4s infinite', 'fade-in': 'fade-in 160ms ease-out', 'slide-up': 'slide-up 180ms ease-out' },
     },
   },
-  plugins: [
-    require('@tailwindcss/forms'),
-    require('@tailwindcss/container-queries'),
-    require('tailwindcss-animate'),
-  ],
+  plugins: [require('@tailwindcss/forms'), require('@tailwindcss/container-queries'), require('tailwindcss-animate')],
 }

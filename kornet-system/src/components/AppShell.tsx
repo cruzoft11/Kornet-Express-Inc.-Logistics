@@ -1,265 +1,409 @@
-import { ReactNode } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+﻿import { Suspense, useEffect, useMemo, useState } from 'react'
+import { Link, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { AnimatePresence, motion } from 'framer-motion'
+import { Command } from 'cmdk'
+import { Bell, ChevronLeft, ChevronRight, CircleUserRound, HelpCircle, LogOut, Menu, Moon, Plus, Search, Settings, Sun } from 'lucide-react'
+import { appRoutes } from '../routes'
+import { searchGlobal, type GlobalSearchItem } from '../modules/dashboard/globalSearch'
 import { useAuthStore } from '../stores/authStore'
 import { useSettingsStore } from '../stores/settingsStore'
-import { getCompanyNameByCode } from '../config/companies'
-import Breadcrumbs, { BreadcrumbSegment } from './Breadcrumbs'
-import GlobalNotificationBell from './GlobalNotificationBell'
-import AutoSaveIndicator from './AutoSaveIndicator'
+import { useCompanyStore } from '../stores/companyStore'
+import { useLogisticsStore } from '../stores/logisticsStore'
+import { useHotkeys, type Hotkey } from '../hooks/useHotkeys'
+import { Button, Dialog, DialogContent, EmptyState, IconButton, Kbd, KornetLoader, Sheet, SheetContent, Switch, Toast } from './ui'
+import PrintDocumentModal from './logistics/PrintDocumentModal'
+import AuditLogModal from './logistics/AuditLogModal'
+import AttachmentModal from './logistics/AttachmentModal'
+import ContainerStuffingModal from './logistics/ContainerStuffingModal'
+import OceanManifestModal from './logistics/OceanManifestModal'
+import NewChargeModal from './logistics/NewChargeModal'
+import FileAnalysisModal from './logistics/FileAnalysisModal'
+import { SEDFilingModal, BillingCodesModal, CarriersDirectoryModal, PortsDirectoryModal, SystemDiagnosticsModal } from './logistics/LogisticsAuxModals'
+import { cn } from '@/lib/cn'
 
+const groupOrder = ['Dashboard', 'Operations', 'Billing', 'Ledger (FS)', 'Directories', 'Admin']
+const roleAliases: Record<string, string> = { manager: 'manager', superadmin: 'superadmin', admin: 'admin', operator: 'operations', accountant: 'accounting', viewer: 'viewer' }
 
-
-interface ShellTab {
-  id: string
-  label: string
+function canSee(routeRoles: string[] | undefined, role: string | undefined) {
+  if (!routeRoles?.length) return true
+  const normalized = roleAliases[role ?? ''] ?? role
+  if (normalized === 'superadmin') return true
+  return routeRoles.includes(normalized ?? '')
 }
 
-interface ShellGroup {
-  title: string
-  items: {
-    label: string
-    onClick: () => void
-    disabled?: boolean
-    icon?: string
-    route?: string
-  }[]
+function AppRoutesView() {
+  const location = useLocation()
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      <Routes location={location} key={location.pathname}>
+        {appRoutes.map((route) => (
+          <Route
+            key={route.path}
+            path={route.path}
+            element={
+              <motion.div
+                className="min-h-full"
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -8 }}
+                transition={{ duration: 0.16, ease: 'easeOut' }}
+              >
+                <Suspense
+                  fallback={
+                    <div className="flex min-h-[50vh] w-full items-center justify-center p-8">
+                      <KornetLoader size="lg" text="Loading moduleâ€¦" />
+                    </div>
+                  }
+                >
+                  {route.element}
+                </Suspense>
+              </motion.div>
+            }
+          />
+        ))}
+        <Route path="/logistics" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/billing" element={<Navigate to="/billing/invoices" replace />} />
+        <Route path="*" element={<EmptyState title="Module not found" description="Use the sidebar or ⌘K to open a module." />} />
+      </Routes>
+    </AnimatePresence>
+  )
 }
 
-interface AppShellProps {
-  moduleName: string
-  companyCode: string | null
-  statusPeriod?: string
-  tabs: ShellTab[]
-  groups: Record<string, ShellGroup[]>
-  activeTab: string
-  onTabChange: (tabId: string) => void
-  onNewEntry?: () => void
-  newEntryLabel?: string
-  children: ReactNode
-  onOpenSettings?: () => void
-  breadcrumbSegments?: BreadcrumbSegment[]
-}
-
-export default function AppShell({ 
-  moduleName, 
-  companyCode, 
-  statusPeriod,
-  tabs, 
-  groups, 
-  activeTab, 
-  onTabChange,
-  onNewEntry,
-  newEntryLabel = 'New Entry',
-  onOpenSettings,
-  breadcrumbSegments,
-  children 
-}: AppShellProps) {
+export default function AppShell() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuthStore()
-  const { darkMode, profilePhoto, showStatusBar, displayName } = useSettingsStore()
-  const companyName = getCompanyNameByCode(companyCode)
-  const currentGroups = groups[activeTab] || []
+  const selectedCompanyCode = useCompanyStore((s) => s.selectedCompanyCode)
+  const { darkMode, compactSidebar, setCompactSidebar, density, setDensity, toggleTheme } = useSettingsStore()
+  const setActiveModule = useLogisticsStore((s) => s.setActiveModule)
+  const [commandOpen, setCommandOpen] = useState(false)
+  const [shortcutsOpen, setShortcutsOpen] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const [gPending, setGPending] = useState(false)
 
-  const isItemActive = (item: { route?: string; label: string }) => {
-    const path = location.pathname
-    if (!item.route) return false
-    if (item.route === '/fs') return path === '/fs'
-    return path === item.route || path.startsWith(item.route + '/')
-  }
+  useEffect(() => {
+    const handleOpen = () => setCommandOpen(true)
+    window.addEventListener('kornet:open-command', handleOpen)
+    return () => window.removeEventListener('kornet:open-command', handleOpen)
+  }, [])
 
-  return (
-    <div className={`flex h-screen w-full font-body text-on-surface overflow-hidden ${darkMode ? 'dark bg-[#1a1a2e] text-gray-100' : 'bg-surface-container-lowest'}`}>
-      
-      {/* ── Fixed Left Sidebar ── */}
-      <aside className={`w-[260px] h-full flex flex-col border-r flex-shrink-0 z-20 ${darkMode ? 'bg-[#16213e] border-gray-700' : 'bg-surface border-outline-variant/20'}`}>
-        
-        {/* Sidebar Header */}
-        <div className={`px-5 py-5 border-b ${darkMode ? 'border-gray-700' : 'border-outline-variant/10'}`}>
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-md bg-primary text-white flex items-center justify-center font-bold text-sm shadow-sm">
-              {companyCode ? companyCode.substring(0, 2).toUpperCase() : 'CO'}
-            </div>
-            <div>
-              <h2 className={`font-headline font-bold text-[14px] leading-tight tracking-tight ${darkMode ? 'text-gray-100' : 'text-on-surface'}`}>{companyName}</h2>
-              <p className={`text-[9px] font-bold tracking-widest uppercase mt-0.5 ${darkMode ? 'text-gray-400' : 'text-on-surface-variant/60'}`}>{moduleName}</p>
-            </div>
-          </div>
-        </div>
+  useEffect(() => {
+    const map: Record<string, string> = { 'ocean-export': 'ocean-export', 'ocean-import': 'ocean-import', 'air-export': 'air-export', 'air-import': 'air-import', vehicles: 'vehicles', 'pd-orders': 'pd', fleet: 'fleet', tracking: 'tracking', 'accounting-bridge': 'bridge' }
+    const key = Object.keys(map).find((k) => location.pathname.includes(k))
+    if (key) setActiveModule(map[key] as Parameters<typeof setActiveModule>[0])
+  }, [location.pathname, setActiveModule])
 
-        {/* Primary CTA */}
-        {onNewEntry && (
-          <div className="px-5 py-4">
-            <button onClick={onNewEntry} className="w-full bg-primary hover:bg-primary/90 text-white shadow-md hover:shadow-lg transition-all rounded-md py-2 font-semibold text-[13px] flex items-center justify-center gap-2">
-              <span className="material-symbols-outlined text-[18px]">add</span> {newEntryLabel}
-            </button>
+  const visibleRoutes = useMemo(() => appRoutes.filter((r) => canSee(r.roles, user?.role)), [user?.role])
+  const grouped = useMemo(() => groupOrder.map((group) => ({ group, routes: visibleRoutes.filter((r) => r.group === group && !r.hidden) })).filter((g) => g.routes.length), [visibleRoutes])
+  const active = visibleRoutes.find((r) => location.pathname === r.path || location.pathname.startsWith(`${r.path}/`))
+  const company = user?.companies?.[0] ?? selectedCompanyCode ?? 'KORNET'
+
+  const hotkeys: Hotkey[] = useMemo(() => [
+    { key: 'Mod+K', description: 'Open command palette', handler: () => setCommandOpen(true) },
+    { key: '?', description: 'Open shortcuts', handler: () => setShortcutsOpen(true) },
+    { key: '/', description: 'Focus global search', handler: () => setCommandOpen(true) },
+    { key: 'N', description: 'New record in current module', handler: () => setCommandOpen(true) },
+    { key: 'Escape', description: 'Close panel/dialog', handler: () => { setCommandOpen(false); setShortcutsOpen(false); setMobileOpen(false); setGPending(false) } },
+    { key: 'G', description: 'Start go-to sequence', handler: () => setGPending(true) },
+    ...['O','A','P','V','B','F','D'].map((key) => ({ key, description: `Go ${key}`, when: gPending, handler: () => { const target: Record<string, string> = { O: '/logistics/ocean-export', A: '/logistics/air-export', P: '/logistics/pd-orders', V: '/logistics/vehicles', B: '/billing/accounting-bridge', F: '/logistics/fleet', D: '/dashboard' }; navigate(target[key]); setGPending(false) } })),
+  ], [gPending, navigate])
+  useHotkeys(hotkeys)
+
+  const sidebar = (
+    <aside className={cn('flex h-full flex-col border-r bg-card shadow-sm transition-[width] duration-150 ease-out', compactSidebar ? 'w-[var(--sidebar-width-collapsed)]' : 'w-[var(--sidebar-width)]')}>
+      <div className="flex h-16 items-center gap-3 border-b px-3">
+        <img src="/brand/kornet-express-logo.png" alt="Kornet Express" className="size-9 rounded-lg object-contain" />
+        {!compactSidebar && (
+          <div className="min-w-0">
+            <p className="truncate text-sm font-bold leading-tight">Kornet Express</p>
+            <p className="truncate font-mono text-[10px] uppercase text-muted-foreground">Logistics + Accounting</p>
           </div>
         )}
-
-        {/* Navigation Groups */}
-        <div className="flex-grow overflow-y-auto px-3 custom-scrollbar">
-          {currentGroups.map((group, idx) => (
-            <div key={idx} className="mb-5">
-              <div className="px-2 mb-1.5">
-                <span className={`text-[9px] font-bold tracking-widest uppercase ${darkMode ? 'text-gray-500' : 'text-on-surface-variant/50'}`}>{group.title}</span>
-              </div>
-              <ul className="space-y-0.5">
-                {group.items.map((item, itemIdx) => {
-                  const active = isItemActive(item)
-                  return (
-                    <li key={itemIdx}>
-                      <button
-                        onClick={item.onClick}
-                        disabled={item.disabled}
-                        className={`w-full text-left px-3 py-2 rounded-md transition-all flex items-center gap-2.5 text-[13px] font-medium
-                          ${item.disabled 
-                              ? `${darkMode ? 'text-gray-600' : 'text-outline-variant/50'} cursor-not-allowed`
-                              : active
-                                ? 'bg-primary/10 text-primary font-semibold border-l-[3px] border-primary pl-2.5'
-                                : `${darkMode ? 'text-gray-300 hover:bg-gray-700/50 hover:text-primary' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-primary'}`
-                          }
-                        `}
-                      >
-                        <span className={`material-symbols-outlined text-[18px] ${active ? 'text-primary' : 'opacity-60'}`}>
-                          {item.icon || 'arrow_right_alt'}
-                        </span>
-                        {item.label}
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
-            </div>
-          ))}
-        </div>
-
-        {/* Sidebar Footer */}
-        <div className={`px-5 py-3 border-t flex flex-col gap-2 ${darkMode ? 'border-gray-700' : 'border-outline-variant/10'}`}>
-          <button onClick={onOpenSettings} className={`flex items-center gap-2.5 transition-colors text-[13px] font-medium py-1 ${darkMode ? 'text-gray-300 hover:text-primary' : 'text-on-surface-variant hover:text-primary'}`}>
-            <span className="material-symbols-outlined text-[18px]">settings</span> Settings
-          </button>
-          <button className={`flex items-center gap-2.5 transition-colors text-[13px] font-medium py-1 ${darkMode ? 'text-gray-300 hover:text-primary' : 'text-on-surface-variant hover:text-primary'}`}>
-            <span className="material-symbols-outlined text-[18px]">help</span> Support
-          </button>
-        </div>
-      </aside>
-
-      {/* ── Main Canvas Area ── */}
-      <div className="flex-grow flex flex-col h-full overflow-hidden">
-        
-        {/* Top Navbar */}
-        <header className={`h-[64px] border-b flex items-center justify-between px-8 flex-shrink-0 ${darkMode ? 'bg-[#16213e] border-gray-700' : 'bg-surface border-outline-variant/20'}`}>
-          
-          <div className="flex items-center gap-6 h-full">
-            {/* Breadcrumbs */}
-            {breadcrumbSegments && (
-              <Breadcrumbs segments={breadcrumbSegments} />
-            )}
-            <div className="h-5 w-px bg-outline-variant/20" />
-            <div className="font-headline text-[1.15rem] font-extrabold text-primary tracking-tight cursor-pointer" onClick={() => navigate('/logistics')}>
-              Kornet LogiSuite
-            </div>
-
-            <div className="flex h-full gap-1">
-              {tabs.map(tab => {
-                const isActive = activeTab === tab.id
+      </div>
+      <nav className="flex-1 overflow-y-auto p-2 custom-scrollbar" aria-label="Primary navigation">
+        {grouped.map(({ group, routes }) => (
+          <div key={group} className="mb-4">
+            <p className={cn('px-2 py-2 text-[10px] font-bold uppercase text-muted-foreground', compactSidebar && 'sr-only')}>{group}</p>
+            <ul className="space-y-1">
+              {routes.map((route) => {
+                const Icon = route.icon
+                const isActive = location.pathname === route.path || location.pathname.startsWith(`${route.path}/`)
                 return (
-                  <button
-                    key={tab.id}
-                    data-tab={tab.id}
-                    onClick={() => onTabChange(tab.id)}
-                    className={`relative h-full px-5 text-sm font-semibold tracking-wide transition-all flex items-center rounded-t-md
-                      ${isActive 
-                        ? 'text-primary bg-primary/5' 
-                        : `${darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/30' : 'text-on-surface-variant/60 hover:text-on-surface hover:bg-surface-container-low/50'}`
-                      }
-                    `}
-                  >
-                    {tab.label}
-                    {isActive && (
-                      <div className="absolute bottom-0 left-2 right-2 h-[3px] bg-primary rounded-t-full" />
-                    )}
-                  </button>
+                  <li key={route.path}>
+                    <Link
+                      to={route.path}
+                      onClick={() => setMobileOpen(false)}
+                      className={cn(
+                        'group flex min-h-[var(--density-row)] items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                        isActive ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+                      )}
+                      title={route.label}
+                    >
+                      <Icon className="size-4 shrink-0" />
+                      {!compactSidebar && <span className="truncate">{route.label}</span>}
+                      {!compactSidebar && route.shortcut && <span className="ml-auto font-mono text-[10px] opacity-70">{route.shortcut}</span>}
+                    </Link>
+                  </li>
                 )
               })}
+            </ul>
+          </div>
+        ))}
+      </nav>
+      <div className="border-t p-2">
+        <button
+          type="button"
+          onClick={() => setCompactSidebar(!compactSidebar)}
+          className="flex h-10 w-full items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+          aria-label={compactSidebar ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {compactSidebar ? <ChevronRight className="size-4" /> : <ChevronLeft className="size-4" />}
+        </button>
+      </div>
+    </aside>
+  )
+
+  return (
+    <div className="flex h-dvh overflow-hidden bg-background text-foreground">
+      <div className="hidden lg:block">{sidebar}</div>
+      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        <SheetContent title="Navigation" side="left" className="p-0">
+          <div className="h-full">{sidebar}</div>
+        </SheetContent>
+      </Sheet>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="safe-top flex h-16 shrink-0 items-center gap-3 border-b bg-background/88 px-3 backdrop-blur supports-[backdrop-filter]:bg-background/72 sm:px-5">
+          <IconButton label="Open navigation" icon={<Menu className="size-4" />} variant="ghost" className="lg:hidden" onClick={() => setMobileOpen(true)} />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Link to="/dashboard" className="hover:text-foreground">Kornet</Link>
+              <span>/</span>
+              <span className="truncate">{active?.group ?? 'Workspace'}</span>
             </div>
+            <h1 className="truncate text-sm font-semibold sm:text-base">{active?.label ?? 'Kornet Express'}</h1>
           </div>
-
-          {/* Real-time Google Docs Style Saving Indicator */}
-          <div className="flex items-center ml-auto mr-1 select-none">
-            <AutoSaveIndicator />
+          <button
+            type="button"
+            onClick={() => setCommandOpen(true)}
+            className="hidden h-10 min-w-[18rem] items-center gap-2 rounded-lg border bg-card px-3 text-left text-sm text-muted-foreground shadow-xs transition-colors hover:bg-muted md:flex"
+          >
+            <Search className="size-4" />
+            <span className="flex-1">Search docs, containers, invoicesâ€¦</span>
+            <Kbd>âŒ˜K</Kbd>
+          </button>
+          <div className="hidden items-center rounded-full border bg-card px-3 py-1 text-xs font-medium text-muted-foreground xl:flex">
+            <span className="mr-2 size-2 rounded-full bg-success" />{company}
           </div>
-
-          {/* Persistent Help / User Manual button — always visible in the ribbon */}
-          <div className="flex items-center ml-3">
-            <button
-              onClick={() => navigate('/fs/manual')}
-              title="Open User Manual"
-              className={`flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-semibold border transition-all
-                ${location.pathname === '/fs/manual'
-                  ? 'bg-primary text-white border-primary shadow-sm'
-                  : `border-outline-variant/30 ${darkMode ? 'text-gray-400 hover:text-primary hover:border-primary/50' : 'text-on-surface-variant/70 hover:text-primary hover:border-primary/50 hover:bg-primary/5'}`
-                }`}
-            >
-              <span className="material-symbols-outlined text-[15px]">menu_book</span>
-              <span>Help</span>
-            </button>
-          </div>
-
-          {/* Topbar Right */}
-          <div className="flex items-center gap-5">
-            <GlobalNotificationBell />
-
-            <button onClick={onOpenSettings} className={`transition-colors ${darkMode ? 'text-gray-300 hover:text-primary' : 'text-on-surface-variant hover:text-primary'}`}>
-              <span className="material-symbols-outlined text-[22px]">settings</span>
-            </button>
-            
-            <div className={`h-5 w-px ${darkMode ? 'bg-gray-600' : 'bg-outline-variant/20'}`}></div>
-            
-            <div className="flex items-center gap-3">
-              <div className="text-right">
-                <div className={`text-[13px] font-bold leading-snug ${darkMode ? 'text-gray-100' : 'text-on-surface'}`}>{displayName || user?.username || user?.fullName || 'User'}</div>
-                <div className={`text-[9px] uppercase tracking-widest font-semibold mt-0.5 ${darkMode ? 'text-gray-500' : 'text-on-surface-variant/60'}`}>{companyCode}</div>
+          <Button variant="outline" size="sm" onClick={() => setDensity(density === 'compact' ? 'comfortable' : 'compact')}>
+            {density === 'compact' ? 'Compact' : 'Comfort'}
+          </Button>
+          <IconButton label={darkMode ? 'Use light mode' : 'Use dark mode'} icon={darkMode ? <Sun className="size-4" /> : <Moon className="size-4" />} variant="ghost" onClick={(e) => toggleTheme(e)} />
+          <IconButton label="Notifications" icon={<Bell className="size-4" />} variant="ghost" />
+          <IconButton label="Shortcuts" icon={<HelpCircle className="size-4" />} variant="ghost" onClick={() => setShortcutsOpen(true)} />
+          <div className="group relative">
+            <IconButton label="User menu" icon={<CircleUserRound className="size-4" />} variant="ghost" />
+            <div className="invisible absolute right-0 z-dropdown mt-2 w-72 rounded-2xl border bg-popover/95 backdrop-blur-md p-3 opacity-0 shadow-2xl transition-all duration-200 group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
+              <div className="px-2 py-2 border-b mb-2">
+                <p className="font-semibold text-sm">{user?.fullName || user?.username}</p>
+                <p className="text-xs text-muted-foreground">{user?.role} Â· {company}</p>
               </div>
-              <div className={`w-9 h-9 rounded-full flex items-center justify-center overflow-hidden border ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-surface-container-high border-outline-variant/30'}`}>
-                {profilePhoto ? (
-                  <img src={profilePhoto} alt="Profile" className="w-full h-full object-cover" />
-                ) : (
-                  <span className={`material-symbols-outlined text-[20px] ${darkMode ? 'text-gray-400' : 'text-on-surface-variant'}`}>person</span>
-                )}
+              <div className="space-y-1 mb-2">
+                <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-muted/60 transition-colors">
+                  <span className="flex items-center gap-2 text-xs font-medium text-foreground">
+                    {darkMode ? <Moon className="size-3.5 text-secondary" /> : <Sun className="size-3.5 text-amber-500" />}
+                    Dark Mode
+                  </span>
+                  <Switch checked={darkMode} onCheckedChange={() => toggleTheme()} aria-label="Toggle dark mode" />
+                </div>
+                <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-muted/60 transition-colors">
+                  <span className="flex items-center gap-2 text-xs font-medium text-foreground">
+                    Compact Density
+                  </span>
+                  <Switch checked={density === 'compact'} onCheckedChange={(v) => setDensity(v ? 'compact' : 'comfortable')} aria-label="Toggle compact density" />
+                </div>
               </div>
-              <button onClick={() => logout()} className="ml-1 px-3 py-1.5 bg-primary text-white text-xs font-bold rounded-md shadow-sm hover:bg-primary/90 transition-colors">
-                Logout
-              </button>
+              <div className="border-t pt-2 space-y-1">
+                <button className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium hover:bg-muted transition-colors" onClick={() => navigate('/admin/settings')}>
+                  <Settings className="size-3.5" />Settings
+                </button>
+                <button className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors" onClick={() => void logout()}>
+                  <LogOut className="size-3.5" />Sign out
+                </button>
+              </div>
             </div>
           </div>
         </header>
-
-        {/* Content */}
-        <main className={`flex-grow overflow-auto p-8 custom-scrollbar relative ${darkMode ? 'bg-[#1a1a2e]' : ''}`}>
-          {children}
+        <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-5 custom-scrollbar">
+          <AppRoutesView />
         </main>
-
-        {/* Status Bar */}
-        {showStatusBar && (
-          <footer className="h-7 bg-primary text-surface-container flex items-center justify-between px-6 text-[10px] font-mono font-medium tracking-wide flex-shrink-0 z-10">
-            <div className="flex items-center gap-6">
-              <span>MODULE: {moduleName}</span>
-              <span className="opacity-50">|</span>
-              <span>COMPANY: {companyName?.toUpperCase()}</span>
-              <span className="opacity-50">|</span>
-              <span>PERIOD: {(statusPeriod || 'N/A').toUpperCase()}</span>
-              <span className="opacity-50">|</span>
-              <span>ROLE: {user?.role === 'superadmin' ? 'SUPER ADMIN' : 'SENIOR ACCOUNTANT'}</span>
-            </div>
-             <div className="flex items-center gap-6">
-              <span>V 3.9.0-Refactored</span>
-              <span className="opacity-50">|</span>
-              <span>© 2026 iSUPPLYTECH CO. LTD.</span>
-            </div>
-          </footer>
-        )}
       </div>
+      <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} routes={visibleRoutes} />
+      <Shortcuts open={shortcutsOpen} onOpenChange={setShortcutsOpen} hotkeys={hotkeys} />
+      <LegacyModals />
+      <Toast />
     </div>
+  )
+}
+
+function CommandPalette({ open, onOpenChange, routes }: { open: boolean; onOpenChange: (v: boolean) => void; routes: typeof appRoutes }) {
+  const navigate = useNavigate()
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState<GlobalSearchItem[]>([])
+
+  useEffect(() => {
+    const q = query.trim()
+    if (!q) {
+      setResults([])
+      return
+    }
+    const timer = setTimeout(() => {
+      searchGlobal(q).then(setResults).catch(() => setResults([]))
+    }, 250)
+    return () => clearTimeout(timer)
+  }, [query])
+
+  const resolveTarget = (item: GlobalSearchItem) => {
+    if (item.route) return item.route
+    if (item.type === 'shipment') return `/logistics/files/${item.id}`
+    if (item.type === 'invoice') return '/billing/invoices'
+    if (item.type === 'pdOrder') return '/logistics/pd-orders'
+    if (item.type === 'vehicle') return '/logistics/vehicles'
+    if (item.type === 'party') return '/directories/parties'
+    return '/dashboard'
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent title="Command center" description="Navigate, create records, or search document numbers." className="p-0">
+        <Command className="overflow-hidden rounded-xl">
+          <div className="flex items-center border-b px-3">
+            <Search className="mr-2 size-4 text-muted-foreground" />
+            <Command.Input
+              className="h-12 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+              placeholder="Type a module, action, BL, AWB, VIN, invoiceâ€¦"
+              value={query}
+              onValueChange={setQuery}
+            />
+          </div>
+          <Command.List className="max-h-96 overflow-auto p-2 custom-scrollbar">
+            <Command.Empty className="px-3 py-8 text-center text-sm text-muted-foreground">
+              {query ? 'No matching records found.' : 'Type to search across documents, containers, invoices, and parties.'}
+            </Command.Empty>
+            {results.length > 0 && (
+              <Command.Group heading="Search results">
+                {results.map((item) => (
+                  <Command.Item
+                    key={`${item.type}-${item.id}`}
+                    value={`${item.label} ${item.sublabel ?? ''} ${item.type}`}
+                    onSelect={() => {
+                      navigate(resolveTarget(item))
+                      onOpenChange(false)
+                    }}
+                    className="flex cursor-default items-center gap-2 rounded-lg px-3 py-2 text-sm aria-selected:bg-muted"
+                  >
+                    <Search className="size-4 text-muted-foreground shrink-0" />
+                    <span className="font-semibold">{item.label}</span>
+                    {item.sublabel && <span className="text-xs text-muted-foreground">({item.sublabel})</span>}
+                    <span className="ml-auto text-xs font-mono uppercase text-muted-foreground">{item.type}</span>
+                  </Command.Item>
+                ))}
+              </Command.Group>
+            )}
+            <Command.Group heading="Navigate">
+              {routes.map((route) => (
+                <Command.Item
+                  key={route.path}
+                  value={`${route.label} ${route.group}`}
+                  onSelect={() => {
+                    navigate(route.path)
+                    onOpenChange(false)
+                  }}
+                  className="flex cursor-default items-center gap-2 rounded-lg px-3 py-2 text-sm aria-selected:bg-muted"
+                >
+                  <route.icon className="size-4" />
+                  {route.label}
+                  <span className="ml-auto text-xs text-muted-foreground">{route.group}</span>
+                </Command.Item>
+              ))}
+            </Command.Group>
+            <Command.Group heading="Quick actions">
+              <Command.Item
+                className="flex cursor-default items-center gap-2 rounded-lg px-3 py-2 text-sm aria-selected:bg-muted"
+                onSelect={() => {
+                  navigate('/logistics/ocean-export?new=1')
+                  onOpenChange(false)
+                }}
+              >
+                <Plus className="size-4" />Create shipment / file
+              </Command.Item>
+              <Command.Item
+                className="flex cursor-default items-center gap-2 rounded-lg px-3 py-2 text-sm aria-selected:bg-muted"
+                onSelect={() => {
+                  navigate('/billing/invoices')
+                  onOpenChange(false)
+                }}
+              >
+                <Plus className="size-4" />Create invoice
+              </Command.Item>
+              <Command.Item
+                className="flex cursor-default items-center gap-2 rounded-lg px-3 py-2 text-sm aria-selected:bg-muted"
+                onSelect={() => {
+                  navigate('/directories/parties')
+                  onOpenChange(false)
+                }}
+              >
+                <Plus className="size-4" />Create party
+              </Command.Item>
+              <Command.Item
+                className="flex cursor-default items-center gap-2 rounded-lg px-3 py-2 text-sm aria-selected:bg-muted"
+                onSelect={() => {
+                  navigate('/logistics/pd-orders?new=1')
+                  onOpenChange(false)
+                }}
+              >
+                <Plus className="size-4" />Create P/D order
+              </Command.Item>
+            </Command.Group>
+          </Command.List>
+        </Command>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function Shortcuts({ open, onOpenChange, hotkeys }: { open: boolean; onOpenChange: (v: boolean) => void; hotkeys: Hotkey[] }) {
+  const unique = hotkeys.filter((h, i, arr) => arr.findIndex((x) => x.key === h.key && x.description === h.description) === i && !h.when)
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent title="Keyboard shortcuts" description="Designed for fast freight and accounting data entry.">
+        <div className="grid gap-2 sm:grid-cols-2">
+          {unique.map((h) => (
+            <div key={`${h.key}-${h.description}`} className="flex items-center justify-between rounded-lg border p-3">
+              <span className="text-sm">{h.description}</span>
+              <Kbd>{h.key.replace('Mod', 'Ctrl/âŒ˜')}</Kbd>
+            </div>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function LegacyModals() {
+  return (
+    <>
+      <PrintDocumentModal />
+      <AuditLogModal />
+      <AttachmentModal />
+      <ContainerStuffingModal />
+      <OceanManifestModal />
+      <NewChargeModal />
+      <FileAnalysisModal />
+      <SEDFilingModal />
+      <BillingCodesModal />
+      <CarriersDirectoryModal />
+      <PortsDirectoryModal />
+      <SystemDiagnosticsModal />
+    </>
   )
 }
