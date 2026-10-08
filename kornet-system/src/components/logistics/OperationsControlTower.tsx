@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowRight, CheckCircle2, FolderOpen, Landmark, LayoutDashboard, RefreshCw, Truck, Waves, Wind, XCircle } from 'lucide-react'
+﻿import { AlertTriangle, ArrowRight, CheckCircle2, FolderOpen, Landmark, LayoutDashboard, RefreshCw, Truck, Waves, Wind, XCircle } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useLogisticsStore } from '../../stores/logisticsStore'
 import { useIntegrationsStore } from '../../stores/integrationsStore'
@@ -35,7 +35,7 @@ export default function OperationsControlTower({ onOpenModule }: Props) {
         <div>
           <div className="stitch-eyebrow"><span /> OPERATIONS CONTROL TOWER</div>
           <h1>Live operational overview</h1>
-          <p>Company-scoped activity across freight, fleet, customer visibility, and accounting handoff.</p>
+          <p>Live overview of active shipments, fleet, and accounting queue.</p>
         </div>
         <div className="stitch-context-meta">
           <span className="stitch-live-dot" />

@@ -674,6 +674,8 @@ model Receipt {
   partyId      String?
   partyName    String?
   date         DateTime             @default(now())
+  glPeriod     String?
+  receiptType  String               @default("OR")
   method       String               @default("CASH")
   bankNo       Int?
   checkNo      String?
@@ -681,6 +683,8 @@ model Receipt {
   amount       Float                @default(0)
   ewtAmount    Float                @default(0)
   unapplied    Float                @default(0)
+  currency     String               @default("PHP")
+  exchangeRate Float                @default(1)
   status       String               @default("DRAFT")
   jeNo         String?
   version      Int                  @default(1)
@@ -952,6 +956,7 @@ model Driver {
   phone         String?
   plateHint     String?
   status        String    @default("AVAILABLE")
+  createdBy     String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -968,6 +973,7 @@ model FleetVehicle {
   registrationExpiry DateTime?
   insuranceExpiry    DateTime?
   status             String    @default("AVAILABLE")
+  createdBy     String?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 

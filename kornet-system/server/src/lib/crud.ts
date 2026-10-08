@@ -1,4 +1,4 @@
-import { Router } from 'express';
+﻿import { Router } from 'express';
 import type { NextFunction, Request, Response } from 'express';
 import type { ZodType } from 'zod';
 import { prisma } from '../db.js';
@@ -163,7 +163,7 @@ export function createCrudRouter(opts: CrudOptions): Router {
   }));
 
   router.get('/:id', asyncHandler(async (req, res) => {
-    const row = await model.findFirst({ where: { id: req.params.id, companyCode: req.companyCode! }, include: req.query.include === 'relations' ? include : undefined });
+    const row = await model.findFirst({ where: { id: req.params.id, companyCode: req.companyCode! }, include: include ?? (req.query.include === 'relations' ? include : undefined) });
     if (!row) throw notFound(`${entity} not found`);
     res.json(parseJsonFields(row as Record<string, unknown>, jsonFields));
   }));

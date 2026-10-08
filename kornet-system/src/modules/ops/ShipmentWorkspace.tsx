@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+﻿import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -649,7 +649,7 @@ export function ShipmentWorkspace({ mode }: ShipmentWorkspaceProps) {
                     )}
                   </div>
                   <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                    {draft.mode} {draft.direction} · {draft.loadType} · Lane: {draft.polCode || '—'} → {draft.podCode || '—'}
+                    {draft.mode} {draft.direction} Â· {draft.loadType} Â· Lane: {draft.polCode || 'â€”'} â†’ {draft.podCode || 'â€”'}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -735,8 +735,8 @@ export function ShipmentWorkspace({ mode }: ShipmentWorkspaceProps) {
       {/* Workspace Header */}
       <PageHeader
         title={modeInfo?.label ?? (draft.fileNo ? `File ${draft.fileNo}` : 'Shipment file')}
-        eyebrow="Operations Workspace"
-        description="End-to-end freight booking, cargo specs, multi-modal routing, charges, milestones, printouts and accounting."
+        eyebrow="Operations"
+        description="Freight booking, cargo, charges, milestones, and documents."
         primaryAction={
           mode ? (
             <Button onClick={() => createMutation.mutate()} loading={createMutation.isPending} kbd="N">
@@ -825,7 +825,7 @@ export function ShipmentWorkspace({ mode }: ShipmentWorkspaceProps) {
             <SearchBox
               value={filters.q || ''}
               onChange={(q) => setFilters((f) => ({ ...f, q }))}
-              placeholder="Search file, booking, consignee…"
+              placeholder="Search file, booking, consigneeâ€¦"
             />
           </div>
           <Select
@@ -860,7 +860,7 @@ export function ShipmentWorkspace({ mode }: ShipmentWorkspaceProps) {
         <div className="w-full min-w-0">
           {listQuery.isLoading ? (
             <div className="flex h-64 items-center justify-center rounded-xl border bg-card">
-              <KornetLoader size="lg" text="Loading files…" />
+              <KornetLoader size="lg" text="Loading filesâ€¦" />
             </div>
           ) : (
             <DataGrid
@@ -892,7 +892,7 @@ export function ShipmentWorkspace({ mode }: ShipmentWorkspaceProps) {
                   header: 'Routing',
                   cell: (row) => (
                     <span className="font-mono text-xs">
-                      {row.polCode || '—'} → {row.podCode || '—'}
+                      {row.polCode || 'â€”'} â†’ {row.podCode || 'â€”'}
                     </span>
                   ),
                 },
@@ -948,7 +948,7 @@ export function ShipmentWorkspace({ mode }: ShipmentWorkspaceProps) {
                       <StatusPill status={row.status} />
                     </div>
                     <p className="truncate text-xs text-muted-foreground">
-                      {row.polCode || '—'} → {row.podCode || '—'} · {formatDate(row.etd)}
+                      {row.polCode || 'â€”'} â†’ {row.podCode || 'â€”'} Â· {formatDate(row.etd)}
                     </p>
                   </button>
                 )
@@ -964,7 +964,7 @@ export function ShipmentWorkspace({ mode }: ShipmentWorkspaceProps) {
         <div className="w-full min-w-0">
           {shipmentQuery.isLoading ? (
             <div className="flex h-96 items-center justify-center rounded-xl border bg-card">
-              <KornetLoader size="lg" text="Loading shipment file…" />
+              <KornetLoader size="lg" text="Loading shipment fileâ€¦" />
             </div>
           ) : (
             renderEditorCard()
@@ -980,7 +980,7 @@ export function ShipmentWorkspace({ mode }: ShipmentWorkspaceProps) {
         >
           {closeCheckQuery.isLoading ? (
             <div className="flex items-center justify-center p-6">
-              <KornetLoader size="md" text="Evaluating closing blockers…" />
+              <KornetLoader size="md" text="Evaluating closing blockersâ€¦" />
             </div>
           ) : (
             <div className="space-y-3">
@@ -1007,7 +1007,7 @@ export function ShipmentWorkspace({ mode }: ShipmentWorkspaceProps) {
               <Textarea
                 value={overrideReason}
                 onChange={(event) => setOverrideReason(event.target.value)}
-                placeholder="Manager override reason (if margin below threshold or unbilled waiver applies)…"
+                placeholder="Manager override reason (if margin below threshold or unbilled waiver applies)â€¦"
               />
               <div className="flex justify-end gap-2 pt-2">
                 <Button variant="outline" onClick={() => setCloseOpen(false)}>

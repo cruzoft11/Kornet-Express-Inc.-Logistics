@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react'
+﻿import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CheckCircle2, Columns2, FileDown, Maximize2, Plus, Printer, Send, Table2, Trash2 } from 'lucide-react'
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Combobox, DataGrid, DateInput, EmptyState, FormField, FormSection, Input, MoneyInput, PageHeader, Select, StatCard, StatusPill, Toolbar, exportRowsToExcel } from '@/components/ui'
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Combobox, DataGrid, DateInput, Dialog, DialogContent, EmptyState, FormField, FormSection, Input, MoneyInput, PageHeader, Select, StatCard, StatusPill, Toolbar, exportRowsToExcel } from '@/components/ui'
 import { KornetLoader } from '@/components/ui/KornetLoader'
 import { useHotkeys } from '@/hooks/useHotkeys'
 import { formatDate, formatMoney } from '@/lib/format'
@@ -13,8 +13,8 @@ const today = () => new Date().toISOString().slice(0, 10)
 const unwrap = <T,>(v?: { data: T[] }) => v?.data ?? []
 const money = (v?: number | null) => <span className="font-mono tabular-nums">{formatMoney(v ?? 0)}</span>
 const err = (e: unknown) => e instanceof Error ? e.message : 'Request failed. Check required fields and posting guards.'
-const postable = (a: FsAccount[]) => a.filter((x) => x.isActive !== false && ['DC', 'CD'].includes(String(x.formula))).map((x) => ({ id: x.acctCode, label: `${x.acctCode} — ${x.acctDesc}`, description: x.glReport }))
-const parties = (p: Party[], flag: 'isCustomer' | 'isVendor') => p.filter((x) => x[flag] !== false).map((x) => ({ id: x.id, label: x.name, description: [x.code, x.tin].filter(Boolean).join(' · ') }))
+const postable = (a: FsAccount[]) => a.filter((x) => x.isActive !== false && ['DC', 'CD'].includes(String(x.formula))).map((x) => ({ id: x.acctCode, label: `${x.acctCode} â€” ${x.acctDesc}`, description: x.glReport }))
+const parties = (p: Party[], flag: 'isCustomer' | 'isVendor') => p.filter((x) => x[flag] !== false).map((x) => ({ id: x.id, label: x.name, description: [x.code, x.tin].filter(Boolean).join(' Â· ') }))
 
 function useLookups() {
   const partyQ = useQuery({ queryKey: ['billing-parties'], queryFn: () => billingApi.parties({ pageSize: 200 }) })
@@ -88,7 +88,7 @@ function LineGrid({ lines, setLines, editable }: { lines: DraftLine[]; setLines:
       {editable && (
         <div className="border-t p-2 bg-muted/20">
           <Button variant="outline" size="sm" onClick={() => setLines([...lines, { billingCode: '', description: '', qty: 1, unit: 'PER_SHPT', rate: 0, amount: 0, amountPhp: 0, vatClass: 'VATABLE' }])}>
-            <Plus className="size-3.5" /> Add line Alt+↓
+            <Plus className="size-3.5" /> Add line Alt+â†“
           </Button>
         </div>
       )}
@@ -215,7 +215,7 @@ export function InvoicesPage() {
         <Card className="p-4 shadow-2xs">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Selected Amount</p>
           <div className="mt-2 flex items-baseline justify-between">
-            <span className="font-mono text-2xl font-bold text-primary">{sel ? formatMoney(sel.totalAmount) : '—'}</span>
+            <span className="font-mono text-2xl font-bold text-primary">{sel ? formatMoney(sel.totalAmount) : 'â€”'}</span>
             <span className="rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">{sel?.status ?? 'New'}</span>
           </div>
         </Card>
@@ -225,7 +225,7 @@ export function InvoicesPage() {
 
       {q.isLoading ? (
         <div className="flex h-72 items-center justify-center rounded-2xl border bg-card">
-          <KornetLoader size="md" label="Loading sales invoices…" />
+          <KornetLoader size="md" label="Loading sales invoicesâ€¦" />
         </div>
       ) : (
         <div className={`grid gap-4 min-w-0 ${layoutView === 'split' ? 'xl:grid-cols-[minmax(22rem,0.9fr)_1.35fr]' : 'grid-cols-1'}`}>
@@ -285,7 +285,7 @@ export function InvoicesPage() {
 }
 
 function printInvoice(i: Invoice) {
-  printHtml(`Invoice ${i.invoiceNo}`, `<h1>Sales Invoice ${i.invoiceNo}</h1><p class="muted">Seller name/TIN/address from company settings</p><p><b>Buyer:</b> ${i.billToName ?? ''}<br><b>TIN:</b> ${i.billToTin ?? ''}<br><b>Address:</b> ${i.billToAddress ?? ''}<br><b>Date:</b> ${formatDate(i.date)} · <b>Due:</b> ${formatDate(i.dueDate)}<br><b>Reference:</b> ${i.customerRef ?? ''}</p><table><tr><th>Code</th><th>Description</th><th>VAT class</th><th class="num">Amount</th></tr>${(i.lines ?? []).map((l) => `<tr><td>${l.billingCode}</td><td>${l.description}${l.zeroRatedReason ? `<br><span class="muted">${l.zeroRatedReason}</span>` : ''}</td><td>${l.vatClass}</td><td class="num">${formatMoney(l.amountPhp ?? l.amount ?? 0)}</td></tr>`).join('')}</table><p class="num"><b>VATable:</b> ${formatMoney(i.vatableSales)} · <b>Zero:</b> ${formatMoney(i.zeroRatedSales)} · <b>Exempt:</b> ${formatMoney(i.exemptSales)} · <b>Reimb:</b> ${formatMoney(i.reimbursables)}<br><b>VAT:</b> ${formatMoney(i.vatAmount)} · <b>EWT:</b> ${formatMoney(i.ewtAmount)} · <b>Net receivable:</b> ${formatMoney(i.netReceivable)}</p>`)
+  printHtml(`Invoice ${i.invoiceNo}`, `<h1>Sales Invoice ${i.invoiceNo}</h1><p class="muted">Seller name/TIN/address from company settings</p><p><b>Buyer:</b> ${i.billToName ?? ''}<br><b>TIN:</b> ${i.billToTin ?? ''}<br><b>Address:</b> ${i.billToAddress ?? ''}<br><b>Date:</b> ${formatDate(i.date)} Â· <b>Due:</b> ${formatDate(i.dueDate)}<br><b>Reference:</b> ${i.customerRef ?? ''}</p><table><tr><th>Code</th><th>Description</th><th>VAT class</th><th class="num">Amount</th></tr>${(i.lines ?? []).map((l) => `<tr><td>${l.billingCode}</td><td>${l.description}${l.zeroRatedReason ? `<br><span class="muted">${l.zeroRatedReason}</span>` : ''}</td><td>${l.vatClass}</td><td class="num">${formatMoney(l.amountPhp ?? l.amount ?? 0)}</td></tr>`).join('')}</table><p class="num"><b>VATable:</b> ${formatMoney(i.vatableSales)} Â· <b>Zero:</b> ${formatMoney(i.zeroRatedSales)} Â· <b>Exempt:</b> ${formatMoney(i.exemptSales)} Â· <b>Reimb:</b> ${formatMoney(i.reimbursables)}<br><b>VAT:</b> ${formatMoney(i.vatAmount)} Â· <b>EWT:</b> ${formatMoney(i.ewtAmount)} Â· <b>Net receivable:</b> ${formatMoney(i.netReceivable)}</p>`)
 }
 
 export function ReceivablesPage() {
@@ -373,7 +373,7 @@ export function ReceivablesPage() {
 
       {inv.isLoading || rec.isLoading ? (
         <div className="flex h-72 items-center justify-center rounded-2xl border bg-card">
-          <KornetLoader size="md" label="Loading receivables & AR aging…" />
+          <KornetLoader size="md" label="Loading receivables & AR agingâ€¦" />
         </div>
       ) : (
         <div className="grid gap-5 xl:grid-cols-2 min-w-0">
@@ -386,7 +386,7 @@ export function ReceivablesPage() {
               <FormSection title="Header">
                 <FormField label="Customer"><Combobox items={parties(look.parties, 'isCustomer')} value={cust?.name} onSelect={(x) => setCust(look.parties.find((p) => p.id === x.id))} /></FormField>
                 <FormField label="Date"><DateInput value={form.date} onValueChange={(v) => setForm({ ...form, date: v })} /></FormField>
-                <FormField label="Bank"><Select value={form.bankNo} onValueChange={(v) => setForm({ ...form, bankNo: v })} options={look.banks.map((b) => ({ value: String(b.bankNo), label: `${b.bankNo} — ${b.bankName}` }))} /></FormField>
+                <FormField label="Bank"><Select value={form.bankNo} onValueChange={(v) => setForm({ ...form, bankNo: v })} options={look.banks.map((b) => ({ value: String(b.bankNo), label: `${b.bankNo} â€” ${b.bankName}` }))} /></FormField>
                 <FormField label="Method"><Select value={form.method} onValueChange={(v) => setForm({ ...form, method: v })} options={['CASH','CHECK','BANK_TRANSFER','ONLINE'].map((v) => ({ value: v, label: v }))} /></FormField>
                 <FormField label="Amount"><MoneyInput value={form.amount} onValueChange={(v) => setForm({ ...form, amount: v })} /></FormField>
                 <FormField label="CWT/EWT 2307"><MoneyInput value={form.ewtAmount} onValueChange={(v) => setForm({ ...form, ewtAmount: v })} /></FormField>
@@ -495,7 +495,7 @@ function Aging({ title, rows, filename }: { title: string; rows: AgingBucket[]; 
             <div className="mt-3 space-y-1 divide-y border-t pt-2">
               {r.docs.map((d) => (
                 <div key={d.id} className="flex justify-between text-xs py-1">
-                  <span>{d.no} · <span className="text-muted-foreground">{d.days} days</span></span>
+                  <span>{d.no} Â· <span className="text-muted-foreground">{d.days} days</span></span>
                   <span className="font-mono">{money(d.balance)}</span>
                 </div>
               ))}
@@ -592,7 +592,7 @@ export function PayablesPage() {
 
       {q.isLoading ? (
         <div className="flex h-72 items-center justify-center rounded-2xl border bg-card">
-          <KornetLoader size="md" label="Loading vendor payables…" />
+          <KornetLoader size="md" label="Loading vendor payablesâ€¦" />
         </div>
       ) : (
         <div className={`grid gap-5 min-w-0 ${layoutView === 'split' ? 'xl:grid-cols-2' : 'grid-cols-1'}`}>
@@ -734,7 +734,7 @@ export function DisbursementsPage() {
 
       {checks.isLoading ? (
         <div className="flex h-72 items-center justify-center rounded-2xl border bg-card">
-          <KornetLoader size="md" label="Loading check vouchers…" />
+          <KornetLoader size="md" label="Loading check vouchersâ€¦" />
         </div>
       ) : (
         <div className="grid gap-5 xl:grid-cols-2 min-w-0">
@@ -746,7 +746,7 @@ export function DisbursementsPage() {
             <CardContent className="grid gap-5 p-4 sm:p-6">
               <FormSection title="Header">
                 <FormField label="Type"><Select value={form.checkType} onValueChange={(v) => setForm({ ...form, checkType: v })} options={['COMPUTER','MANUAL'].map((v) => ({ value: v, label: v }))} /></FormField>
-                <FormField label="Bank"><Select value={form.bankNo} onValueChange={(v) => setForm({ ...form, bankNo: v })} options={look.banks.map((b) => ({ value: String(b.bankNo), label: `${b.bankNo} — ${b.bankName}` }))} /></FormField>
+                <FormField label="Bank"><Select value={form.bankNo} onValueChange={(v) => setForm({ ...form, bankNo: v })} options={look.banks.map((b) => ({ value: String(b.bankNo), label: `${b.bankNo} â€” ${b.bankName}` }))} /></FormField>
                 <FormField label="Manual check no"><Input disabled={form.checkType !== 'MANUAL'} value={form.checkNo ?? ''} onChange={(e) => setForm({ ...form, checkNo: e.target.value })} /></FormField>
                 <FormField label="Date"><DateInput value={form.date} onValueChange={(v) => setForm({ ...form, date: v, glPeriod: v.slice(0, 7) })} /></FormField>
                 <FormField label="Payee"><Combobox items={parties(look.parties, 'isVendor')} value={form.payeeName} onSelect={(p) => setForm({ ...form, payeePartyId: p.id, payeeName: p.label })} /></FormField>
@@ -858,11 +858,13 @@ export function AccountingBridgePage() {
   const [status, setStatus] = useState('STAGED')
   const [sel, setSel] = useState<BridgeItem[]>([])
   const [msg, setMsg] = useState('')
+  const [rejectOpen, setRejectOpen] = useState(false)
+  const [rejectReason, setRejectReason] = useState('')
 
   const q = useQuery({ queryKey: ['bridge', status], queryFn: () => billingApi.bridge(status === 'ALL' ? undefined : status) })
 
   const act = useMutation({
-    mutationFn: async (op: string) => op === 'trial' ? billingApi.trialBridge(sel.map((x) => x.id)) : op === 'post' ? billingApi.postBridge(sel.map((x) => x.id)) : { data: await Promise.all(sel.map((x) => billingApi.rejectBridge(x.id, prompt('Reject reason') || 'Rejected from bridge UI'))) },
+    mutationFn: async (op: string) => op === 'trial' ? billingApi.trialBridge(sel.map((x) => x.id)) : op === 'post' ? billingApi.postBridge(sel.map((x) => x.id)) : { data: await Promise.all(sel.map((x) => billingApi.rejectBridge(x.id, rejectReason.trim() || 'Rejected'))) },
     onSuccess: (r) => {
       setMsg(JSON.stringify(r))
       return qc.invalidateQueries({ queryKey: ['bridge'] })
@@ -879,7 +881,7 @@ export function AccountingBridgePage() {
       <PageHeader
         eyebrow="Accounting bridge"
         title="Staged logistics-to-FS journals"
-        description="Review Dr/Cr double-entry lines, run trial posting verification, post confirmed entries to FS books, or reject with audit trail."
+        description="Review Dr/Cr journal entries, run trial verification, and post to FS books."
         actions={<Select value={status} onValueChange={setStatus} options={['ALL','STAGED','TRIAL_OK','TRIAL_ERROR','POSTED','REJECTED'].map((v) => ({ value: v, label: v }))} />}
         primaryAction={<Button disabled={!sel.length} onClick={() => act.mutate('trial')}>Trial post ({sel.length})</Button>}
       />
@@ -918,7 +920,7 @@ export function AccountingBridgePage() {
 
       <Toolbar>
         <Button disabled={!sel.length} onClick={() => act.mutate('post')}><CheckCircle2 className="size-4" /> Final post selected</Button>
-        <Button variant="destructive" disabled={!sel.length} onClick={() => act.mutate('reject')}>Reject selected</Button>
+        <Button variant="destructive" disabled={!sel.length} onClick={() => { setRejectReason(''); setRejectOpen(true) }}>Reject selected</Button>
         <span className="text-sm text-muted-foreground font-mono">{sel.length} entries selected</span>
       </Toolbar>
 
@@ -926,7 +928,7 @@ export function AccountingBridgePage() {
 
       {q.isLoading ? (
         <div className="flex h-72 items-center justify-center rounded-2xl border bg-card">
-          <KornetLoader size="md" label="Loading accounting bridge…" />
+          <KornetLoader size="md" label="Loading accounting bridgeâ€¦" />
         </div>
       ) : (
         <DataGrid
@@ -956,6 +958,32 @@ export function AccountingBridgePage() {
           ]}
         />
       )}
+
+      {/* Reject Dialog */}
+      <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
+        <DialogContent title="Reject bridge entries" description="Provide a reason for rejecting the selected entries. This will be recorded in the audit trail.">
+          <div className="grid gap-4">
+            <div className="grid gap-1.5">
+              <label className="text-sm font-medium">Reason</label>
+              <Input
+                autoFocus
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="e.g. Wrong GL account, needs correction" />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setRejectOpen(false)}>Cancel</Button>
+              <Button
+                variant="destructive"
+                loading={act.isPending}
+                disabled={act.isPending}
+                onClick={() => { act.mutate('reject'); setRejectOpen(false) }}>
+                Confirm rejection
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

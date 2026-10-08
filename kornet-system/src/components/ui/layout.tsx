@@ -1,11 +1,26 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
 import * as TabsPrimitive from '@radix-ui/react-tabs'
 import { ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { Button } from './button'
 
-export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('min-w-0 rounded-xl border bg-card text-card-foreground shadow-xs transition-all duration-150', className)} {...props} />
+export function Card({ className, hover = true, children, style, id, role, 'aria-label': ariaLabel, onClick }: React.HTMLAttributes<HTMLDivElement> & { hover?: boolean }) {
+  const reduced = useReducedMotion()
+  return (
+    <motion.div
+      id={id}
+      role={role}
+      aria-label={ariaLabel}
+      onClick={onClick}
+      style={style}
+      className={cn('min-w-0 rounded-xl border bg-card text-card-foreground shadow-xs transition-shadow duration-150', className)}
+      whileHover={hover && !reduced ? { y: -2, boxShadow: '0 12px 32px -14px hsl(221 83% 10% / 0.18)' } : undefined}
+      transition={{ duration: 0.15, ease: 'easeOut' }}
+    >
+      {children}
+    </motion.div>
+  )
 }
 
 export function CardHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
@@ -223,7 +238,7 @@ export function ModulePlaceholder({ title, description }: { title: string; descr
     <div className="flex h-full min-h-[28rem] items-center justify-center p-6">
       <div className="max-w-md text-center">
         <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl bg-muted text-secondary">
-          ⌁
+          âŒ
         </div>
         <h2 className="text-xl font-semibold">{title}</h2>
         <p className="mt-2 text-sm text-muted-foreground">{description ?? 'This module is being rebuilt on the Kornet v2 component library.'}</p>
