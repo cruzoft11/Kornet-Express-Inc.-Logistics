@@ -105,20 +105,20 @@ export function Combobox({ items, value, onSelect, placeholder = 'Search…', on
 }
 
 export const Checkbox = forwardRef<HTMLButtonElement, CheckboxPrimitive.CheckboxProps>(({ className, children, ...props }, ref) => (
-  <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-medium select-none">
+  <label className="inline-flex cursor-pointer items-center gap-2.5 text-sm font-medium select-none group">
     <CheckboxPrimitive.Root
       ref={ref}
       className={cn(
-        'peer flex size-4.5 shrink-0 items-center justify-center rounded border-2 border-slate-300 dark:border-slate-600 bg-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-white disabled:cursor-not-allowed disabled:opacity-50 hover:border-primary/70',
+        'peer flex size-4.5 shrink-0 items-center justify-center rounded-md border-2 border-slate-300 dark:border-slate-600 bg-background transition-all duration-200 group-hover:border-primary/70 group-hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-white data-[state=checked]:shadow-xs disabled:cursor-not-allowed disabled:opacity-50 active:scale-95',
         className
       )}
       {...props}
     >
-      <CheckboxPrimitive.Indicator className="flex items-center justify-center text-xs font-bold leading-none text-white">
+      <CheckboxPrimitive.Indicator className="flex items-center justify-center text-xs font-bold leading-none text-white transition-transform duration-150">
         ✓
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>
-    {children}
+    <span className="text-foreground transition-colors group-hover:text-foreground/90">{children}</span>
   </label>
 ))
 Checkbox.displayName = 'Checkbox'
@@ -127,13 +127,13 @@ export const Switch = forwardRef<HTMLButtonElement, SwitchPrimitive.SwitchProps>
   <SwitchPrimitive.Root
     ref={ref}
     className={cn(
-      'relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=unchecked]:bg-slate-300 dark:data-[state=unchecked]:bg-slate-700',
+      'peer relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border border-slate-300 dark:border-slate-700/80 transition-all duration-300 cubic-bezier(0.4, 0, 0.2, 1) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:border-primary data-[state=checked]:shadow-[0_0_12px_rgba(7,85,143,0.35)] data-[state=unchecked]:bg-slate-200 dark:data-[state=unchecked]:bg-slate-800 hover:data-[state=unchecked]:bg-slate-300 dark:hover:data-[state=unchecked]:bg-slate-700 active:scale-[0.97]',
       className
     )}
     {...props}
   >
     <SwitchPrimitive.Thumb
-      className="pointer-events-none block size-5 rounded-full bg-white shadow-md ring-0 transition-transform duration-200 ease-in-out data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0"
+      className="pointer-events-none block size-5 rounded-full shadow-md transition-all duration-300 cubic-bezier(0.34, 1.25, 0.64, 1) data-[state=checked]:translate-x-[21px] data-[state=checked]:bg-white dark:data-[state=checked]:bg-white data-[state=checked]:shadow-[0_2px_6px_rgba(0,0,0,0.3)] data-[state=unchecked]:translate-x-[1px] data-[state=unchecked]:bg-slate-400 dark:data-[state=unchecked]:bg-slate-500"
     />
   </SwitchPrimitive.Root>
 ))

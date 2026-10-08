@@ -1,11 +1,13 @@
-﻿import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { FileText, Printer, Wand2 } from 'lucide-react'
-import { Button, EditableGrid, EmptyState, FormField, FormSection, Input, Select, Textarea, Timeline, Toolbar } from '@/components/ui'
+import { AlertTriangle, Ban, CheckCircle2, Copy, Edit2, FileText, Plus, Printer, Trash2, Wand2 } from 'lucide-react'
+import { Badge, Button, ConfirmDialog, EditableGrid, EmptyState, FormField, FormSection, Input, NumberInput, MoneyInput, Select, Sheet, SheetContent, Textarea, Timeline, Toolbar } from '@/components/ui'
 import { opsApi, type CargoLine, type ChargeLine, type ContainerLine, type Shipment, type TransportDoc } from '@/api/ops'
 import { formatCbm, formatDate, formatMoney, formatNumber, formatWeightKg } from '@/lib/format'
 import { apiErrorMessage, cargoTotals, CHARGE_UNITS, computeCargoLine, computeChargeLine, EQUIPMENT_TYPES, FREIGHT_TERMS, fromDateInput, INCOTERMS, LOAD_TYPES, newCargoLine, STATUS_STEPS, toDateInput, validateIso6346, validateMawb, VAT_CLASSES } from '../utils'
 import { LookupField, MarginBadge, MoneyValue, NumberValue, OptionsSelect, WarningText } from './common'
+import { openPrintWindow, transportDocPrintHtml } from './print'
 
 type Row = Record<string, unknown>
 const docKinds = ['booking-confirmation', 'hbl', 'awb', 'arrival-notice', 'delivery-order', 'manifest', 'cargo-release']
@@ -91,12 +93,550 @@ export function ContainersTab({ ocean, shipmentId, containers, setContainers }: 
   return <div className="space-y-3"><EditableGrid rows={containers as unknown as Row[]} onRowsChange={(rows) => setContainers(rows as unknown as ContainerLine[])} createRow={() => blankContainer(shipmentId) as unknown as Row} columns={[{ id: 'equipmentType', header: 'Equipment' }, { id: 'containerNo', header: 'Container #' }, { id: 'sealNo', header: 'Seal' }, { id: 'tareKg', header: 'Tare kg', type: 'number' }, { id: 'vgmKg', header: 'VGM kg', type: 'number' }, { id: 'temperatureC', header: 'Temp °C', type: 'number' }, { id: 'unNumbers', header: 'UN #' }]} footer={<span className="text-sm text-muted-foreground">Equipment: {EQUIPMENT_TYPES.join(', ')}</span>} /><div className="grid gap-2 md:grid-cols-2">{containers.map((line, index) => <WarningText key={line.id ?? index}>{validateIso6346(line.containerNo)}</WarningText>)}</div></div>
 }
 
-export function DocsTab({ air, draft, docs, setDocs }: { air: boolean; draft: Partial<Shipment>; docs: TransportDoc[]; setDocs: (rows: TransportDoc[]) => void }) {
-  const issue = (doc: TransportDoc) => {
-    if (!doc.id) { toast.error('Save the transport document before issuing.'); return }
-    opsApi.issueTransportDoc(doc.id).then((updated) => { toast.success(`${updated.docNo} issued`); setDocs(docs.map((row) => row.id === updated.id ? updated : row)) }).catch((error: unknown) => toast.error(apiErrorMessage(error)))
+export function DocsTab({
+  air,
+  draft,
+  cargo = [],
+  docs,
+  setDocs,
+}: {
+  air: boolean
+  draft: Partial<Shipment>
+  cargo?: CargoLine[]
+  docs: TransportDoc[]
+  setDocs: (rows: TransportDoc[]) => void
+}) {
+  const [editingDoc, setEditingDoc] = useState<TransportDoc | null>(null)
+  const [editingIndex, setEditingIndex] = useState<number>(-1)
+  const [deletingDoc, setDeletingDoc] = useState<{ doc: TransportDoc; index: number } | null>(null)
+
+  const createHouse = () => {
+    const next = blankDoc(draft, air)
+    setDocs([...docs, next])
+    setEditingDoc(next)
+    setEditingIndex(docs.length)
+    toast.success(`Created draft House ${air ? 'AWB' : 'B/L'}`)
   }
-  return <div className="space-y-4"><div className="flex gap-2"><Button variant="outline" onClick={() => setDocs([...docs, blankDoc(draft, air)])}>Create house from file</Button></div><EditableGrid rows={docs as unknown as Row[]} onRowsChange={(rows) => setDocs(rows as unknown as TransportDoc[])} createRow={() => blankDoc(draft, air) as unknown as Row} columns={[{ id: 'docClass', header: 'Class' }, { id: 'docType', header: 'Type' }, { id: 'docNo', header: air ? 'MAWB/HAWB' : 'MBL/HBL' }, { id: 'freightTerm', header: 'Term' }, { id: 'issuePlace', header: 'Issue place' }, { id: 'releaseType', header: 'Release' }, { id: 'status', header: 'Status', readOnly: true }]} footer={<div className="flex flex-wrap gap-2">{docs.map((doc, index) => <Button key={doc.id ?? index} variant="outline" size="sm" onClick={() => issue(doc)}>Issue {doc.docNo || index + 1}</Button>)}</div>} />{air && docs.map((doc, index) => <WarningText key={doc.id ?? index}>{validateMawb(doc.docNo || '')}</WarningText>)}</div>
+
+  const createMaster = () => {
+    const next: TransportDoc = {
+      ...blankDoc(draft, air),
+      docClass: 'MASTER',
+      docType: air ? 'AWB' : 'BL',
+    }
+    setDocs([...docs, next])
+    setEditingDoc(next)
+    setEditingIndex(docs.length)
+    toast.success(`Created draft Master ${air ? 'AWB' : 'B/L'}`)
+  }
+
+  const syncFromShipment = (index: number) => {
+    const current = docs[index]
+    if (!current) return
+    const updated: TransportDoc = {
+      ...current,
+      shipperName: draft.shipperName || current.shipperName,
+      shipperAddress: draft.shipperAddress || current.shipperAddress,
+      consigneeName: draft.consigneeName || current.consigneeName,
+      consigneeAddress: draft.consigneeAddress || current.consigneeAddress,
+      notifyName: draft.notifyName || current.notifyName,
+      notifyAddress: draft.notifyAddress || current.notifyAddress,
+      pol: draft.polCode || current.pol,
+      pod: draft.podCode || current.pod,
+      freightTerm: draft.freightTerm || current.freightTerm,
+    }
+    setDocs(docs.map((d, i) => (i === index ? updated : d)))
+    if (editingIndex === index) setEditingDoc(updated)
+    toast.success('Synced party & route details from shipment')
+  }
+
+  const issueDoc = async (doc: TransportDoc, index: number) => {
+    if (!doc.id) {
+      toast.error('Please save the file first before issuing this document.')
+      return
+    }
+    if (air && doc.docNo) {
+      const err = validateMawb(doc.docNo)
+      if (err) {
+        toast.warning(`MAWB note: ${err}`)
+      }
+    }
+    try {
+      const updated = await opsApi.issueTransportDoc(doc.id)
+      toast.success(`${updated.docNo || 'Transport document'} issued successfully`)
+      setDocs(docs.map((d, i) => (i === index ? updated : d)))
+    } catch (e) {
+      toast.error(apiErrorMessage(e))
+    }
+  }
+
+  const voidDoc = async (doc: TransportDoc, index: number) => {
+    if (doc.id) {
+      try {
+        const updated = await opsApi.updateTransportDoc(doc.id, { status: 'VOID' })
+        setDocs(docs.map((d, i) => (i === index ? updated : d)))
+        toast.success(`Marked ${doc.docNo || 'document'} as VOID`)
+      } catch (e) {
+        toast.error(apiErrorMessage(e))
+      }
+    } else {
+      setDocs(docs.map((d, i) => (i === index ? { ...d, status: 'VOID' } : d)))
+      toast.success('Marked draft as VOID')
+    }
+  }
+
+  const duplicateDoc = (doc: TransportDoc) => {
+    const copy: TransportDoc = {
+      ...doc,
+      id: undefined,
+      docNo: doc.docNo ? `${doc.docNo}-COPY` : '',
+      status: 'DRAFT',
+      issueDate: null,
+      version: undefined,
+    }
+    setDocs([...docs, copy])
+    toast.success('Document duplicated as new draft')
+  }
+
+  const confirmDelete = async () => {
+    if (!deletingDoc) return
+    const { doc, index } = deletingDoc
+    try {
+      if (doc.id) {
+        await opsApi.deleteTransportDoc(doc.id)
+        toast.success(`Deleted ${doc.docNo || 'document'}`)
+      } else {
+        toast.info('Draft transport document removed')
+      }
+      setDocs(docs.filter((_, i) => i !== index))
+      setDeletingDoc(null)
+    } catch (e) {
+      toast.error(apiErrorMessage(e))
+    }
+  }
+
+  const printDoc = (doc: TransportDoc) => {
+    try {
+      openPrintWindow(doc.docNo || 'Transport Document', transportDocPrintHtml(doc, draft, cargo))
+    } catch (e) {
+      toast.error(apiErrorMessage(e))
+    }
+  }
+
+  const saveEditedDoc = () => {
+    if (!editingDoc || editingIndex < 0) return
+    setDocs(docs.map((d, i) => (i === editingIndex ? editingDoc : d)))
+    setEditingDoc(null)
+    setEditingIndex(-1)
+    toast.success('Transport document details updated in draft')
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Top Action Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-3 shadow-xs">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button onClick={createHouse} size="sm">
+            <Plus className="size-4" />
+            New House {air ? 'AWB (HAWB)' : 'B/L (HBL)'}
+          </Button>
+          <Button onClick={createMaster} variant="outline" size="sm">
+            <Plus className="size-4" />
+            New Master {air ? 'AWB (MAWB)' : 'B/L (MBL)'}
+          </Button>
+        </div>
+        <div className="text-xs text-muted-foreground">
+          {docs.length} transport document{docs.length === 1 ? '' : 's'} linked to this file
+        </div>
+      </div>
+
+      {/* Document Cards List */}
+      {docs.length === 0 ? (
+        <EmptyState
+          title={`No ${air ? 'Air Waybills' : 'Bills of Lading'} created yet`}
+          description={`Click "New House ${air ? 'AWB' : 'B/L'}" to create an official transport document populated with this file's parties and routing.`}
+          action={
+            <Button onClick={createHouse}>
+              <Plus className="size-4" />
+              Create first document
+            </Button>
+          }
+        />
+      ) : (
+        <div className="space-y-3">
+          {docs.map((doc, index) => {
+            const isAirDoc = doc.docType === 'AWB' || air
+            const mawbCheck = isAirDoc && doc.docNo ? validateMawb(doc.docNo) : null
+            const isDraft = !doc.status || doc.status === 'DRAFT'
+            const isIssued = doc.status === 'ISSUED'
+            const isVoid = doc.status === 'VOID'
+
+            return (
+              <div
+                key={doc.id || index}
+                className="group relative rounded-xl border bg-card p-4 shadow-xs transition-all duration-200 hover:border-primary/40 hover:shadow-sm"
+              >
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  {/* Left info */}
+                  <div className="space-y-1.5 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge
+                        status={doc.docClass || 'HOUSE'}
+                        tone={doc.docClass === 'MASTER' ? 'accent' : 'info'}
+                      />
+                      <Badge status={doc.docType || (air ? 'AWB' : 'BL')} tone="neutral" />
+                      <Badge
+                        status={doc.status || 'DRAFT'}
+                        tone={isIssued ? 'success' : isVoid ? 'danger' : 'neutral'}
+                      />
+                      <span className="font-mono text-sm font-bold tracking-tight text-foreground">
+                        {doc.docNo || <span className="italic text-muted-foreground">Unnumbered draft</span>}
+                      </span>
+                    </div>
+
+                    <div className="grid gap-1 text-xs text-muted-foreground sm:grid-cols-2 lg:grid-cols-4">
+                      <div>
+                        <span className="font-semibold text-foreground/80">Shipper: </span>
+                        <span className="truncate">{doc.shipperName || draft.shipperName || '—'}</span>
+                      </div>
+                      <div>
+                        <span className="font-semibold text-foreground/80">Consignee: </span>
+                        <span className="truncate">{doc.consigneeName || draft.consigneeName || '—'}</span>
+                      </div>
+                      <div>
+                        <span className="font-semibold text-foreground/80">Term: </span>
+                        <span>{doc.freightTerm || draft.freightTerm || 'PREPAID'}</span>
+                      </div>
+                      <div>
+                        <span className="font-semibold text-foreground/80">Route: </span>
+                        <span>{doc.pol || draft.polCode || '—'} → {doc.pod || draft.podCode || '—'}</span>
+                      </div>
+                    </div>
+
+                    {/* MAWB format validation badge */}
+                    {isAirDoc && doc.docNo && (
+                      <div className="pt-0.5">
+                        {mawbCheck ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                            <AlertTriangle className="size-3" />
+                            {mawbCheck}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                            <CheckCircle2 className="size-3" />
+                            Valid IATA MAWB check digit
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right Tools & Actions */}
+                  <div className="flex flex-wrap items-center gap-1.5 sm:self-center">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setEditingDoc({ ...doc })
+                        setEditingIndex(index)
+                      }}
+                      title="Edit transport document fields"
+                    >
+                      <Edit2 className="size-3.5" />
+                      Edit
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => printDoc(doc)}
+                      title="Print official transport document"
+                    >
+                      <Printer className="size-3.5" />
+                      Print
+                    </Button>
+
+                    {isDraft && (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => issueDoc(doc, index)}
+                        title="Issue transport document"
+                      >
+                        <CheckCircle2 className="size-3.5" />
+                        Issue
+                      </Button>
+                    )}
+
+                    {isIssued && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => voidDoc(doc, index)}
+                        className="text-amber-600 hover:text-amber-700 dark:text-amber-400"
+                        title="Mark document as void"
+                      >
+                        <Ban className="size-3.5" />
+                        Void
+                      </Button>
+                    )}
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => duplicateDoc(doc)}
+                      title="Duplicate as new draft"
+                    >
+                      <Copy className="size-3.5" />
+                      Clone
+                    </Button>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setDeletingDoc({ doc, index })}
+                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      title="Delete transport document"
+                    >
+                      <Trash2 className="size-3.5" />
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Edit Transport Document Full Sheet */}
+      <Sheet open={Boolean(editingDoc)} onOpenChange={(open) => { if (!open) setEditingDoc(null) }}>
+        <SheetContent
+          title={`Edit ${air ? 'Air Waybill' : 'Bill of Lading'} Details`}
+          description="Complete IATA/FIATA compliant document particulars. Saved into shipment draft."
+          className="overflow-y-auto sm:max-w-2xl"
+        >
+          {editingDoc && (
+            <div className="space-y-4 pt-2">
+              <div className="flex justify-end">
+                <Button variant="outline" size="sm" onClick={() => syncFromShipment(editingIndex)}>
+                  Autofill from shipment file
+                </Button>
+              </div>
+
+              <FormSection title="Document Identification" description="Class, number, terms, and release format.">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <FormField label="Document Class" required>
+                    <Select
+                      value={editingDoc.docClass || 'HOUSE'}
+                      onValueChange={(val) => setEditingDoc({ ...editingDoc, docClass: val })}
+                      options={[
+                        { value: 'HOUSE', label: 'HOUSE (Direct client)' },
+                        { value: 'MASTER', label: 'MASTER (Carrier direct)' },
+                      ]}
+                    />
+                  </FormField>
+
+                  <FormField label="Document Type" required>
+                    <Select
+                      value={editingDoc.docType || (air ? 'AWB' : 'BL')}
+                      onValueChange={(val) => setEditingDoc({ ...editingDoc, docType: val })}
+                      options={[
+                        { value: 'AWB', label: 'AWB (Air Waybill)' },
+                        { value: 'BL', label: 'B/L (Bill of Lading)' },
+                      ]}
+                    />
+                  </FormField>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <FormField label="Document Number" required hint={air ? 'Format: 079-12345675 (3 airline prefix + 7 serial + mod-7)' : undefined}>
+                    <Input
+                      value={editingDoc.docNo || ''}
+                      onChange={(e) => setEditingDoc({ ...editingDoc, docNo: e.target.value.toUpperCase() })}
+                      placeholder={air ? '079-12345675' : 'HBL-2026-00001'}
+                    />
+                  </FormField>
+
+                  <FormField label="Freight Term">
+                    <Select
+                      value={editingDoc.freightTerm || 'PREPAID'}
+                      onValueChange={(val) => setEditingDoc({ ...editingDoc, freightTerm: val })}
+                      options={FREIGHT_TERMS.map((t) => ({ value: t, label: t }))}
+                    />
+                  </FormField>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <FormField label="Issue Place">
+                    <Input
+                      value={editingDoc.issuePlace || ''}
+                      onChange={(e) => setEditingDoc({ ...editingDoc, issuePlace: e.target.value })}
+                      placeholder="MANILA, PH"
+                    />
+                  </FormField>
+
+                  <FormField label="Release Type">
+                    <Select
+                      value={editingDoc.releaseType || 'ORIGINAL'}
+                      onValueChange={(val) => setEditingDoc({ ...editingDoc, releaseType: val })}
+                      options={[
+                        { value: 'ORIGINAL', label: 'Original Paper' },
+                        { value: 'TELEX', label: 'Telex / Express' },
+                        { value: 'SEA_WAYBILL', label: 'Sea Waybill' },
+                      ]}
+                    />
+                  </FormField>
+
+                  <FormField label="Originals Count">
+                    <NumberInput
+                      value={editingDoc.numberOfOriginals ?? 3}
+                      onValueChange={(val) => setEditingDoc({ ...editingDoc, numberOfOriginals: val })}
+                    />
+                  </FormField>
+                </div>
+              </FormSection>
+
+              <FormSection title="Shipper & Consignee" description="Full names and registered addresses as shown on physical document.">
+                <FormField label="Shipper Name" required>
+                  <Input
+                    value={editingDoc.shipperName || ''}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, shipperName: e.target.value })}
+                  />
+                </FormField>
+                <FormField label="Shipper Address">
+                  <Textarea
+                    value={editingDoc.shipperAddress || ''}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, shipperAddress: e.target.value })}
+                    rows={2}
+                  />
+                </FormField>
+
+                <FormField label="Consignee Name" required>
+                  <Input
+                    value={editingDoc.consigneeName || ''}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, consigneeName: e.target.value })}
+                  />
+                </FormField>
+                <FormField label="Consignee Address">
+                  <Textarea
+                    value={editingDoc.consigneeAddress || ''}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, consigneeAddress: e.target.value })}
+                    rows={2}
+                  />
+                </FormField>
+              </FormSection>
+
+              <FormSection title="Notify Party & Issuing Agent" defaultOpen={false}>
+                <FormField label="Notify Name">
+                  <Input
+                    value={editingDoc.notifyName || ''}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, notifyName: e.target.value })}
+                    placeholder="SAME AS CONSIGNEE"
+                  />
+                </FormField>
+                <FormField label="Notify Address">
+                  <Textarea
+                    value={editingDoc.notifyAddress || ''}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, notifyAddress: e.target.value })}
+                    rows={2}
+                  />
+                </FormField>
+
+                <FormField label="Issuing Agent Name">
+                  <Input
+                    value={editingDoc.agentName || ''}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, agentName: e.target.value })}
+                    placeholder="KORNET EXPRESS, INC."
+                  />
+                </FormField>
+                <FormField label="Issuing Agent Address">
+                  <Textarea
+                    value={editingDoc.agentAddress || ''}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, agentAddress: e.target.value })}
+                    rows={2}
+                  />
+                </FormField>
+              </FormSection>
+
+              <FormSection title="Routing & Carrier Details" defaultOpen={false}>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <FormField label={air ? 'Airport of Departure' : 'Port of Loading (POL)'}>
+                    <Input
+                      value={editingDoc.pol || ''}
+                      onChange={(e) => setEditingDoc({ ...editingDoc, pol: e.target.value.toUpperCase() })}
+                    />
+                  </FormField>
+                  <FormField label={air ? 'Airport of Destination' : 'Port of Discharge (POD)'}>
+                    <Input
+                      value={editingDoc.pod || ''}
+                      onChange={(e) => setEditingDoc({ ...editingDoc, pod: e.target.value.toUpperCase() })}
+                    />
+                  </FormField>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <FormField label="Declared Value Carriage">
+                    <MoneyInput
+                      value={editingDoc.declaredValueCarriage || 0}
+                      onValueChange={(val) => setEditingDoc({ ...editingDoc, declaredValueCarriage: val })}
+                    />
+                  </FormField>
+                  <FormField label="Declared Value Customs">
+                    <MoneyInput
+                      value={editingDoc.declaredValueCustoms || 0}
+                      onValueChange={(val) => setEditingDoc({ ...editingDoc, declaredValueCustoms: val })}
+                    />
+                  </FormField>
+                  <FormField label="Insurance Amount">
+                    <MoneyInput
+                      value={editingDoc.amountInsurance || 0}
+                      onValueChange={(val) => setEditingDoc({ ...editingDoc, amountInsurance: val })}
+                    />
+                  </FormField>
+                </div>
+
+                <FormField label="Handling Information">
+                  <Textarea
+                    value={editingDoc.handlingInfo || ''}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, handlingInfo: e.target.value })}
+                    placeholder="e.g. KEEP DRY, DO NOT STACK, 24HR NOTIFY"
+                    rows={2}
+                  />
+                </FormField>
+                <FormField label="Accounting Information">
+                  <Textarea
+                    value={editingDoc.accountingInfo || ''}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, accountingInfo: e.target.value })}
+                    placeholder="e.g. FREIGHT PREPAID VIA MANILA HEAD OFFICE"
+                    rows={2}
+                  />
+                </FormField>
+              </FormSection>
+
+              <div className="flex justify-end gap-2 pt-2 border-t">
+                <Button variant="outline" onClick={() => setEditingDoc(null)}>
+                  Cancel
+                </Button>
+                <Button onClick={saveEditedDoc}>
+                  Apply Changes
+                </Button>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={Boolean(deletingDoc)}
+        onOpenChange={(open) => { if (!open) setDeletingDoc(null) }}
+        title="Delete Transport Document"
+        description={`Are you sure you want to delete ${deletingDoc?.doc.docNo || 'this transport document'}? This action cannot be undone.`}
+        onConfirm={() => void confirmDelete()}
+      />
+    </div>
+  )
 }
 
 export function ChargesTab({ draft, air, cargo, containers, charges, setCharges, applyTariffs, loading, totals }: { draft: Partial<Shipment>; air: boolean; cargo: CargoLine[]; containers: ContainerLine[]; charges: ChargeLine[]; setCharges: (rows: ChargeLine[]) => void; applyTariffs: () => void; loading: boolean; totals: { bill: number; cost: number; profit: number; margin: number } }) {

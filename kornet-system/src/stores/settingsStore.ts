@@ -60,14 +60,14 @@ function animateThemeChange(run: () => void, event?: MouseEvent | ReactMouseEven
     run()
     return
   }
-  const x = event && 'clientX' in event ? event.clientX : window.innerWidth - 48
-  const y = event && 'clientY' in event ? event.clientY : 32
+  const x = event && 'clientX' in event && event.clientX > 0 ? event.clientX : window.innerWidth - 48
+  const y = event && 'clientY' in event && event.clientY > 0 ? event.clientY : 32
   const endRadius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y))
   const transition = doc.startViewTransition(run)
   void transition.ready.then(() => {
     document.documentElement.animate(
       { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${endRadius}px at ${x}px ${y}px)`] },
-      { duration: 380, easing: 'cubic-bezier(0.4, 0, 0.2, 1)', pseudoElement: '::view-transition-new(root)' },
+      { duration: 420, easing: 'cubic-bezier(0.25, 1, 0.5, 1)', pseudoElement: '::view-transition-new(root)' },
     )
   })
 }

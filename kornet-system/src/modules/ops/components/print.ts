@@ -1,4 +1,4 @@
-﻿import type { DocumentPayload, Quote } from '@/api/ops'
+import type { CargoLine, DocumentPayload, Quote, Shipment, TransportDoc } from '@/api/ops'
 import { formatDate, formatMoney, formatNumber } from '@/lib/format'
 import { financialTotals } from '../utils'
 
@@ -27,4 +27,27 @@ export function shipmentDocumentHtml(payload: DocumentPayload) {
   const containers = payload.containers.map((line) => `<tr><td>${esc(line.equipmentType)}</td><td class="mono">${esc(line.containerNo)}</td><td>${esc(line.sealNo)}</td><td class="right mono">${formatNumber(line.vgmKg)}</td><td>${esc(line.unNumbers)}</td></tr>`).join('')
   const charges = payload.charges.map((line) => `<tr><td>${esc(line.billingCode)}</td><td>${esc(line.description)}</td><td class="right mono">${formatMoney(line.amountPhp ?? line.amount, 'PHP')}</td></tr>`).join('')
   return `<div class="header"><div><h1>${esc(payload.kind.replace(/-/g, ' ').toUpperCase())}</h1><div>${esc(companyName)}</div></div><div class="right"><strong>File:</strong> <span class="mono">${esc(shipment.fileNo)}</span><br/><strong>Status:</strong> ${esc(shipment.status)}<br/><strong>Generated:</strong> ${formatDate(payload.generatedAt)}</div></div><div class="grid"><div class="box"><strong>Shipper</strong><br/>${esc(shipment.shipperName)}<br/>${esc(shipment.shipperAddress)}</div><div class="box"><strong>Consignee</strong><br/>${esc(shipment.consigneeName)}<br/>${esc(shipment.consigneeAddress)}</div><div class="box"><strong>Routing</strong><br/>${esc(shipment.placeOfReceipt)} / ${esc(shipment.polCode)} → ${esc(shipment.podCode)} / ${esc(shipment.finalDestination)}<br/>ETD ${formatDate(shipment.etd)} · ETA ${formatDate(shipment.eta)}</div><div class="box"><strong>Carrier</strong><br/>${esc(shipment.carrierPartyId)}<br/>${esc(shipment.vessel || shipment.flightNo)} ${esc(shipment.voyage)}</div></div><h3>Cargo</h3><table><thead><tr><th>PCS</th><th>Pkg</th><th>Description</th><th>Marks</th><th>Gross kg</th><th>CBM</th></tr></thead><tbody>${cargo}</tbody></table>${payload.containers.length ? `<h3>Containers</h3><table><thead><tr><th>Type</th><th>Container</th><th>Seal</th><th>VGM</th><th>Hazmat</th></tr></thead><tbody>${containers}</tbody></table>` : ''}${payload.charges.length ? `<h3>Shown charges</h3><table><thead><tr><th>Code</th><th>Description</th><th>Amount PHP</th></tr></thead><tbody>${charges}</tbody></table>` : ''}`
+}
+
+export function transportDocPrintHtml(doc: Partial<TransportDoc>, shipment: Partial<Shipment>, cargo: CargoLine[] = []) {
+  const isAir = doc.docType === 'AWB' || shipment.mode === 'AIR'
+  const title = isAir
+    ? (doc.docClass === 'MASTER' ? 'MASTER AIR WAYBILL (MAWB)' : 'HOUSE AIR WAYBILL (HAWB)')
+    : (doc.docClass === 'MASTER' ? 'OCEAN BILL OF LADING (MBL)' : 'HOUSE BILL OF LADING (HBL)')
+  const cargoRows = cargo.map((l) => `<tr><td class="right mono">${formatNumber(l.pieces)}</td><td>${esc(l.packageType)}</td><td>${esc(l.description)}</td><td class="right mono">${formatNumber(l.grossKg)} kg</td><td class="right mono">${formatNumber(l.cbm)} cbm</td><td class="right mono">${formatNumber(l.chargeableKg)}</td></tr>`).join('')
+
+  return `<div class="header"><div><h1 style="font-size:22px;margin:0 0 4px 0">${esc(title)}</h1><div class="muted">KORNET EXPRESS, INC. · LOGISTICS SERVICES</div></div><div class="right"><strong style="font-size:16px" class="mono">${esc(doc.docNo || 'DRAFT')}</strong><br/><strong>Class:</strong> ${esc(doc.docClass || 'HOUSE')}<br/><strong>Status:</strong> ${esc(doc.status || 'DRAFT')}</div></div>
+<div class="grid"><div class="box"><strong>Shipper / Exporter</strong><br/>${esc(doc.shipperName || shipment.shipperName || '—')}<br/>${esc(doc.shipperAddress || shipment.shipperAddress || '')}</div><div class="box"><strong>Consignee</strong><br/>${esc(doc.consigneeName || shipment.consigneeName || '—')}<br/>${esc(doc.consigneeAddress || shipment.consigneeAddress || '')}</div><div class="box"><strong>Notify Party</strong><br/>${esc(doc.notifyName || shipment.notifyName || 'SAME AS CONSIGNEE')}<br/>${esc(doc.notifyAddress || shipment.notifyAddress || '')}</div><div class="box"><strong>Issuing Agent / Details</strong><br/><strong>Agent:</strong> ${esc(doc.agentName || 'KORNET EXPRESS, INC.')}<br/><strong>Freight Term:</strong> ${esc(doc.freightTerm || shipment.freightTerm || 'PREPAID')}<br/><strong>Originals:</strong> ${esc(doc.numberOfOriginals ?? 3)}<br/><strong>Release:</strong> ${esc(doc.releaseType || 'ORIGINAL')}</div></div>
+<div class="grid"><div class="box"><strong>Routing / Flight & Vessel</strong><br/><strong>Airport / Port of Departure:</strong> ${esc(doc.pol || shipment.polCode || '—')}<br/><strong>Airport / Port of Destination:</strong> ${esc(doc.pod || shipment.podCode || '—')}<br/><strong>Carrier / Flight / Vessel:</strong> ${esc(isAir ? (shipment.flightNo || 'TBD') : `${shipment.vessel || ''} ${shipment.voyage || ''}`)}</div><div class="box"><strong>Declared Values & Insurance</strong><br/><strong>For Carriage:</strong> ${doc.declaredValueCarriage ? formatMoney(doc.declaredValueCarriage) : 'NVD'}<br/><strong>For Customs:</strong> ${doc.declaredValueCustoms ? formatMoney(doc.declaredValueCustoms) : 'NCV'}<br/><strong>Insurance:</strong> ${doc.amountInsurance ? formatMoney(doc.amountInsurance) : 'NIL'}</div></div>
+${doc.handlingInfo ? `<div class="box"><strong>Handling Information:</strong><br/>${esc(doc.handlingInfo)}</div>` : ''}
+${doc.accountingInfo ? `<div class="box"><strong>Accounting Information:</strong><br/>${esc(doc.accountingInfo)}</div>` : ''}
+<h3>Cargo Specification</h3>
+<table><thead><tr><th>PCS</th><th>Pkg</th><th>Nature and Quantity of Goods</th><th>Gross Weight</th><th>CBM</th><th>${isAir ? 'Chargeable kg' : 'W/M'}</th></tr></thead><tbody>${cargoRows || '<tr><td colspan="6" class="muted" style="text-align:center;padding:16px">No cargo lines specified</td></tr>'}</tbody></table>
+<div style="margin-top:20px;padding:12px;border:1px dashed #d1d5db;border-radius:8px;font-size:11px;color:#6b7280;line-height:1.4">
+It is agreed that the goods described herein are accepted in apparent good order and condition (except as noted) for carriage SUBJECT TO THE CONDITIONS OF CONTRACT. THE SHIPPER'S ATTENTION IS DRAWN TO THE NOTICE CONCERNING CARRIER'S LIMITATION OF LIABILITY.
+</div>
+<div style="display:flex;justify-content:space-between;margin-top:32px;padding-top:16px;border-top:1px solid #d1d5db;font-size:12px">
+<div>Place of Issue: <strong>${esc(doc.issuePlace || 'MANILA, PH')}</strong><br/>Date of Issue: <strong>${formatDate(doc.issueDate || new Date())}</strong></div>
+<div style="text-align:right">Signature of Issuing Carrier or its Agent:<br/><br/><strong>KORNET EXPRESS, INC.</strong></div>
+</div>`
 }

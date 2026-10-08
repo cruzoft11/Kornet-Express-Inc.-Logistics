@@ -271,9 +271,19 @@ export function ShipmentWorkspace({ mode }: ShipmentWorkspaceProps) {
         if (line.id) await opsApi.updateCharge(line.id, payload)
         else if (line.billingCode || line.description) await opsApi.createCharge(payload)
       }
+      const initialDocIds = (shipmentQuery.data?.transportDocs ?? []).map((d) => d.id).filter(Boolean) as string[]
+      const currentDocIds = new Set(docs.map((d) => d.id).filter(Boolean))
+      for (const removedId of initialDocIds) {
+        if (!currentDocIds.has(removedId)) {
+          await opsApi.deleteTransportDoc(removedId)
+        }
+      }
       for (const doc of docs) {
-        const payload = { ...doc, shipmentId: shipment.id }
-        if (!payload.docNo) continue
+        const payload = {
+          ...doc,
+          shipmentId: shipment.id,
+          docNo: doc.docNo || `${doc.docType || (draft.mode === 'AIR' ? 'AWB' : 'BL')}-${shipment.fileNo || 'DRAFT'}`,
+        }
         if (doc.id) await opsApi.updateTransportDoc(doc.id, payload)
         else await opsApi.createTransportDoc(payload)
       }
@@ -486,7 +496,7 @@ export function ShipmentWorkspace({ mode }: ShipmentWorkspaceProps) {
               { value: 'import', label: 'Import info', content: <ImportTab draft={draft} update={updateDraft} disabled={draft.direction !== 'IMPORT'} /> },
               { value: 'cargo', label: 'Cargo', content: <CargoTab air={air} cargo={computedCargo} setCargo={setCargo} totals={cargoSummary} pasteText={pasteText} setPasteText={setPasteText} /> },
               { value: 'containers', label: 'Containers', content: <ContainersTab ocean={ocean} shipmentId={String(draft.id || '')} containers={containers} setContainers={setContainers} /> },
-              { value: 'docs', label: 'Transport Docs', content: <DocsTab air={air} draft={draft} docs={docs} setDocs={setDocs} /> },
+              { value: 'docs', label: 'Transport Docs', content: <DocsTab air={air} draft={draft} cargo={computedCargo} docs={docs} setDocs={setDocs} /> },
               { value: 'charges', label: 'Charges & Margin', content: <ChargesTab draft={draft} air={air} cargo={computedCargo} containers={containers} charges={computedCharges} setCharges={setCharges} applyTariffs={() => simpleAction.mutate('tariffs')} loading={simpleAction.isPending} totals={moneyTotals} /> },
               { value: 'timeline', label: 'Status & Timeline', content: <TimelineTab events={eventsQuery.data?.data ?? []} milestone={milestone} setMilestone={setMilestone} add={() => milestoneMutation.mutate()} status={(status) => statusMutation.mutate(status)} /> },
               { value: 'documents', label: 'Printouts', content: <DocumentsTab air={air} print={printDocument} /> },

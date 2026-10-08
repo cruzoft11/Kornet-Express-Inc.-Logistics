@@ -1,4 +1,4 @@
-﻿import { apiDelete, apiGet, apiPatch, apiPost } from './client'
+import { apiDelete, apiGet, apiPatch, apiPost } from './client'
 
 export type WorkspaceMode = 'OCEAN_EXPORT' | 'OCEAN_IMPORT' | 'AIR_EXPORT' | 'AIR_IMPORT' | 'DOMESTIC'
 export type ApiList<T> = { data: T[]; total: number; page: number; pageSize: number }
@@ -302,6 +302,7 @@ export const opsApi = {
   deleteCharge: (id: string) => apiDelete(`/charges/${id}`),
   createTransportDoc: (body: Partial<TransportDoc>) => apiPost<TransportDoc>('/transport-docs', body),
   updateTransportDoc: (id: string, body: Partial<TransportDoc>) => apiPatch<TransportDoc>(`/transport-docs/${id}`, body),
+  deleteTransportDoc: (id: string) => apiDelete(`/transport-docs/${id}`),
   issueTransportDoc: (id: string) => apiPost<TransportDoc>(`/transport-docs/${id}/issue`),
   listStatusEvents: (entityType: string, entityId: string) => apiGet<ApiList<StatusEvent>>(`/status-events${qs({ entityType, entityId, q: entityId, pageSize: 100, sort: '-eventAt' })}`),
   createStatusEvent: (body: Partial<StatusEvent>) => apiPost<StatusEvent>('/status-events', body),

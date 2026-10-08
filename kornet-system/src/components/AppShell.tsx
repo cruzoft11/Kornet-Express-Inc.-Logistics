@@ -10,7 +10,7 @@ import { useSettingsStore } from '../stores/settingsStore'
 import { useCompanyStore } from '../stores/companyStore'
 import { useLogisticsStore } from '../stores/logisticsStore'
 import { useHotkeys, type Hotkey } from '../hooks/useHotkeys'
-import { Button, Dialog, DialogContent, EmptyState, IconButton, Kbd, KornetLoader, Sheet, SheetContent, Toast } from './ui'
+import { Button, Dialog, DialogContent, EmptyState, IconButton, Kbd, KornetLoader, Sheet, SheetContent, Switch, Toast } from './ui'
 import PrintDocumentModal from './logistics/PrintDocumentModal'
 import AuditLogModal from './logistics/AuditLogModal'
 import AttachmentModal from './logistics/AttachmentModal'
@@ -202,17 +202,34 @@ export default function AppShell() {
           <IconButton label="Shortcuts" icon={<HelpCircle className="size-4" />} variant="ghost" onClick={() => setShortcutsOpen(true)} />
           <div className="group relative">
             <IconButton label="User menu" icon={<CircleUserRound className="size-4" />} variant="ghost" />
-            <div className="invisible absolute right-0 z-dropdown mt-2 w-64 rounded-xl border bg-popover p-2 opacity-0 shadow-lg transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
-              <div className="px-2 py-2">
-                <p className="font-semibold">{user?.fullName || user?.username}</p>
+            <div className="invisible absolute right-0 z-dropdown mt-2 w-72 rounded-2xl border bg-popover/95 backdrop-blur-md p-3 opacity-0 shadow-2xl transition-all duration-200 group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
+              <div className="px-2 py-2 border-b mb-2">
+                <p className="font-semibold text-sm">{user?.fullName || user?.username}</p>
                 <p className="text-xs text-muted-foreground">{user?.role} · {company}</p>
               </div>
-              <button className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm hover:bg-muted" onClick={() => navigate('/admin/settings')}>
-                <Settings className="size-4" />Settings
-              </button>
-              <button className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm text-destructive hover:bg-muted" onClick={() => void logout()}>
-                <LogOut className="size-4" />Sign out
-              </button>
+              <div className="space-y-1 mb-2">
+                <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-muted/60 transition-colors">
+                  <span className="flex items-center gap-2 text-xs font-medium text-foreground">
+                    {darkMode ? <Moon className="size-3.5 text-secondary" /> : <Sun className="size-3.5 text-amber-500" />}
+                    Dark Mode
+                  </span>
+                  <Switch checked={darkMode} onCheckedChange={() => toggleTheme()} aria-label="Toggle dark mode" />
+                </div>
+                <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-muted/60 transition-colors">
+                  <span className="flex items-center gap-2 text-xs font-medium text-foreground">
+                    Compact Density
+                  </span>
+                  <Switch checked={density === 'compact'} onCheckedChange={(v) => setDensity(v ? 'compact' : 'comfortable')} aria-label="Toggle compact density" />
+                </div>
+              </div>
+              <div className="border-t pt-2 space-y-1">
+                <button className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium hover:bg-muted transition-colors" onClick={() => navigate('/admin/settings')}>
+                  <Settings className="size-3.5" />Settings
+                </button>
+                <button className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors" onClick={() => void logout()}>
+                  <LogOut className="size-3.5" />Sign out
+                </button>
+              </div>
             </div>
           </div>
         </header>

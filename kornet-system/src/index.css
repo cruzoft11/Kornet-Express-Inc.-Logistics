@@ -125,8 +125,8 @@
     font-size: 14px;
     font-feature-settings: 'cv02','cv03','cv04','cv11';
     text-rendering: optimizeLegibility;
-    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: background-color 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                color 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   }
   html[data-density='compact'] {
     font-size: 13px;
@@ -134,12 +134,15 @@
   body {
     @apply min-h-dvh bg-background text-foreground font-sans antialiased;
     margin: 0;
-    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: background-color 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                color 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  *, *::before, *::after {
+  body, header, main, nav, aside, footer,
+  [class*="bg-background"], [class*="bg-card"], [class*="bg-popover"],
+  [class*="bg-surface"], [class*="bg-muted"], [class*="border-border"],
+  [class*="text-foreground"], [class*="text-muted-foreground"] {
     transition-property: background-color, border-color, color, fill, stroke;
-    transition-duration: 0.25s;
+    transition-duration: 0.35s;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
   button, input, textarea, select { font: inherit; }
@@ -179,7 +182,17 @@
   .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
 }
 
-::view-transition-old(root), ::view-transition-new(root) { animation-duration: 380ms; animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-old(root) {
+  z-index: 1;
+}
+::view-transition-new(root) {
+  z-index: 9999;
+}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: 1ms !important; }
   ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
