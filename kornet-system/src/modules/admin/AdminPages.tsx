@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Plus, Save, Shield, Trash2 } from 'lucide-react'
@@ -7,6 +7,7 @@ import { auditApi, companiesApi, settingsApi, usersApi, type AdminRole, type Aud
 import { useHotkeys } from '@/hooks/useHotkeys'
 import { formatDate, formatMoney } from '@/lib/format'
 import { useAuthStore } from '@/stores/authStore'
+import { useIntegrationsStore, type IntegrationStatus } from '@/stores/integrationsStore'
 
 const roles: AdminRole[] = ['viewer', 'operations', 'accounting', 'manager', 'admin', 'superadmin']
 const rank: Record<string, number> = { viewer: 0, operator: 1, operations: 1, accountant: 2, accounting: 2, manager: 3, admin: 4, superadmin: 5 }
@@ -41,6 +42,65 @@ function PreviewNumber({ formats }: { formats: string }) { let obj: Record<strin
 
 export function AuditLogPage() { const [entity, setEntity] = useState(''); const [user, setUser] = useState(''); const [from, setFrom] = useState(''); const { data, isLoading } = useQuery({ queryKey: ['audit', entity], queryFn: () => auditApi.list({ entity: entity || undefined, pageSize: 200 }) }); const rows = useMemo(() => (data?.data ?? []).filter((r) => (!user || (r.username ?? '').toLowerCase().includes(user.toLowerCase())) && (!from || new Date(r.createdAt) >= new Date(from))), [data, user, from]); return <div><PageHeader eyebrow="Admin" title="Audit log" description="Company-scoped audit trail with entity, user, date filters and raw diff detail." /><Toolbar><Input placeholder="Entity" value={entity} onChange={(e) => setEntity(e.target.value)} /><Input placeholder="User" value={user} onChange={(e) => setUser(e.target.value)} /><DateInput value={from} onValueChange={setFrom} /></Toolbar><DataGrid loading={isLoading} data={rows} columns={[{ id: 'createdAt', header: 'When', cell: (r) => formatDate(r.createdAt) }, { id: 'username', header: 'User', accessor: 'username' }, { id: 'action', header: 'Action', cell: (r) => <Badge status={r.action} /> }, { id: 'entity', header: 'Entity', accessor: 'entity' }, { id: 'detail', header: 'Diff', cell: (r) => <DiffView row={r} /> }]} /></div> }
 function DiffView({ row }: { row: AuditLog }) { return <details className="max-w-xl"><summary className="cursor-pointer text-secondary">View diff</summary><pre className="mt-2 max-h-60 overflow-auto rounded bg-muted p-2 text-xs">{JSON.stringify(row.detail ?? {}, null, 2)}</pre></details> }
+export function IntegrationsPage() {
+  const items = useIntegrationsStore((s) => s.items)
+  const setStatus = useIntegrationsStore((s) => s.setStatus)
+  const fetchIntegrations = useIntegrationsStore((s) => s.fetchIntegrations)
+
+  useEffect(() => {
+    void fetchIntegrations()
+  }, [fetchIntegrations])
+
+  const toggle = async (key: string, current: IntegrationStatus) => {
+    const next: IntegrationStatus = current === 'connected' ? 'disconnected' : 'connected'
+    try {
+      await setStatus(key, next)
+      toast.success(`Updated integration ${key} to ${next}`)
+    } catch {
+      toast.error('Could not update this integration.')
+    }
+  }
+
+  return (
+    <div>
+      <PageHeader
+        eyebrow="Admin"
+        title="Hardware & Integrations"
+        description="Configure connected hardware (barcode scanners, signature pads, label printers) and external logistics gateways."
+      />
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {items.map((item) => {
+          const isConnected = item.status === 'connected'
+          return (
+            <Card key={item.key}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <Badge
+                    status={item.status}
+                    tone={isConnected ? 'success' : item.status === 'error' ? 'danger' : 'neutral'}
+                  />
+                  <span className="text-xs uppercase text-muted-foreground">{item.category}</span>
+                </div>
+                <CardTitle className="text-base">{item.name}</CardTitle>
+                <CardDescription>Key: {item.key}</CardDescription>
+              </CardHeader>
+              <CardContent className="flex items-center justify-between pt-2">
+                <span className="text-sm text-muted-foreground">Status: {item.status}</span>
+                <Button
+                  size="sm"
+                  variant={isConnected ? 'outline' : 'default'}
+                  onClick={() => toggle(item.key, item.status)}
+                >
+                  {isConnected ? 'Disconnect' : 'Connect'}
+                </Button>
+              </CardContent>
+            </Card>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
 export function SettingsGapCard() { return <Card><CardHeader><CardTitle>Backend gaps</CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground">CompanySetting is key/value; strongly typed settings endpoints are not present yet.</p></CardContent></Card> }
 export function ResetPasswordHint() { return <span className="inline-flex items-center gap-1 text-xs text-muted-foreground"><Shield className="size-3" />10+ characters</span> }
 export function AmountPreview({ amount }: { amount: number }) { return <span>{formatMoney(amount)}</span> }

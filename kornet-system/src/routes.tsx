@@ -30,7 +30,7 @@ const PdOrdersPage = lazy(() => import('./modules/pd/PdOrdersPage'))
 const PdDispatchBoard = lazy(() => import('./modules/pd/PdDispatchBoard'))
 const VehicleInventoryPage = lazy(() => import('./modules/vehicles/VehicleInventoryPage'))
 const FleetDispatchPage = lazy(() => import('./modules/fleet/FleetDispatchPage'))
-const CustomerTrackingPortal = lazy(() => import('./components/logistics/CustomerTrackingPortal'))
+const PublicTrackingPage = lazy(() => import('./modules/portal/PortalPages').then((m) => ({ default: m.PublicTrackingPage })))
 
 // Billing
 const InvoicesPage = lazy(() => import('./modules/billing/pages').then((m) => ({ default: m.InvoicesPage })))
@@ -60,7 +60,7 @@ const CurrenciesPage = lazy(() => import('./modules/masters/MastersPages').then(
 const UsersPage = lazy(() => import('./modules/admin/AdminPages').then((m) => ({ default: m.UsersPage })))
 const CompanySettingsPage = lazy(() => import('./modules/admin/AdminPages').then((m) => ({ default: m.CompanySettingsPage })))
 const AuditLogPage = lazy(() => import('./modules/admin/AdminPages').then((m) => ({ default: m.AuditLogPage })))
-const IntegrationsSettings = lazy(() => import('./components/logistics/IntegrationsSettings'))
+const IntegrationsPage = lazy(() => import('./modules/admin/AdminPages').then((m) => ({ default: m.IntegrationsPage })))
 const UIKit = lazy(() => import('./pages/UIKit'))
 
 export type LazyComponent = LazyExoticComponent<ComponentType<Record<string, never>>> | ComponentType<Record<string, never>>
@@ -92,7 +92,7 @@ export const appRoutes: AppRoute[] = [
   { path: '/logistics/pd-orders/board', label: 'P/D Dispatch Board', group: 'Operations', icon: Route, element: <PdDispatchBoard />, hidden: true, keywords: ['board', 'kanban'] },
   { path: '/logistics/vehicles', label: 'Vehicle Inventory', group: 'Operations', icon: Truck, element: <VehicleInventoryPage />, shortcut: 'G V', keywords: ['vin', 'roro', 'dock receipt', 'title'] },
   { path: '/logistics/fleet', label: 'Fleet & Dispatch', group: 'Operations', icon: Route, element: <FleetDispatchPage />, shortcut: 'G F', keywords: ['trucks', 'drivers', 'plate'] },
-  { path: '/logistics/tracking', label: 'Customer Tracking', group: 'Operations', icon: Route, element: <CustomerTrackingPortal />, keywords: ['milestones', 'status'] },
+  { path: '/logistics/tracking', label: 'Customer Tracking', group: 'Operations', icon: Route, element: <PublicTrackingPage />, keywords: ['milestones', 'status'] },
   { path: '/logistics/files/:id', label: 'Shipment Detail', group: 'Operations', icon: Ship, element: <ShipmentWorkspace />, hidden: true },
 
   // Billing
@@ -127,7 +127,7 @@ export const appRoutes: AppRoute[] = [
   // Admin
   { path: '/admin/users', label: 'Users', group: 'Admin', icon: Users, roles: ['admin', 'superadmin'], element: <UsersPage /> },
   { path: '/admin/settings', label: 'Settings', group: 'Admin', icon: Cog, roles: ['admin', 'superadmin', 'manager'], element: <CompanySettingsPage /> },
-  { path: '/admin/integrations', label: 'Integrations', group: 'Admin', icon: Cog, roles: ['admin', 'superadmin', 'manager'], element: <IntegrationsSettings /> },
+  { path: '/admin/integrations', label: 'Integrations', group: 'Admin', icon: Cog, roles: ['admin', 'superadmin', 'manager'], element: <IntegrationsPage /> },
   { path: '/admin/audit-log', label: 'Audit Log', group: 'Admin', icon: FileText, roles: ['admin', 'superadmin', 'manager'], element: <AuditLogPage /> },
   { path: '/ui-kit', label: 'UI Kit', group: 'Admin', icon: Cog, roles: ['admin', 'superadmin'], element: <UIKit /> },
 ]
