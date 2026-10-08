@@ -17,7 +17,7 @@ This section supersedes older deployment/status statements below where they conf
   - An unposted, open `DOC` quote charge of PHP 100; server calculation returned PHP 12 VAT. It has a QA-only note and is not invoiced or posted to the ledger.
   - The quote was **not** converted to a shipment; do not mistake these synthetic records for customer business. The quote sequence has advanced to `QT-2026-00001`.
 - QA still outstanding: no comprehensive module, shipment-to-invoice/AP, accounting bridge, or ledger posting test has been completed. The dashboard's MTD/AR/AP figures were zero and it reported 20 staged bridge items; verify whether these reflect expected production data before posting or clearing anything. No financial transaction was posted during this QA. Continue with a controlled test plan and safe void/cleanup procedures.
-- Source contained mojibake punctuation and labels (`â€”`, `â†’`, `â€¦`, `NestlÃ©`) in UI and seed text. UI/seed strings were corrected locally and both frontend/backend builds passed; this text fix has not yet been committed or deployed.
+- Source contained mojibake punctuation and labels (`â€”`, `â†’`, `â€¦`, `NestlÃ©`) in UI and seed text. These strings were corrected, both builds passed, and commit `ee408e7` deployed successfully in workflow run `37860713104`. The deployed frontend entry bundle was checked and no longer contains the corrupted em-dash/arrow sequences.
 - The pre-existing working-tree change to `.github/workflows/azure-deploy.yml` and untracked scripts `check-accts.mjs`, `check-co.mjs`, `check-fs.mjs`, and `list-tables.mjs` remain uncommitted and must be preserved/reviewed separately.
 
 ---
