@@ -362,7 +362,7 @@ At handoff time `npx tsc --noEmit` failed on in-progress files in `src/modules/f
      - deploy package that excludes `.db` files
    - Production startup: run `prisma db push`/migrate and seed if empty on first start.
    - `accounting.db` location via `ACCOUNTING_DB_PATH` on persistent storage (Azure `/home`).
-   - App settings to document: `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `PORTAL_JWT_SECRET`, `CORS_ORIGIN`, `DATABASE_URL`, `ACCOUNTING_DB_PATH`, `NODE_ENV=production`.
+   - App settings to document: `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `PORTAL_JWT_SECRET`, `CORS_ORIGIN`, `DATABASE_URL`, `ACCOUNTING_DB_PATH`, `NODE_ENV=production`. Azure startup now also detects `WEBSITE_SITE_NAME` and runs schema sync if `NODE_ENV` is unset; set `NODE_ENV=production` and configure strong JWT secrets before relying on production secret validation.
    - Check the server start script (`node server/dist/src/index.js`) serves the built SPA.
    - Health endpoint.
    - DB backup script.

@@ -14,7 +14,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ── Production first-boot: ensure DB exists and is migrated ──────────────────
-if (process.env.NODE_ENV === 'production') {
+if (process.env.NODE_ENV === 'production' || process.env.WEBSITE_SITE_NAME) {
   const serverRoot = [
     path.resolve(__dirname, '..'),
     path.resolve(__dirname, '../..'),

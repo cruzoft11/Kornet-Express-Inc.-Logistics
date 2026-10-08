@@ -136,4 +136,5 @@ The GitHub Actions workflow (`.github/workflows/azure-deploy.yml`) is configured
   - `NODE_ENV=production`
   - `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `PORTAL_JWT_SECRET`
 - If `DATABASE_URL` is absent, the server falls back to the bundled server SQLite path so startup does not fail with Prisma's missing-environment-variable error. Production should still configure `DATABASE_URL` to the existing persistent database location; do not point it at a new empty file to work around login errors.
+- Azure App Service sets `WEBSITE_SITE_NAME`; the server uses it to recognize Azure production and run schema sync even when `NODE_ENV` was not configured. Set `NODE_ENV=production` as well so production-only secret validation is enabled.
 - Before production schema sync, the server creates a schema-versioned SQLite backup under `$HOME/kornet-db-backups`, preserves known legacy columns/tables, then runs `prisma db push` **without** `--accept-data-loss` or `--force-reset`. If Prisma detects a destructive change, startup stops rather than deleting data. Inspect the startup logs and resolve the schema difference before redeploying.

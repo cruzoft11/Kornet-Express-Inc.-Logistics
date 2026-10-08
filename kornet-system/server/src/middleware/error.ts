@@ -23,6 +23,10 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
     if (err.code === 'P2025') {
       return res.status(404).json({ error: 'Record not found.' });
     }
+    if (err.code === 'P2021' || err.code === 'P2022') {
+      console.error('[db] Prisma schema mismatch', { code: err.code, meta: err.meta });
+      return res.status(500).json({ error: 'Database schema is out of date.' });
+    }
     return res.status(400).json({ error: 'Database request error', details: err.code });
   }
 
