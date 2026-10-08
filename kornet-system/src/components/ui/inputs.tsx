@@ -1,4 +1,4 @@
-﻿import { forwardRef, useMemo, useState } from 'react'
+import { forwardRef, useMemo, useState } from 'react'
 import { CalendarDays, ChevronDown, Search, X } from 'lucide-react'
 import * as SelectPrimitive from '@radix-ui/react-select'
 import * as CheckboxPrimitive from '@radix-ui/react-checkbox'
@@ -7,7 +7,7 @@ import * as PopoverPrimitive from '@radix-ui/react-popover'
 import { cn } from '@/lib/cn'
 import { parseDdMmYyyy, toInputDate } from '@/lib/format'
 
-const control = 'h-[var(--density-control)] w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-50'
+const control = 'h-[var(--density-control)] w-full rounded-md border border-border/90 bg-background px-3 text-sm text-foreground shadow-xs transition-colors placeholder:text-muted-foreground/75 focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/25 disabled:cursor-not-allowed disabled:opacity-50'
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> { leftIcon?: React.ReactNode; rightSlot?: React.ReactNode }
 export const Input = forwardRef<HTMLInputElement, InputProps>(({ className, leftIcon, rightSlot, ...props }, ref) => (
@@ -47,7 +47,7 @@ NumberInput.displayName = 'NumberInput'
 
 export interface MoneyInputProps extends NumberInputProps { currency?: string }
 export const MoneyInput = forwardRef<HTMLInputElement, MoneyInputProps>(({ currency = 'PHP', onBlur, ...props }, ref) => (
-  <NumberInput ref={ref} leftIcon={<span className="font-mono text-xs">{currency}</span>} step={0.01} onBlur={onBlur} {...props} />
+  <NumberInput ref={ref} leftIcon={<span className="font-mono text-xs font-semibold text-muted-foreground">{currency}</span>} step={0.01} onBlur={onBlur} {...props} />
 ))
 MoneyInput.displayName = 'MoneyInput'
 
@@ -74,9 +74,9 @@ export function Select({ value, onValueChange, options, placeholder = 'Select…
         <SelectPrimitive.Icon><ChevronDown className="size-4 text-muted-foreground" /></SelectPrimitive.Icon>
       </SelectPrimitive.Trigger>
       <SelectPrimitive.Portal>
-        <SelectPrimitive.Content className="z-modal overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-lg">
+        <SelectPrimitive.Content className="z-modal overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-xl">
           <SelectPrimitive.Viewport className="p-1">
-            {options.map((o) => <SelectPrimitive.Item key={o.value} value={o.value} disabled={o.disabled} className="relative flex h-9 cursor-default select-none items-center rounded-md px-3 text-sm outline-none data-[highlighted]:bg-muted data-[disabled]:opacity-50"><SelectPrimitive.ItemText>{o.label}</SelectPrimitive.ItemText></SelectPrimitive.Item>)}
+            {options.map((o) => <SelectPrimitive.Item key={o.value} value={o.value} disabled={o.disabled} className="relative flex h-9 cursor-pointer select-none items-center rounded-md px-3 text-sm outline-none transition-colors data-[highlighted]:bg-primary/10 data-[highlighted]:text-primary dark:data-[highlighted]:bg-primary/20 dark:data-[highlighted]:text-white data-[disabled]:opacity-50"><SelectPrimitive.ItemText>{o.label}</SelectPrimitive.ItemText></SelectPrimitive.Item>)}
           </SelectPrimitive.Viewport>
         </SelectPrimitive.Content>
       </SelectPrimitive.Portal>
@@ -92,10 +92,10 @@ export function Combobox({ items, value, onSelect, placeholder = 'Search…', on
   return (
     <PopoverPrimitive.Root open={open} onOpenChange={setOpen}>
       <PopoverPrimitive.Trigger asChild><button type="button" className={cn(control, 'flex items-center justify-between text-left')}><span className={cn(!value && 'text-muted-foreground')}>{value || placeholder}</span><ChevronDown className="size-4 text-muted-foreground" /></button></PopoverPrimitive.Trigger>
-      <PopoverPrimitive.Portal><PopoverPrimitive.Content align="start" className="z-modal w-[min(28rem,calc(100vw-2rem))] rounded-lg border bg-popover p-2 shadow-lg">
+      <PopoverPrimitive.Portal><PopoverPrimitive.Content align="start" className="z-modal w-[min(28rem,calc(100vw-2rem))] rounded-lg border bg-popover p-2 shadow-xl">
         <Input autoFocus leftIcon={<Search className="size-4" />} value={query} placeholder={placeholder} onChange={(e) => { setQuery(e.target.value); onQueryChange?.(e.target.value) }} rightSlot={query ? <button aria-label="Clear" onClick={() => setQuery('')}><X className="size-4" /></button> : null} />
         <div className="mt-2 max-h-72 overflow-auto custom-scrollbar">
-          {filtered.map((item) => <button key={item.id} type="button" className="w-full rounded-md px-3 py-2 text-left text-sm hover:bg-muted focus:bg-muted" onClick={() => { onSelect?.(item); setOpen(false) }}><span className="font-medium">{item.label}</span>{item.description && <span className="block text-xs text-muted-foreground">{item.description}</span>}</button>)}
+          {filtered.map((item) => <button key={item.id} type="button" className="w-full rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 dark:hover:text-white focus:bg-primary/10" onClick={() => { onSelect?.(item); setOpen(false) }}><span className="font-medium">{item.label}</span>{item.description && <span className="block text-xs text-muted-foreground">{item.description}</span>}</button>)}
           {createLabel && <button type="button" className="mt-1 w-full rounded-md border border-dashed px-3 py-2 text-left text-sm text-secondary hover:bg-muted">{createLabel}</button>}
           {!filtered.length && <p className="px-3 py-6 text-center text-sm text-muted-foreground">No results.</p>}
         </div>
@@ -104,14 +104,43 @@ export function Combobox({ items, value, onSelect, placeholder = 'Search…', on
   )
 }
 
-export const Checkbox = forwardRef<HTMLButtonElement, CheckboxPrimitive.CheckboxProps>(({ className, children, ...props }, ref) => <label className="inline-flex items-center gap-2 text-sm"><CheckboxPrimitive.Root ref={ref} className={cn('flex size-4 items-center justify-center rounded border border-input bg-background data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground', className)} {...props}><CheckboxPrimitive.Indicator>✓</CheckboxPrimitive.Indicator></CheckboxPrimitive.Root>{children}</label>)
+export const Checkbox = forwardRef<HTMLButtonElement, CheckboxPrimitive.CheckboxProps>(({ className, children, ...props }, ref) => (
+  <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-medium select-none">
+    <CheckboxPrimitive.Root
+      ref={ref}
+      className={cn(
+        'peer flex size-4.5 shrink-0 items-center justify-center rounded border-2 border-slate-300 dark:border-slate-600 bg-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-white disabled:cursor-not-allowed disabled:opacity-50 hover:border-primary/70',
+        className
+      )}
+      {...props}
+    >
+      <CheckboxPrimitive.Indicator className="flex items-center justify-center text-xs font-bold leading-none text-white">
+        ✓
+      </CheckboxPrimitive.Indicator>
+    </CheckboxPrimitive.Root>
+    {children}
+  </label>
+))
 Checkbox.displayName = 'Checkbox'
 
-export const Switch = forwardRef<HTMLButtonElement, SwitchPrimitive.SwitchProps>(({ className, ...props }, ref) => <SwitchPrimitive.Root ref={ref} className={cn('relative h-6 w-11 rounded-full bg-muted transition-colors data-[state=checked]:bg-primary', className)} {...props}><SwitchPrimitive.Thumb className="block size-5 translate-x-0.5 rounded-full bg-white shadow-sm transition-transform data-[state=checked]:translate-x-[1.375rem]" /></SwitchPrimitive.Root>)
+export const Switch = forwardRef<HTMLButtonElement, SwitchPrimitive.SwitchProps>(({ className, ...props }, ref) => (
+  <SwitchPrimitive.Root
+    ref={ref}
+    className={cn(
+      'relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=unchecked]:bg-slate-300 dark:data-[state=unchecked]:bg-slate-700',
+      className
+    )}
+    {...props}
+  >
+    <SwitchPrimitive.Thumb
+      className="pointer-events-none block size-5 rounded-full bg-white shadow-md ring-0 transition-transform duration-200 ease-in-out data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0"
+    />
+  </SwitchPrimitive.Root>
+))
 Switch.displayName = 'Switch'
 
 export function SegmentedControl({ value, onValueChange, options, label }: { value: string; onValueChange: (v: string) => void; options: SelectOption[]; label: string }) {
-  return <div role="radiogroup" aria-label={label} className="inline-flex rounded-lg border bg-muted p-1">{options.map((o) => <button key={o.value} role="radio" aria-checked={value === o.value} type="button" onClick={() => onValueChange(o.value)} className={cn('rounded-md px-3 py-1.5 text-sm font-medium transition-colors', value === o.value ? 'bg-background shadow-xs' : 'text-muted-foreground hover:text-foreground')}>{o.label}</button>)}</div>
+  return <div role="radiogroup" aria-label={label} className="inline-flex rounded-lg border bg-muted p-1">{options.map((o) => <button key={o.value} role="radio" aria-checked={value === o.value} type="button" onClick={() => onValueChange(o.value)} className={cn('rounded-md px-3 py-1.5 text-sm font-medium transition-colors', value === o.value ? 'bg-background shadow-xs text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground')}>{o.label}</button>)}</div>
 }
 
 export { control as controlClassName }

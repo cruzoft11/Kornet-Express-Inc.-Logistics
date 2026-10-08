@@ -10,7 +10,7 @@ import { useSettingsStore } from '../stores/settingsStore'
 import { useCompanyStore } from '../stores/companyStore'
 import { useLogisticsStore } from '../stores/logisticsStore'
 import { useHotkeys, type Hotkey } from '../hooks/useHotkeys'
-import { Button, Dialog, DialogContent, EmptyState, IconButton, Kbd, Sheet, SheetContent, Skeleton, Toast } from './ui'
+import { Button, Dialog, DialogContent, EmptyState, IconButton, Kbd, KornetLoader, Sheet, SheetContent, Toast } from './ui'
 import PrintDocumentModal from './logistics/PrintDocumentModal'
 import AuditLogModal from './logistics/AuditLogModal'
 import AttachmentModal from './logistics/AttachmentModal'
@@ -48,7 +48,13 @@ function AppRoutesView() {
                 exit={{ opacity: 0, x: -8 }}
                 transition={{ duration: 0.16, ease: 'easeOut' }}
               >
-                <Suspense fallback={<div className="p-6"><Skeleton className="h-80" /></div>}>
+                <Suspense
+                  fallback={
+                    <div className="flex min-h-[50vh] w-full items-center justify-center p-8">
+                      <KornetLoader size="lg" text="Loading module…" />
+                    </div>
+                  }
+                >
                   {route.element}
                 </Suspense>
               </motion.div>
@@ -210,7 +216,7 @@ export default function AppShell() {
             </div>
           </div>
         </header>
-        <main className="min-h-0 flex-1 overflow-auto p-3 sm:p-5 custom-scrollbar">
+        <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-5 custom-scrollbar">
           <AppRoutesView />
         </main>
       </div>

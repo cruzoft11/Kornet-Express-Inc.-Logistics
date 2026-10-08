@@ -1,8 +1,9 @@
-﻿import { useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { FileDown, Printer, Search, ShieldAlert, Wand2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button, Card, CardContent, CardHeader, CardTitle, DataGrid, type DataGridColumn, DateInput, Dialog, DialogContent, EmptyState, exportRowsToExcel, FormField, FormSection, Input, NumberInput, PageHeader, Select, Sheet, SheetContent, Skeleton, StatusPill, Tabs, Textarea, Timeline, Toolbar } from '@/components/ui'
+import { KornetLoader } from '@/components/ui/KornetLoader'
 import { useHotkeys } from '@/hooks/useHotkeys'
 import { formatDate, formatNumber, formatWeightKg } from '@/lib/format'
 import { vehiclesApi, type ContainerOption, type Vehicle, type VehicleInput, type VinDecodeResult } from '@/api/vehicles'
@@ -38,6 +39,7 @@ export default function VehicleInventoryPage() {
   const openNew = () => { setDraft(blankVehicle); setSelected(null); setSheetOpen(true); setTab('identity') }
   const openEdit = (row: Vehicle) => { setDraft(row); setSelected(row); setSheetOpen(true); setTab('identity') }
   useHotkeys([{ key: 'N', description: 'New vehicle', handler: openNew }, { key: '/', description: 'Search', handler: () => searchRef.current?.focus() }, { key: 'Mod+S', description: 'Save vehicle', handler: () => sheetOpen && save.mutate(), when: sheetOpen }, { key: 'Escape', description: 'Close sheet', handler: () => setSheetOpen(false), when: sheetOpen }])
+
   const columns: DataGridColumn<Vehicle>[] = [
     { id: 'wrNo', header: 'WR #', cell: (r) => <button className="font-mono font-semibold text-secondary underline-offset-4 hover:underline" onClick={() => openEdit(r)}>{r.wrNo ?? '—'}</button>, sortable: true },
     { id: 'vin', header: 'VIN', accessor: 'vin', sortable: true, className: 'font-mono' },
@@ -46,17 +48,91 @@ export default function VehicleInventoryPage() {
     { id: 'received', header: 'Received', cell: (r) => formatDate(r.date), sortable: true },
     { id: 'customer', header: 'Customer', cell: (r) => r.shipperName || r.consigneeName || '—' },
     { id: 'container', header: 'Container', cell: (r) => r.containerId ?? '—' },
-    { id: 'actions', header: 'Valid actions', cell: (r) => <div className="flex flex-wrap gap-1">{validActions(r).map((a) => <Button key={a} size="sm" variant="outline" onClick={() => setAction({ vehicle: r, action: a })}>{labelAction(a)}</Button>)}<Button size="sm" variant="ghost" onClick={() => setPrintVehicle(r)}><Printer className="size-3" />Print</Button></div> },
+    {
+      id: 'actions',
+      header: 'Actions',
+      cell: (r) => {
+        const actions = validActions(r)
+        const primary = actions[0]
+        return (
+          <div className="flex items-center gap-1.5">
+            {primary && (
+              <Button size="sm" variant="secondary" className="h-7 px-2 text-xs" onClick={() => setAction({ vehicle: r, action: primary })}>
+                {labelAction(primary)}
+              </Button>
+            )}
+            {actions.length > 1 && (
+              <Select
+                placeholder="More…"
+                options={actions.slice(1).map((a) => ({ value: a, label: labelAction(a) }))}
+                onValueChange={(val) => setAction({ vehicle: r, action: val as VehicleAction })}
+                className="h-7 w-24 text-xs"
+              />
+            )}
+            <Button size="sm" variant="ghost" className="h-7 px-1.5" onClick={() => setPrintVehicle(r)} title="Print receipt">
+              <Printer className="size-3.5" />
+            </Button>
+          </div>
+        )
+      },
+    },
   ]
-  return <div className="space-y-5 p-4 md:p-6"><PageHeader title="Vehicle Inventory" eyebrow="RoRo / car exports" description="VIN decode, WR intake, inspection fields, valid state-machine actions, bulk operations, and status history." primaryAction={<Button onClick={openNew} kbd="N">New vehicle</Button>} actions={<Button variant="outline" onClick={() => exportRowsToExcel(rows.map(exportVehicle), `vehicles-${todayIso()}.xlsx`)}><FileDown className="size-4" />Excel</Button>} />
-    <Toolbar><Input ref={searchRef} leftIcon={<Search className="size-4" />} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search VIN, WR, make, customer…" className="w-80" /><Select value={status || undefined} onValueChange={setStatus} placeholder="All status" options={statuses.map((value) => ({ value, label: value.replace(/_/g, ' ') }))} /><DateInput value={dateFrom} onValueChange={setDateFrom} placeholder="Received from" /><Input value={containerId} onChange={(e) => setContainerId(e.target.value)} placeholder="Container ID" className="w-48" /><Button disabled={!selectedRows.length} onClick={() => bulkReady(selectedRows, runAction.mutate)}>Bulk ready</Button><Button disabled={!selectedRows.length} onClick={() => selectedRows[0] && setAction({ vehicle: selectedRows[0], action: 'link-to-container' })}>Link selected to container</Button></Toolbar>
-    <div className="grid gap-3 md:grid-cols-5">{statuses.slice(0, 8).map((s) => <Card key={s}><CardHeader className="py-3"><CardTitle className="flex items-center justify-between text-sm"><span>{s.replace(/_/g, ' ')}</span><span className="font-mono">{rows.filter((r) => r.status === s).length}</span></CardTitle></CardHeader></Card>)}</div>
-    <DataGrid columns={columns} data={rows} loading={vehicles.isLoading} emptyTitle="No vehicles found" density="compact" onRowSelect={setSelectedRows} />
-    <Sheet open={sheetOpen} onOpenChange={setSheetOpen}><SheetContent title={draft.id ? `Edit ${draft.vin}` : 'New vehicle'} description="Ctrl+S saves; Decode fills NHTSA values." className="w-[min(76rem,100vw)] overflow-y-auto"><VehicleEditor draft={draft} setDraft={setDraft} tab={tab} setTab={setTab} onSave={() => save.mutate()} onDecode={() => draft.vin && decode.mutate(draft.vin)} saving={save.isPending} decoding={decode.isPending} /></SheetContent></Sheet>
-    {action && <ActionDialog vehicle={action.vehicle} action={action.action} containers={containers.data?.data ?? []} onClose={() => setAction(null)} loading={runAction.isPending} onSubmit={(body) => runAction.mutate({ vehicle: action.vehicle, action: action.action, body })} />}
-    {printVehicle && <PrintVehicle vehicle={printVehicle} onClose={() => setPrintVehicle(null)} />}
-    {selected && <Card><CardHeader><CardTitle>Status history</CardTitle></CardHeader><CardContent>{events.isLoading ? <Skeleton className="h-24" /> : (events.data?.data.length ? <Timeline items={(events.data?.data ?? []).map((e) => ({ id: e.id, title: e.code, time: formatDate(e.eventAt), description: e.notes ?? e.subStatus ?? undefined, tone: e.code.includes('HOLD') ? 'danger' : 'info' }))} /> : <EmptyState title="No status events yet" />)}</CardContent></Card>}
-  </div>
+
+  return (
+    <div className="space-y-5 p-4 md:p-6 min-w-0 w-full overflow-hidden">
+      <PageHeader
+        title="Vehicle Inventory"
+        eyebrow="RoRo / car exports"
+        description="VIN decode, WR intake, inspection fields, state-machine transitions, container loading, and history."
+        primaryAction={<Button onClick={openNew} kbd="N">New vehicle</Button>}
+        actions={<Button variant="outline" onClick={() => exportRowsToExcel(rows.map(exportVehicle), `vehicles-${todayIso()}.xlsx`)}><FileDown className="size-4" />Excel</Button>}
+      />
+      <Toolbar>
+        <Input ref={searchRef} leftIcon={<Search className="size-4" />} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search VIN, WR, make, customer…" className="w-80" />
+        <Select value={status || undefined} onValueChange={setStatus} placeholder="All status" options={statuses.map((value) => ({ value, label: value.replace(/_/g, ' ') }))} />
+        <DateInput value={dateFrom} onValueChange={setDateFrom} placeholder="Received from" />
+        <Input value={containerId} onChange={(e) => setContainerId(e.target.value)} placeholder="Container ID" className="w-40" />
+        <Button disabled={!selectedRows.length} onClick={() => bulkReady(selectedRows, runAction.mutate)}>Bulk ready</Button>
+        <Button disabled={!selectedRows.length} onClick={() => selectedRows[0] && setAction({ vehicle: selectedRows[0], action: 'link-to-container' })}>Link to container</Button>
+      </Toolbar>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
+        {statuses.slice(0, 8).map((s) => (
+          <Card key={s} className="p-3 shadow-2xs">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground truncate">{s.replace(/_/g, ' ')}</p>
+            <p className="mt-1 font-mono text-xl font-bold">{rows.filter((r) => r.status === s).length}</p>
+          </Card>
+        ))}
+      </div>
+      {vehicles.isLoading ? (
+        <div className="flex h-72 items-center justify-center rounded-2xl border bg-card">
+          <KornetLoader size="md" label="Loading vehicle inventory…" />
+        </div>
+      ) : (
+        <DataGrid columns={columns} data={rows} loading={false} emptyTitle="No vehicles found" density="compact" onRowSelect={setSelectedRows} />
+      )}
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <SheetContent title={draft.id ? `Edit ${draft.vin}` : 'New vehicle'} description="Ctrl+S saves; Decode fills NHTSA values." className="w-[min(76rem,100vw)] overflow-y-auto">
+          <VehicleEditor draft={draft} setDraft={setDraft} tab={tab} setTab={setTab} onSave={() => save.mutate()} onDecode={() => draft.vin && decode.mutate(draft.vin)} saving={save.isPending} decoding={decode.isPending} />
+        </SheetContent>
+      </Sheet>
+      {action && <ActionDialog vehicle={action.vehicle} action={action.action} containers={containers.data?.data ?? []} onClose={() => setAction(null)} loading={runAction.isPending} onSubmit={(body) => runAction.mutate({ vehicle: action.vehicle, action: action.action, body })} />}
+      {printVehicle && <PrintVehicle vehicle={printVehicle} onClose={() => setPrintVehicle(null)} />}
+      {selected && (
+        <Card className="shadow-sm">
+          <CardHeader><CardTitle className="text-base">Status history — {selected.vin}</CardTitle></CardHeader>
+          <CardContent>
+            {events.isLoading ? (
+              <Skeleton className="h-24" />
+            ) : events.data?.data.length ? (
+              <Timeline items={(events.data?.data ?? []).map((e) => ({ id: e.id, title: e.code, time: formatDate(e.eventAt), description: e.notes ?? e.subStatus ?? undefined, tone: e.code.includes('HOLD') ? 'danger' : 'info' }))} />
+            ) : (
+              <EmptyState title="No status events yet" />
+            )}
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  )
 }
 
 type VehicleAction = 'receive' | 'inspect' | 'hold' | 'release-hold' | 'ready' | 'force-ready' | 'temporal-release' | 'undo-temporal-release' | 'withdraw' | 'link-to-container' | 'title-rejected'

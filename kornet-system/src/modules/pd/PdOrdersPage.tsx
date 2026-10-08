@@ -1,8 +1,9 @@
-﻿import { useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CalendarDays, ClipboardCheck, FileDown, Printer, Search, Truck } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button, Card, CardContent, CardHeader, CardTitle, DataGrid, type DataGridColumn, DateInput, Dialog, DialogContent, exportRowsToExcel, FormField, FormSection, Input, NumberInput, PageHeader, Select, Sheet, SheetContent, Skeleton, StatusPill, Tabs, Textarea, Timeline, Toolbar } from '@/components/ui'
+import { KornetLoader } from '@/components/ui/KornetLoader'
 import { useHotkeys } from '@/hooks/useHotkeys'
 import { formatDate, formatMoney, formatNumber, formatWeightKg } from '@/lib/format'
 import { pdApi, type Driver, type FleetVehicle, type PdOrder, type PdOrderInput } from '@/api/pd'
@@ -65,21 +66,88 @@ export default function PdOrdersPage() {
     { id: 'driver', header: 'Driver', cell: (r) => lookupDriver(r.driverId, drivers.data?.data) },
     { id: 'customer', header: 'Customer', cell: (r) => r.shipperName || r.consigneeName || '—' },
     { id: 'route', header: 'Route', cell: (r) => <span className="text-xs">{r.originAddr || '—'} → {r.destAddr || '—'}</span> },
-    { id: 'actions', header: 'Actions', cell: (r) => <div className="flex gap-1"><Button size="sm" variant="ghost" onClick={() => setPrintOrder(r)}><Printer className="size-3" />Print</Button>{r.status === 'OPEN' && <Button size="sm" variant="outline" onClick={() => setDispatchOrder(r)}>Dispatch</Button>}{['DISPATCHED', 'IN_TRANSIT'].includes(r.status) && <Button size="sm" variant="outline" onClick={() => setPodOrder(r)}>POD</Button>}{['OPEN', 'DISPATCHED'].includes(r.status) && <Button size="sm" variant="ghost" onClick={() => setCancelOrder(r)}>Cancel</Button>}</div> },
+    {
+      id: 'actions',
+      header: 'Actions',
+      cell: (r) => (
+        <div className="flex items-center gap-1">
+          {r.status === 'OPEN' && (
+            <Button size="sm" variant="secondary" className="h-7 px-2 text-xs" onClick={() => setDispatchOrder(r)}>
+              Dispatch
+            </Button>
+          )}
+          {['DISPATCHED', 'IN_TRANSIT'].includes(r.status) && (
+            <Button size="sm" variant="secondary" className="h-7 px-2 text-xs" onClick={() => setPodOrder(r)}>
+              POD
+            </Button>
+          )}
+          {['OPEN', 'DISPATCHED'].includes(r.status) && (
+            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-destructive hover:text-destructive" onClick={() => setCancelOrder(r)}>
+              Cancel
+            </Button>
+          )}
+          <Button size="sm" variant="ghost" className="h-7 px-1.5" onClick={() => setPrintOrder(r)} title="Print P/D ticket">
+            <Printer className="size-3.5" />
+          </Button>
+        </div>
+      ),
+    },
   ]
 
-  return <div className="space-y-5 p-4 md:p-6">
-    <PageHeader title="P/D Orders" eyebrow="Operations" description="Logisuite-style pickup and delivery entry, dispatching, POD completion, Excel export, and printable receipts." primaryAction={<Button onClick={openNew} kbd="N">New order</Button>} actions={<Button variant="outline" onClick={() => exportRowsToExcel(rows.map(exportPd), `pd-orders-${todayIso()}.xlsx`)}><FileDown className="size-4" />Excel</Button>} />
-    <Toolbar><Input ref={searchRef} leftIcon={<Search className="size-4" />} placeholder="Search order, customer, tracking…" value={q} onChange={(e) => setQ(e.target.value)} className="w-72" /><Select value={type || undefined} onValueChange={(v) => setType(v)} placeholder="All types" options={pdTypes} /><Select value={status || undefined} onValueChange={(v) => setStatus(v)} placeholder="All status" options={statuses.map((value) => ({ value, label: value }))} /><Button variant={quick === 'today' ? 'secondary' : 'outline'} onClick={() => setQuick(quick === 'today' ? 'all' : 'today')}><CalendarDays className="size-4" />Today</Button><Button variant={quick === 'tomorrow' ? 'secondary' : 'outline'} onClick={() => setQuick(quick === 'tomorrow' ? 'all' : 'tomorrow')}>Tomorrow</Button></Toolbar>
-    <div className="grid gap-3 md:grid-cols-5">{statuses.map((s) => <Card key={s}><CardHeader className="py-3"><CardTitle className="flex items-center justify-between text-sm"><span>{s.replace('_', ' ')}</span><span className="font-mono">{rows.filter((r) => r.status === s).length}</span></CardTitle></CardHeader></Card>)}</div>
-    <DataGrid columns={columns} data={rows} loading={orders.isLoading} emptyTitle="No P/D orders found" density="compact" />
-    <Sheet open={sheetOpen} onOpenChange={setSheetOpen}><SheetContent title={draft.id ? `Edit ${draft.orderNo}` : 'New P/D order'} description="Ctrl+S saves; Esc closes." className="w-[min(72rem,100vw)] overflow-y-auto"><OrderEditor draft={draft} setDraft={setDraft} tab={tab} setTab={setTab} onSave={() => save.mutate()} saving={save.isPending} /></SheetContent></Sheet>
-    {dispatchOrder && <DispatchDialog order={dispatchOrder} drivers={drivers.data?.data ?? []} vehicles={fleet.data?.data ?? []} onClose={() => setDispatchOrder(null)} onSubmit={(driverId, fleetVehicleId) => dispatch.mutate({ order: dispatchOrder, driverId, fleetVehicleId })} loading={dispatch.isPending} />}
-    {podOrder && <PodDialog order={podOrder} onClose={() => setPodOrder(null)} onSubmit={(v) => complete.mutate({ order: podOrder, ...v })} loading={complete.isPending} />}
-    {cancelOrder && <CancelDialog order={cancelOrder} onClose={() => setCancelOrder(null)} onSubmit={(reason) => cancel.mutate({ order: cancelOrder, reason })} loading={cancel.isPending} />}
-    {printOrder && <PrintDialog order={printOrder} onClose={() => setPrintOrder(null)} />}
-    {selected && <Card><CardHeader><CardTitle>Status history</CardTitle></CardHeader><CardContent>{events.isLoading ? <Skeleton className="h-24" /> : <Timeline items={(events.data?.data ?? []).map((e) => ({ id: e.id, title: e.code, time: formatDate(e.eventAt), description: e.notes ?? e.subStatus ?? undefined, tone: e.code === 'POD' ? 'success' : e.code === 'DSP' ? 'info' : 'neutral' }))} />}</CardContent></Card>}
-  </div>
+  return (
+    <div className="space-y-5 p-4 md:p-6 min-w-0 w-full overflow-hidden">
+      <PageHeader
+        title="P/D Orders"
+        eyebrow="Operations"
+        description="Logisuite-style pickup and delivery entry, dispatching, POD completion, Excel export, and printable receipts."
+        primaryAction={<Button onClick={openNew} kbd="N">New order</Button>}
+        actions={<Button variant="outline" onClick={() => exportRowsToExcel(rows.map(exportPd), `pd-orders-${todayIso()}.xlsx`)}><FileDown className="size-4" />Excel</Button>}
+      />
+      <Toolbar>
+        <Input ref={searchRef} leftIcon={<Search className="size-4" />} placeholder="Search order, customer, tracking…" value={q} onChange={(e) => setQ(e.target.value)} className="w-72" />
+        <Select value={type || undefined} onValueChange={(v) => setType(v)} placeholder="All types" options={pdTypes} />
+        <Select value={status || undefined} onValueChange={(v) => setStatus(v)} placeholder="All status" options={statuses.map((value) => ({ value, label: value }))} />
+        <Button variant={quick === 'today' ? 'secondary' : 'outline'} onClick={() => setQuick(quick === 'today' ? 'all' : 'today')}><CalendarDays className="size-4" />Today</Button>
+        <Button variant={quick === 'tomorrow' ? 'secondary' : 'outline'} onClick={() => setQuick(quick === 'tomorrow' ? 'all' : 'tomorrow')}>Tomorrow</Button>
+      </Toolbar>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+        {statuses.map((s) => (
+          <Card key={s} className="p-3 shadow-2xs">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{s.replace('_', ' ')}</p>
+            <p className="mt-1 font-mono text-2xl font-bold">{rows.filter((r) => r.status === s).length}</p>
+          </Card>
+        ))}
+      </div>
+      {orders.isLoading ? (
+        <div className="flex h-72 items-center justify-center rounded-2xl border bg-card">
+          <KornetLoader size="md" label="Loading P/D orders…" />
+        </div>
+      ) : (
+        <DataGrid columns={columns} data={rows} loading={false} emptyTitle="No P/D orders found" density="compact" />
+      )}
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <SheetContent title={draft.id ? `Edit ${draft.orderNo}` : 'New P/D order'} description="Ctrl+S saves; Esc closes." className="w-[min(72rem,100vw)] overflow-y-auto">
+          <OrderEditor draft={draft} setDraft={setDraft} tab={tab} setTab={setTab} onSave={() => save.mutate()} saving={save.isPending} />
+        </SheetContent>
+      </Sheet>
+      {dispatchOrder && <DispatchDialog order={dispatchOrder} drivers={drivers.data?.data ?? []} vehicles={fleet.data?.data ?? []} onClose={() => setDispatchOrder(null)} onSubmit={(driverId, fleetVehicleId) => dispatch.mutate({ order: dispatchOrder, driverId, fleetVehicleId })} loading={dispatch.isPending} />}
+      {podOrder && <PodDialog order={podOrder} onClose={() => setPodOrder(null)} onSubmit={(v) => complete.mutate({ order: podOrder, ...v })} loading={complete.isPending} />}
+      {cancelOrder && <CancelDialog order={cancelOrder} onClose={() => setCancelOrder(null)} onSubmit={(reason) => cancel.mutate({ order: cancelOrder, reason })} loading={cancel.isPending} />}
+      {printOrder && <PrintDialog order={printOrder} onClose={() => setPrintOrder(null)} />}
+      {selected && (
+        <Card className="shadow-sm">
+          <CardHeader><CardTitle className="text-base">Status history — {selected.orderNo}</CardTitle></CardHeader>
+          <CardContent>
+            {events.isLoading ? (
+              <Skeleton className="h-24" />
+            ) : (
+              <Timeline items={(events.data?.data ?? []).map((e) => ({ id: e.id, title: e.code, time: formatDate(e.eventAt), description: e.notes ?? e.subStatus ?? undefined, tone: e.code === 'POD' ? 'success' : e.code === 'DSP' ? 'info' : 'neutral' }))} />
+            )}
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  )
 }
 
 function OrderEditor({ draft, setDraft, tab, setTab, onSave, saving }: { draft: PdOrderInput; setDraft: (v: PdOrderInput) => void; tab: string; setTab: (v: string) => void; onSave: () => void; saving: boolean }) {

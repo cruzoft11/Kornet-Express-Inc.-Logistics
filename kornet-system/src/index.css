@@ -32,7 +32,7 @@
     --accent: 355 89% 42%;
     --accent-foreground: 0 0% 100%;
     --muted: 214 32% 92%;
-    --muted-foreground: 216 16% 42%;
+    --muted-foreground: 217 19% 36%;
     --destructive: 4 75% 43%;
     --destructive-foreground: 0 0% 100%;
     --success: 153 86% 26%;
@@ -41,8 +41,8 @@
     --warning-foreground: 48 96% 11%;
     --info: 205 92% 36%;
     --info-foreground: 0 0% 100%;
-    --border: 216 26% 86%;
-    --input: 216 26% 86%;
+    --border: 216 26% 84%;
+    --input: 216 26% 84%;
     --ring: 207 95% 33%;
     --chart-1: 207 95% 33%;
     --chart-2: 153 86% 26%;
@@ -85,16 +85,16 @@
     --card-foreground: 214 42% 96%;
     --popover: 217 48% 12%;
     --popover-foreground: 214 42% 96%;
-    --primary: 215 70% 74%;
-    --primary-foreground: 221 83% 10%;
+    --primary: 207 90% 50%;
+    --primary-foreground: 0 0% 100%;
     --navy: 221 83% 16%;
     --navy-foreground: 0 0% 100%;
     --secondary: 204 90% 62%;
     --secondary-foreground: 221 83% 10%;
     --accent: 355 86% 56%;
     --accent-foreground: 0 0% 100%;
-    --muted: 218 38% 17%;
-    --muted-foreground: 215 19% 70%;
+    --muted: 218 36% 16%;
+    --muted-foreground: 215 20% 72%;
     --destructive: 4 83% 62%;
     --destructive-foreground: 0 0% 100%;
     --success: 153 68% 45%;
@@ -103,8 +103,8 @@
     --warning-foreground: 48 96% 11%;
     --info: 204 92% 61%;
     --info-foreground: 221 83% 10%;
-    --border: 217 30% 22%;
-    --input: 217 30% 24%;
+    --border: 217 30% 23%;
+    --input: 217 30% 25%;
     --ring: 204 92% 61%;
     --shadow-xs: 0 1px 2px hsl(0 0% 0% / .28);
     --shadow-sm: 0 1px 2px hsl(0 0% 0% / .34);
@@ -125,11 +125,23 @@
     font-size: 14px;
     font-feature-settings: 'cv02','cv03','cv04','cv11';
     text-rendering: optimizeLegibility;
+    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   html[data-density='compact'] {
     font-size: 13px;
   }
-  body { @apply min-h-dvh bg-background text-foreground font-sans antialiased; margin: 0; }
+  body {
+    @apply min-h-dvh bg-background text-foreground font-sans antialiased;
+    margin: 0;
+    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  *, *::before, *::after {
+    transition-property: background-color, border-color, color, fill, stroke;
+    transition-duration: 0.25s;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
   button, input, textarea, select { font: inherit; }
   ::selection { background: hsl(var(--secondary) / .22); }
   :focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
@@ -167,8 +179,105 @@
   .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
 }
 
-::view-transition-old(root), ::view-transition-new(root) { animation-duration: 180ms; animation-timing-function: cubic-bezier(.22,1,.36,1); }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 380ms; animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: 1ms !important; }
   ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+}
+
+/* ==========================================================================
+   Kornet Express Official Modern Loading Animation (from kne_modern_loader)
+   ========================================================================== */
+:root {
+  --kne-blue: #07558f;
+  --kne-red: #d71920;
+  --kne-taupe: #806b6b;
+  --kne-track: rgba(7, 85, 143, 0.12);
+}
+
+.kne-loader {
+  width: 150px;
+  height: 150px;
+  position: relative;
+}
+
+.kne-ring {
+  position: absolute;
+  inset: 18px;
+  border-radius: 50%;
+  border: 5px solid var(--kne-track);
+  border-top-color: var(--kne-blue);
+  border-right-color: var(--kne-red);
+  border-bottom-color: var(--kne-taupe);
+  animation: kne-spin 1.15s cubic-bezier(.55,.08,.35,.92) infinite;
+}
+
+.kne-inner-ring {
+  position: absolute;
+  inset: 38px;
+  border-radius: 50%;
+  border: 3px solid rgba(128, 107, 107, .12);
+  border-left-color: var(--kne-blue);
+  border-bottom-color: var(--kne-red);
+  animation: kne-reverseSpin .8s linear infinite;
+}
+
+.kne-particle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  top: 71px;
+  left: 71px;
+  transform-origin: 4px 4px;
+}
+
+.kne-particle-1 {
+  background: var(--kne-blue);
+  animation: kne-orbit 1.8s linear infinite;
+}
+
+.kne-particle-2 {
+  background: var(--kne-red);
+  animation: kne-orbit 1.8s linear -.6s infinite;
+}
+
+.kne-particle-3 {
+  background: var(--kne-taupe);
+  animation: kne-orbit 1.8s linear -1.2s infinite;
+}
+
+.kne-center {
+  position: absolute;
+  inset: 58px;
+  border-radius: 50%;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  box-shadow: 0 4px 18px rgba(7, 85, 143, 0.14);
+  animation: kne-pulse 1.15s ease-in-out infinite;
+}
+
+@keyframes kne-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes kne-reverseSpin {
+  to { transform: rotate(-360deg); }
+}
+
+@keyframes kne-orbit {
+  from { transform: rotate(0deg) translateX(31px); }
+  to { transform: rotate(360deg) translateX(31px); }
+}
+
+@keyframes kne-pulse {
+  0%, 100% { transform: scale(.92); opacity: .92; }
+  50% { transform: scale(1); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kne-ring, .kne-inner-ring, .kne-particle, .kne-center {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

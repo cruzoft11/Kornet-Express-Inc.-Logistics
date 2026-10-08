@@ -1,4 +1,4 @@
-﻿import { forwardRef } from 'react'
+import { forwardRef } from 'react'
 import { Slot } from '@radix-ui/react-slot'
 import { Loader2 } from 'lucide-react'
 import { cva, type VariantProps } from 'class-variance-authority'
@@ -6,15 +6,15 @@ import { cn } from '@/lib/cn'
 import { Kbd } from './feedback'
 
 export const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-semibold transition-[background-color,color,box-shadow,transform,border-color] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 active:translate-y-px',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-semibold transition-[background-color,color,box-shadow,transform,border-color] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]',
   {
     variants: {
       variant: {
-        default: 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/92',
+        default: 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90',
         secondary: 'bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/90',
         accent: 'bg-accent text-accent-foreground shadow-sm hover:bg-accent/90',
-        outline: 'border border-border bg-background hover:bg-muted',
-        ghost: 'hover:bg-muted text-foreground',
+        outline: 'border border-border/90 bg-card text-foreground shadow-xs hover:bg-muted hover:border-border',
+        ghost: 'text-foreground hover:bg-muted hover:text-foreground',
         destructive: 'bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90',
         link: 'text-secondary underline-offset-4 hover:underline shadow-none px-0',
       },
