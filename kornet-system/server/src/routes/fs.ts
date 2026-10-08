@@ -1,914 +1,110 @@
-import { Router, type Request, type Response } from 'express';
-import { DatabaseSync } from 'node:sqlite';
-import path from 'node:path';
-import fs from 'node:fs';
-import { fileURLToPath } from 'node:url';
+﻿import { Router, type Request } from 'express';
 import { prisma } from '../db.js';
-import { asyncHandler } from '../lib/http.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Open connection to self-contained accounting SQLite DB
-const candidatePaths = [
-  path.resolve(__dirname, '../../prisma/data/accounting.db'),
-  path.resolve(__dirname, '../../../prisma/data/accounting.db'),
-  path.resolve(process.cwd(), 'server/prisma/data/accounting.db'),
-  path.resolve(process.cwd(), 'prisma/data/accounting.db'),
-  path.resolve(process.cwd(), 'data/accounting.db'),
-];
-const dbPath = candidatePaths.find((p) => fs.existsSync(p)) || candidatePaths[0];
-const db = new DatabaseSync(dbPath);
+import { asyncHandler, badRequest, forbidden, notFound, conflict } from '../lib/http.js';
+import { requireAuth, requireCompany, requireFsAccess, requireRole } from '../middleware/auth.js';
+import { finalPost, getLedgerDb, getAccounts, getPeriod, listBanks, listSuppliers, recomputeCompanyBalances, reverse, trialPost, type LedgerEntry, type LedgerLine } from '../lib/fsLedger.js';
 
 const router = Router();
+router.use(requireAuth, requireCompany, requireRole('accounting', 'manager', 'admin', 'superadmin'), requireFsAccess);
 
-function getCompany(req: Request): string {
-  const code = (req.headers['x-company-code'] as string | undefined)?.trim();
-  if (code && code !== 'undefined' && code !== 'null') return code;
-  return req.companyCode || 'KORNET';
-}
+const JOURNAL_TABLES: Record<string, { table: string; journal: LedgerEntry['journal'] }> = {
+  receipts: { table: 'fs_cashrcpt', journal: 'CRB' }, sales: { table: 'fs_salebook', journal: 'SALEBOOK' }, general: { table: 'fs_journals', journal: 'JV' }, purchase: { table: 'fs_purcbook', journal: 'PURCBOOK' }, adjustments: { table: 'fs_adjstmnt', journal: 'JV' },
+};
+const QUERY_TABLES: Record<string, string> = { accounts:'fs_accounts', cdv:'fs_checkmas', receipt:'fs_cashrcpt', sales:'fs_salebook', general:'fs_journals', purchase:'fs_purcbook', adjustment:'fs_adjstmnt', journals:'fs_journals', vouchers:'fs_checkmas' };
+const db = () => getLedgerDb();
+const toMoney = (n: unknown) => Math.round((Number(n) || 0) * 100) / 100;
+const iso = (d: unknown) => String(d || '').slice(0, 10);
+const dc = (v: unknown): 'D' | 'C' => String(v || 'D').toUpperCase() === 'C' ? 'C' : 'D';
+const company = (req: Request) => req.companyCode || 'KORNET';
+const activeClause = (alias = '') => { const p = alias ? `${alias}.` : ''; return `(${p}is_deleted IS NULL OR ${p}is_deleted = 0)`; };
+function mapAccount(r: any) { return { id:r.Id??r.id, acctCode:r.acct_code, acctDesc:r.acct_desc, acctType:r.acct_type, groupCode:r.group_code, subGroup:r.sub_group, formula:r.formula, openBal:toMoney(r.open_bal), curDebit:toMoney(r.cur_debit), curCredit:toMoney(r.cur_credit), endBal:toMoney(r.end_bal), glReport:r.gl_report, glEffect:r.gl_effect, schedule:r.schedule, initialize:r.initialize, isActive:r.is_active===1||r.is_active===true, companyCode:r.company_code }; }
+function mapJournal(r: any) { return { id:r.Id??r.id, jJvNo:r.j_jv_no, jDate:r.j_date, acctCode:r.acct_code, jCkAmt:toMoney(r.j_ck_amt), jDOrC:dc(r.j_d_or_c), companyCode:r.company_code }; }
+function mapMaster(r: any) { return r ? { id:r.Id??r.id, jJvNo:r.j_jv_no, jCkNo:r.j_ck_no, jDate:r.j_date, jPayTo:r.j_pay_to, jCkAmt:toMoney(r.j_ck_amt), jDesc:r.j_desc, bankNo:Number(r.bank_no||0), supNo:Number(r.sup_no||0), companyCode:r.company_code } : null; }
+function mapLine(r: any) { return r ? { id:r.Id??r.id, jCkNo:r.j_ck_no, acctCode:r.acct_code, jCkAmt:toMoney(r.j_ck_amt), jDOrC:dc(r.j_d_or_c), companyCode:r.company_code } : null; }
+function mapBank(r: any) { return { id:r.Id??r.id, bankNo:Number(r.bank_no||0), bankName:r.bank_name, bankAddr:r.bank_addr, bankAcct:r.bank_acct }; }
+function mapSupplier(r: any) { return { id:r.Id??r.id, supNo:Number(r.sup_no||0), supName:r.sup_name, supAddr:r.sup_addr, supPhone:r.sup_phone, supFax:r.sup_fax, supContak:r.sup_contak }; }
+function mapSignatory(r: any) { return { id:r.Id??r.id, signName:r.sign_name, signTitle:r.sign_title, isActive:r.is_active===1||r.is_active===true }; }
+async function audit(req: Request, action: string, entity: string, entityId: string, detail?: unknown) { try { await prisma.auditLog.create({ data: { companyCode: company(req), userId: req.user?.sub, username: req.user?.username, action, entity, entityId, detail: JSON.stringify(detail ?? {}) } }); } catch {} }
+function requireAdmin(req: Request) { if (!['admin','superadmin'].includes(req.user?.role || '')) throw forbidden('Admin role required'); }
+function getUnpostedRows(table: string, comp: string, ref: string) { return db().prepare(`SELECT * FROM ${table} WHERE company_code=? AND j_jv_no=? AND ${activeClause()} ORDER BY Id`).all(comp, ref) as any[]; }
+function toLedgerLines(rows: any[]): LedgerLine[] { return rows.map((r) => ({ acctCode:r.acct_code, amount:toMoney(r.j_ck_amt), dc:dc(r.j_d_or_c) })); }
+function unpostedCount(table: string, comp: string) { return (db().prepare(`SELECT COUNT(*) c FROM ${table} WHERE company_code=? AND ${activeClause()}`).get(comp) as any)?.c ?? 0; }
+function computedAccounts(comp: string, from?: string, to?: string) { const params: any[] = [comp]; let dateWhere=''; if (from) { dateWhere+=' AND date(j_date)>=date(?)'; params.push(from); } if (to) { dateWhere+=' AND date(j_date)<=date(?)'; params.push(to); } return (db().prepare(`SELECT a.*, COALESCE(p.debit,0) computed_debit, COALESCE(p.credit,0) computed_credit FROM fs_accounts a LEFT JOIN (SELECT acct_code, SUM(CASE WHEN j_d_or_c='D' THEN ROUND(j_ck_amt,2) ELSE 0 END) debit, SUM(CASE WHEN j_d_or_c='C' THEN ROUND(j_ck_amt,2) ELSE 0 END) credit FROM fs_pournals WHERE company_code=? ${dateWhere} GROUP BY acct_code) p ON p.acct_code=a.acct_code WHERE a.company_code=? ORDER BY a.acct_code`).all(...params, comp) as any[]).map((a) => { const open=toMoney(a.open_bal), debit=toMoney(a.computed_debit), credit=toMoney(a.computed_credit); const ending=String(a.formula||'').toUpperCase()==='CD'?toMoney(open+credit-debit):toMoney(open+debit-credit); return { ...mapAccount(a), openingBalance:open, debitMovement:debit, creditMovement:credit, endingBalance:ending }; }); }
+function buildTrialBalance(req: Request) { const rows=computedAccounts(company(req), String(req.query.from||''), String(req.query.to||req.query.asOf||'')); const postable=rows.filter((a)=>['DC','CD'].includes(a.formula)); const totalDebit=toMoney(postable.reduce((s,a)=>s+(a.formula==='DC'?Math.max(a.endingBalance,0):Math.max(-a.endingBalance,0)),0)); const totalCredit=toMoney(postable.reduce((s,a)=>s+(a.formula==='CD'?Math.max(a.endingBalance,0):Math.max(-a.endingBalance,0)),0)); return { rows,totalDebit,totalCredit,inBalance:Math.abs(totalDebit-totalCredit)<0.01 }; }
 
-function mapMaster(r: any) {
-  if (!r) return null;
-  return {
-    id: r.Id ?? r.id ?? 0,
-    jJvNo: r.j_jv_no ?? r.jJvNo ?? '',
-    jCkNo: r.j_ck_no ?? r.jCkNo ?? '',
-    jDate: r.j_date ?? r.jDate ?? '',
-    jPayTo: r.j_pay_to ?? r.jPayTo ?? '',
-    jCkAmt: parseFloat(r.j_ck_amt ?? r.jCkAmt ?? 0),
-    jDesc: r.j_desc ?? r.jDesc ?? '',
-    bankNo: r.bank_no ?? r.bankNo ?? 0,
-    supNo: r.sup_no ?? r.supNo ?? 0,
-  };
-}
+router.get('/system-info', asyncHandler(async (req, res) => { const comp=company(req), period=getPeriod(comp); const counts={ unpostedChecks:unpostedCount('fs_checkmas',comp), unpostedCashReceipts:unpostedCount('fs_cashrcpt',comp), unpostedSalesBook:unpostedCount('fs_salebook',comp), unpostedJournals:unpostedCount('fs_journals',comp), unpostedPurchaseBook:unpostedCount('fs_purcbook',comp), unpostedAdjustments:unpostedCount('fs_adjstmnt',comp) }; res.json({ currentMonth:period?.currentMonth, currentYear:period?.currentYear, begDate:period?.begDate, endDate:period?.endDate, ...counts, totalUnposted:Object.values(counts).reduce((a,b)=>a+b,0), companyCode:comp }); }));
+router.get('/period', asyncHandler(async (req,res)=>res.json({ data:getPeriod(company(req)) })));
+router.get('/accounts', asyncHandler(async (req,res)=>{ const rows=getAccounts(company(req)).map(mapAccount); res.json({ data:rows, count:rows.length }); }));
+router.post('/accounts', asyncHandler(async (req,res)=>{ requireAdmin(req); const b=req.body??{}; const acct=String(b.acctCode||b.acct_code||'').trim().toUpperCase(); if(!acct||!(b.acctDesc||b.acct_desc)) throw badRequest('acctCode and acctDesc are required'); db().prepare(`INSERT INTO fs_accounts (acct_code,acct_desc,acct_type,group_code,sub_group,formula,open_bal,cur_debit,cur_credit,end_bal,gl_report,gl_effect,schedule,initialize,is_active,company_code,created_at,updated_at,created_by_user_id) VALUES (?,?,?,?,?,?,?,0,0,?,?,?,?,?,1,?,datetime('now'),datetime('now'),?)`).run(acct,b.acctDesc||b.acct_desc,b.acctType||'',b.groupCode||'',b.subGroup||'',b.formula||'DC',toMoney(b.openBal),toMoney(b.openBal),b.glReport||'',b.glEffect||'',b.schedule||'',b.initialize||'',company(req),req.user?.sub??null); await audit(req,'CREATE','FsAccount',acct); res.status(201).json({ data:mapAccount(db().prepare('SELECT * FROM fs_accounts WHERE company_code=? AND acct_code=?').get(company(req),acct)) }); }));
+router.patch('/accounts/:acctCode', asyncHandler(async (req,res)=>{ requireAdmin(req); const b=req.body??{}; db().prepare(`UPDATE fs_accounts SET acct_desc=COALESCE(?,acct_desc), acct_type=COALESCE(?,acct_type), group_code=COALESCE(?,group_code), sub_group=COALESCE(?,sub_group), formula=COALESCE(?,formula), gl_report=COALESCE(?,gl_report), gl_effect=COALESCE(?,gl_effect), schedule=COALESCE(?,schedule), is_active=COALESCE(?,is_active), updated_at=datetime('now') WHERE company_code=? AND acct_code=?`).run(b.acctDesc??b.acct_desc??null,b.acctType??null,b.groupCode??null,b.subGroup??null,b.formula??null,b.glReport??null,b.glEffect??null,b.schedule??null,b.isActive===undefined?null:(b.isActive?1:0),company(req),req.params.acctCode.toUpperCase()); await audit(req,'UPDATE','FsAccount',req.params.acctCode,b); res.json({ data:mapAccount(db().prepare('SELECT * FROM fs_accounts WHERE company_code=? AND acct_code=?').get(company(req),req.params.acctCode.toUpperCase())) }); }));
+router.delete('/accounts/:acctCode', asyncHandler(async (req,res)=>{ requireAdmin(req); db().prepare('UPDATE fs_accounts SET is_active=0, updated_at=datetime(\'now\') WHERE company_code=? AND acct_code=?').run(company(req),req.params.acctCode.toUpperCase()); await audit(req,'SOFT_DELETE','FsAccount',req.params.acctCode); res.status(204).end(); }));
+router.get('/banks', asyncHandler(async (req,res)=>{ const rows=listBanks(company(req)).map(mapBank); res.json({ data:rows, count:rows.length }); }));
+router.get('/suppliers', asyncHandler(async (req,res)=>{ const rows=listSuppliers(company(req)).map(mapSupplier); res.json({ data:rows, count:rows.length }); }));
+router.get('/signatories', asyncHandler(async (req,res)=>{ const rows=db().prepare('SELECT * FROM fs_signatories WHERE company_code=? ORDER BY sign_name').all(company(req)) as any[]; res.json({ data:rows.map(mapSignatory), count:rows.length }); }));
+router.post('/signatories', asyncHandler(async (req,res)=>{ requireAdmin(req); const name=String(req.body?.signName||req.body?.sign_name||'').trim(); if(!name) throw badRequest('signName is required'); db().prepare('INSERT INTO fs_signatories (sign_name,sign_title,is_active,company_code,created_by_user_id) VALUES (?,?,?,?,?)').run(name,req.body?.signTitle||req.body?.sign_title||'',req.body?.isActive===false?0:1,company(req),req.user?.sub??null); const row=db().prepare('SELECT * FROM fs_signatories WHERE company_code=? ORDER BY Id DESC LIMIT 1').get(company(req)); await audit(req,'CREATE','FsSignatory',String((row as any).Id)); res.status(201).json({ data:mapSignatory(row) }); }));
+router.put('/signatories/:id', asyncHandler(async (req,res)=>{ requireAdmin(req); db().prepare('UPDATE fs_signatories SET sign_name=COALESCE(?,sign_name), sign_title=COALESCE(?,sign_title), is_active=COALESCE(?,is_active) WHERE company_code=? AND Id=?').run(req.body?.signName??null,req.body?.signTitle??null,req.body?.isActive===undefined?null:(req.body.isActive?1:0),company(req),Number(req.params.id)); const row=db().prepare('SELECT * FROM fs_signatories WHERE company_code=? AND Id=?').get(company(req),Number(req.params.id)); if(!row) throw notFound('Signatory not found'); await audit(req,'UPDATE','FsSignatory',req.params.id); res.json({ data:mapSignatory(row) }); }));
+router.delete('/signatories/:id', asyncHandler(async (req,res)=>{ requireAdmin(req); db().prepare('DELETE FROM fs_signatories WHERE company_code=? AND Id=?').run(company(req),Number(req.params.id)); await audit(req,'DELETE','FsSignatory',req.params.id); res.status(204).end(); }));
 
-function mapLine(r: any) {
-  if (!r) return null;
-  return {
-    id: r.Id ?? r.id ?? 0,
-    jCkNo: r.j_ck_no ?? r.jCkNo ?? '',
-    acctCode: r.acct_code ?? r.acctCode ?? '',
-    jCkAmt: parseFloat(r.j_ck_amt ?? r.jCkAmt ?? 0),
-    jDOrC: (r.j_d_or_c ?? r.jDOrC ?? 'D') as 'D' | 'C',
-  };
-}
+router.get('/vouchers/masters', asyncHandler(async (req,res)=>{ const comp=company(req), type=String(req.query.type||'all').toLowerCase(), period=getPeriod(comp); let where=`company_code=? AND ${activeClause()}`; const params:any[]=[comp]; if(type==='current'&&period){where += " AND j_ck_no NOT LIKE 'ADV%' AND (j_date IS NULL OR date(j_date)<=date(?))"; params.push(period.endDate);} if(type==='advance'&&period){where += " AND (j_ck_no LIKE 'ADV%' OR date(j_date)>date(?))"; params.push(period.endDate);} const rows=db().prepare(`SELECT * FROM fs_checkmas WHERE ${where} ORDER BY j_date DESC, Id DESC`).all(...params) as any[]; res.json({ data:rows.map(mapMaster), count:rows.length }); }));
+router.get('/vouchers/masters/:checkNo', asyncHandler(async (req,res)=>{ const row=db().prepare(`SELECT * FROM fs_checkmas WHERE company_code=? AND (j_ck_no=? OR j_jv_no=?) AND ${activeClause()} LIMIT 1`).get(company(req),req.params.checkNo,req.params.checkNo); if(!row) throw notFound('Voucher not found'); res.json({ data:mapMaster(row) }); }));
+router.get('/vouchers/checkmaster/jv/:jvNo', asyncHandler(async (req,res)=>{ const row=db().prepare(`SELECT * FROM fs_checkmas WHERE company_code=? AND j_jv_no=? AND ${activeClause()} LIMIT 1`).get(company(req),req.params.jvNo); if(!row) throw notFound('Voucher not found'); res.json({ data:mapMaster(row) }); }));
+router.get('/vouchers/checkmaster/no/:checkNo', asyncHandler(async (req,res)=>{ const row=db().prepare(`SELECT * FROM fs_checkmas WHERE company_code=? AND j_ck_no=? AND ${activeClause()} LIMIT 1`).get(company(req),req.params.checkNo); if(!row) throw notFound('Check not found'); res.json({ data:mapMaster(row) }); }));
+router.post('/vouchers/masters', asyncHandler(async (req,res)=>{ const b=req.body??{}, comp=company(req); const ck=String(b.jCkNo||b.j_ck_no||b.jJvNo||`CHK-${Date.now()}`).trim(), jv=String(b.jJvNo||b.j_jv_no||ck).trim(); db().prepare(`INSERT INTO fs_checkmas (j_jv_no,j_ck_no,j_date,j_pay_to,j_ck_amt,j_desc,bank_no,sup_no,company_code,is_deleted,created_at,updated_at,created_by_user_id) VALUES (?,?,?,?,?,?,?,?,?,0,datetime('now'),datetime('now'),?)`).run(jv,ck,iso(b.jDate||b.j_date||new Date().toISOString()),b.jPayTo||b.j_pay_to||'',toMoney(b.jCkAmt||b.j_ck_amt),b.jDesc||b.j_desc||'',Number(b.bankNo||b.bank_no||0),Number(b.supNo||b.sup_no||0),comp,req.user?.sub??null); await audit(req,'CREATE','FsCheckMaster',ck); res.status(201).json({ data:mapMaster(db().prepare('SELECT * FROM fs_checkmas WHERE company_code=? AND j_ck_no=?').get(comp,ck)) }); }));
+router.put('/vouchers/masters/:checkNo', asyncHandler(async (req,res)=>{ const b=req.body??{}; db().prepare(`UPDATE fs_checkmas SET j_jv_no=COALESCE(?,j_jv_no), j_ck_no=COALESCE(?,j_ck_no), j_date=COALESCE(?,j_date), j_pay_to=COALESCE(?,j_pay_to), j_desc=COALESCE(?,j_desc), j_ck_amt=COALESCE(?,j_ck_amt), bank_no=COALESCE(?,bank_no), sup_no=COALESCE(?,sup_no), updated_at=datetime('now') WHERE company_code=? AND j_ck_no=?`).run(b.jJvNo??null,b.jCkNo??null,b.jDate?iso(b.jDate):null,b.jPayTo??null,b.jDesc??null,b.jCkAmt===undefined?null:toMoney(b.jCkAmt),b.bankNo===undefined?null:Number(b.bankNo),b.supNo===undefined?null:Number(b.supNo),company(req),req.params.checkNo); const row=db().prepare('SELECT * FROM fs_checkmas WHERE company_code=? AND j_ck_no=?').get(company(req),b.jCkNo||req.params.checkNo); if(!row) throw notFound('Voucher not found'); await audit(req,'UPDATE','FsCheckMaster',req.params.checkNo); res.json({ data:mapMaster(row) }); }));
+router.delete('/vouchers/masters/:checkNo', asyncHandler(async (req,res)=>{ db().prepare('UPDATE fs_checkmas SET is_deleted=1, deleted_at=datetime(\'now\') WHERE company_code=? AND j_ck_no=?').run(company(req),req.params.checkNo); db().prepare('UPDATE fs_checkvou SET is_deleted=1, deleted_at=datetime(\'now\') WHERE company_code=? AND j_ck_no=?').run(company(req),req.params.checkNo); await audit(req,'SOFT_DELETE','FsCheckMaster',req.params.checkNo); res.json({ success:true }); }));
+router.get('/vouchers/lines', asyncHandler(async (req,res)=>{ const rows=db().prepare(`SELECT * FROM fs_checkvou WHERE company_code=? AND ${activeClause()} ORDER BY Id`).all(company(req)) as any[]; res.json({ data:rows.map(mapLine), count:rows.length }); }));
+router.get('/vouchers/lines/:checkNo', asyncHandler(async (req,res)=>{ const rows=db().prepare(`SELECT * FROM fs_checkvou WHERE company_code=? AND j_ck_no=? AND ${activeClause()} ORDER BY Id`).all(company(req),req.params.checkNo) as any[]; res.json({ data:rows.map(mapLine), count:rows.length }); }));
+router.post('/vouchers/lines', asyncHandler(async (req,res)=>{ const b=req.body??{}, ck=String(b.jCkNo||'').trim(); if(!ck) throw badRequest('jCkNo is required'); db().prepare(`INSERT INTO fs_checkvou (j_ck_no,acct_code,j_ck_amt,j_d_or_c,company_code,is_deleted,created_at,updated_at,created_by_user_id) VALUES (?,?,?,?,?,0,datetime('now'),datetime('now'),?)`).run(ck,String(b.acctCode||'').trim().toUpperCase(),toMoney(b.jCkAmt),dc(b.jDOrC),company(req),req.user?.sub??null); res.status(201).json({ data:mapLine(db().prepare('SELECT * FROM fs_checkvou WHERE company_code=? ORDER BY Id DESC LIMIT 1').get(company(req))) }); }));
+router.put('/vouchers/lines/:id', asyncHandler(async (req,res)=>{ const b=req.body??{}; db().prepare(`UPDATE fs_checkvou SET acct_code=COALESCE(?,acct_code), j_ck_amt=COALESCE(?,j_ck_amt), j_d_or_c=COALESCE(?,j_d_or_c), updated_at=datetime('now') WHERE company_code=? AND Id=?`).run(b.acctCode?String(b.acctCode).trim().toUpperCase():null,b.jCkAmt===undefined?null:toMoney(b.jCkAmt),b.jDOrC?dc(b.jDOrC):null,company(req),Number(req.params.id)); const row=db().prepare('SELECT * FROM fs_checkvou WHERE company_code=? AND Id=?').get(company(req),Number(req.params.id)); if(!row) throw notFound('Voucher line not found'); res.json({ data:mapLine(row) }); }));
+router.delete('/vouchers/lines/:id', asyncHandler(async (req,res)=>{ db().prepare('UPDATE fs_checkvou SET is_deleted=1, deleted_at=datetime(\'now\') WHERE company_code=? AND Id=?').run(company(req),Number(req.params.id)); res.json({ success:true }); }));
+router.get('/vouchers/unbalanced', asyncHandler(async (req,res)=>{ const rows=db().prepare(`SELECT j_ck_no ckNo, SUM(CASE WHEN j_d_or_c='D' THEN j_ck_amt ELSE 0 END) debitTotal, SUM(CASE WHEN j_d_or_c='C' THEN j_ck_amt ELSE 0 END) creditTotal FROM fs_checkvou WHERE company_code=? AND ${activeClause()} GROUP BY j_ck_no HAVING ABS(debitTotal-creditTotal)>0.01`).all(company(req)) as any[]; res.json({ data:rows.map((r)=>({ ckNo:r.ckNo, balance:toMoney(Math.abs(r.debitTotal-r.creditTotal)) })), count:rows.length }); }));
 
-function mapAccount(r: any) {
-  if (!r) return null;
-  return {
-    id: r.Id ?? r.id ?? 0,
-    acctCode: r.acct_code ?? r.acctCode ?? '',
-    acctDesc: r.acct_desc ?? r.acctDesc ?? '',
-    acctType: r.acct_type ?? r.acctType ?? '',
-    groupCode: r.group_code ?? r.groupCode ?? '',
-    subGroup: r.sub_group ?? r.subGroup ?? '',
-    formula: r.formula ?? '',
-    openBal: parseFloat(r.open_bal ?? r.openBal ?? 0),
-    curDebit: parseFloat(r.cur_debit ?? r.curDebit ?? 0),
-    curCredit: parseFloat(r.cur_credit ?? r.curCredit ?? 0),
-    endBal: parseFloat(r.end_bal ?? r.endBal ?? 0),
-    glReport: r.gl_report ?? r.glReport ?? '',
-    glEffect: r.gl_effect ?? r.glEffect ?? '',
-    schedule: r.schedule ?? '',
-    initialize: r.initialize ?? '',
-    isActive: r.is_active === 1 || r.is_active === true,
-  };
-}
+router.get('/journals/:kind', asyncHandler(async (req,res)=>{ const cfg=JOURNAL_TABLES[req.params.kind]; if(!cfg) throw notFound('Journal type not found'); const rows=db().prepare(`SELECT * FROM ${cfg.table} WHERE company_code=? AND ${activeClause()} ORDER BY j_date DESC, Id DESC`).all(company(req)) as any[]; res.json({ data:rows.map(mapJournal), count:rows.length }); }));
+router.post('/journals/:kind', asyncHandler(async (req,res)=>{ const cfg=JOURNAL_TABLES[req.params.kind]; if(!cfg) throw notFound('Journal type not found'); const b=req.body??{}, ref=String(b.jJvNo||b.j_jv_no||`JV-${Date.now()}`).trim(); db().prepare(`INSERT INTO ${cfg.table} (j_jv_no,j_date,acct_code,j_ck_amt,j_d_or_c,company_code,is_deleted,created_at,updated_at,created_by_user_id) VALUES (?,?,?,?,?,?,0,datetime('now'),datetime('now'),?)`).run(ref,iso(b.jDate||new Date().toISOString()),String(b.acctCode||'').trim().toUpperCase(),toMoney(b.jCkAmt),dc(b.jDOrC),company(req),req.user?.sub??null); res.status(201).json({ data:mapJournal(db().prepare(`SELECT * FROM ${cfg.table} WHERE company_code=? ORDER BY Id DESC LIMIT 1`).get(company(req))) }); }));
+router.put('/journals/:kind/:id', asyncHandler(async (req,res)=>{ const cfg=JOURNAL_TABLES[req.params.kind]; if(!cfg) throw notFound('Journal type not found'); const b=req.body??{}; db().prepare(`UPDATE ${cfg.table} SET j_jv_no=COALESCE(?,j_jv_no), j_date=COALESCE(?,j_date), acct_code=COALESCE(?,acct_code), j_ck_amt=COALESCE(?,j_ck_amt), j_d_or_c=COALESCE(?,j_d_or_c), updated_at=datetime('now') WHERE company_code=? AND Id=?`).run(b.jJvNo??null,b.jDate?iso(b.jDate):null,b.acctCode?String(b.acctCode).trim().toUpperCase():null,b.jCkAmt===undefined?null:toMoney(b.jCkAmt),b.jDOrC?dc(b.jDOrC):null,company(req),Number(req.params.id)); const row=db().prepare(`SELECT * FROM ${cfg.table} WHERE company_code=? AND Id=?`).get(company(req),Number(req.params.id)); if(!row) throw notFound('Journal line not found'); res.json({ data:mapJournal(row) }); }));
+router.delete('/journals/:kind/:id', asyncHandler(async (req,res)=>{ const cfg=JOURNAL_TABLES[req.params.kind]; if(!cfg) throw notFound('Journal type not found'); db().prepare(`UPDATE ${cfg.table} SET is_deleted=1, deleted_at=datetime('now') WHERE company_code=? AND Id=?`).run(company(req),Number(req.params.id)); res.json({ success:true }); }));
+router.post('/journals/:kind/trial', asyncHandler(async (req,res)=>{ const cfg=JOURNAL_TABLES[req.params.kind]; if(!cfg) throw notFound('Journal type not found'); const ref=String(req.body?.refNo||req.body?.jJvNo||'').trim(); const rows=getUnpostedRows(cfg.table,company(req),ref); const entry:LedgerEntry={ companyCode:company(req), journal:cfg.journal, refNo:ref, date:iso(req.body?.date||rows[0]?.j_date), description:req.body?.description, lines:toLedgerLines(rows), userId:req.user?.sub }; res.json(trialPost(entry)); }));
+router.post('/journals/:kind/post', asyncHandler(async (req,res)=>{ const cfg=JOURNAL_TABLES[req.params.kind]; if(!cfg) throw notFound('Journal type not found'); const ref=String(req.body?.refNo||req.body?.jJvNo||'').trim(); const rows=getUnpostedRows(cfg.table,company(req),ref); const entry:LedgerEntry={ companyCode:company(req), journal:cfg.journal, refNo:ref, date:iso(req.body?.date||rows[0]?.j_date), description:req.body?.description, lines:toLedgerLines(rows), userId:req.user?.sub }; const posted=finalPost(entry); await audit(req,'FINAL_POST','FsJournal',ref,posted); res.json({ success:true, ...posted }); }));
 
-function mapBank(r: any) {
-  if (!r) return null;
-  return {
-    id: r.Id ?? r.id ?? 0,
-    bankNo: r.bank_no ?? r.bankNo ?? 0,
-    bankName: r.bank_name ?? r.bankName ?? '',
-    bankAddr: r.bank_addr ?? r.bankAddr ?? '',
-    bankAcct: r.bank_acct ?? r.bankAcct ?? '',
-  };
-}
-
-function mapSupplier(r: any) {
-  if (!r) return null;
-  return {
-    id: r.Id ?? r.id ?? 0,
-    supNo: r.sup_no ?? r.supNo ?? 0,
-    supName: r.sup_name ?? r.supName ?? '',
-    supAddr: r.sup_addr ?? r.supAddr ?? '',
-    supPhone: r.sup_phone ?? r.supPhone ?? '',
-    supFax: r.sup_fax ?? r.supFax ?? '',
-    supContak: r.sup_contak ?? r.supContak ?? '',
-  };
-}
-
-// ───────────────────────────────────────────────
-// SYSTEM INFO / ACTIVE FISCAL PERIOD
-// ───────────────────────────────────────────────
-router.get(
-  '/system-info',
-  asyncHandler(async (req: Request, res: Response) => {
-    const comp = getCompany(req);
-    let sys: any = db.prepare('SELECT * FROM fs_sys_id WHERE company_code = ?').get(comp);
-    if (!sys) {
-      sys = db.prepare('SELECT * FROM fs_sys_id ORDER BY Id DESC LIMIT 1').get();
-    }
-
-    const currentMonth = sys?.pres_mo ?? 9;
-    const currentYear = sys?.pres_yr ?? 2026;
-    const begDate = sys?.beg_date ?? '2026-09-01 00:00:00';
-    const endDate = sys?.end_date ?? '2026-09-30 00:00:00';
-
-    const getCount = (tbl: string) => {
-      try {
-        const row: any = db
-          .prepare(`SELECT COUNT(*) as c FROM ${tbl} WHERE (company_code = ? OR company_code IS NULL) AND (is_deleted IS NULL OR is_deleted = 0)`)
-          .get(comp);
-        return row?.c ?? 0;
-      } catch {
-        return 0;
+router.get('/advance-checks', asyncHandler(async (req,res)=>{ const comp=company(req), period=getPeriod(comp); const rows=db().prepare(`SELECT * FROM fs_checkmas WHERE company_code=? AND ${activeClause()} AND (j_ck_no LIKE 'ADV%' OR date(j_date)>date(?)) ORDER BY j_date`).all(comp,period?.endDate||'9999-12-31') as any[]; res.json({ data:rows.map(mapMaster), count:rows.length }); }));
+router.post('/transfer-advance-cdb', asyncHandler(async (req,res)=>{ const comp=company(req), period=getPeriod(comp); const from=String(req.query.fromDate||'1900-01-01'), to=String(req.query.toDate||'9999-12-31'); const rows=db().prepare(`SELECT * FROM fs_checkmas WHERE company_code=? AND ${activeClause()} AND (j_ck_no LIKE 'ADV%' OR (date(j_date)>=date(?) AND date(j_date)<=date(?)))`).all(comp,from,to) as any[]; let count=0; for(const r of rows){ const next=String(r.j_ck_no).startsWith('ADV')?String(r.j_ck_no).replace(/^ADV/,'CDV'):r.j_ck_no; db().prepare('UPDATE fs_checkmas SET j_ck_no=?, j_date=?, updated_at=datetime(\'now\') WHERE company_code=? AND Id=?').run(next,period?.begDate||iso(new Date().toISOString()),comp,r.Id); db().prepare('UPDATE fs_checkvou SET j_ck_no=? WHERE company_code=? AND j_ck_no=?').run(next,comp,r.j_ck_no); count++; } await audit(req,'TRANSFER_ADVANCE_CDB','FsCheckMaster',comp,{count}); res.json({ success:true, transferredCount:count, message:`Successfully transferred ${count} Advance CDVs to current active period (${period?.begDate}).` }); }));
+router.post('/trial-post', asyncHandler(async (req,res)=>{ const entry={...req.body,companyCode:company(req),userId:req.user?.sub} as LedgerEntry; res.json(trialPost(entry)); }));
+router.post('/final-post', asyncHandler(async (req,res)=>{ const entry={...req.body,companyCode:company(req),userId:req.user?.sub} as LedgerEntry; const posted=finalPost(entry); await audit(req,'FINAL_POST','FsLedger',entry.refNo,posted); res.json({ success:true, ...posted }); }));
+router.post('/reverse', asyncHandler(async (req,res)=>{ const posted=reverse(String(req.body?.refNo||''),company(req),iso(req.body?.date||new Date().toISOString()),req.user?.sub); await audit(req,'REVERSE','FsLedger',String(req.body?.refNo||''),posted); res.json({ success:true, ...posted }); }));
+router.post('/posting', asyncHandler(async (req,res)=>{
+  const comp=company(req); let recordsPosted=0; const errors:string[]=[];
+  db().exec(`CREATE TABLE IF NOT EXISTS fs_post_log (Id INTEGER PRIMARY KEY AUTOINCREMENT, ref_no TEXT NOT NULL, company_code TEXT NOT NULL, journal TEXT NOT NULL, jv_no TEXT NOT NULL, posted_at TEXT NOT NULL, posted_by TEXT, UNIQUE(company_code, ref_no))`);
+  const postRows=(journal:LedgerEntry['journal'], ref:string, date:string, rows:any[])=>{
+    if(!rows.length) return;
+    const trial=trialPost({companyCode:comp,journal,refNo:ref,date,lines:toLedgerLines(rows),userId:req.user?.sub});
+    if(!trial.ok){ errors.push(`${journal}/${ref}: ${trial.errors.join('; ')}`); return; }
+    db().exec('BEGIN IMMEDIATE');
+    try{
+      const existing=db().prepare('SELECT 1 FROM fs_post_log WHERE company_code=? AND ref_no=?').get(comp,ref);
+      if(!existing){
+        for(const r of rows){ db().prepare(`INSERT INTO fs_pournals (j_jv_no,j_date,acct_code,j_ck_amt,j_d_or_c,company_code,created_at,created_by_user_id) VALUES (?,?,?,?,?,?,datetime('now'),?)`).run(ref,iso(r.j_date),r.acct_code,toMoney(r.j_ck_amt),dc(r.j_d_or_c),comp,req.user?.sub??null); recordsPosted++; }
+        db().prepare('INSERT INTO fs_post_log (ref_no,company_code,journal,jv_no,posted_at,posted_by) VALUES (?,?,?,?,datetime(\'now\'),?)').run(ref,comp,journal,ref,req.user?.sub??null);
       }
-    };
-
-    const unpostedChecks = getCount('fs_checkmas');
-    const unpostedCashReceipts = getCount('fs_cashrcpt');
-    const unpostedSalesBook = getCount('fs_salebook');
-    const unpostedJournals = getCount('fs_journals');
-    const unpostedPurchaseBook = getCount('fs_purcbook');
-    const unpostedAdjustments = getCount('fs_adjstmnt');
-    const totalUnposted =
-      unpostedChecks +
-      unpostedCashReceipts +
-      unpostedSalesBook +
-      unpostedJournals +
-      unpostedPurchaseBook +
-      unpostedAdjustments;
-
-    const payload = {
-      currentMonth,
-      currentYear,
-      begDate,
-      endDate,
-      unpostedChecks,
-      unpostedCashReceipts,
-      unpostedSalesBook,
-      unpostedJournals,
-      unpostedPurchaseBook,
-      unpostedAdjustments,
-      totalUnposted,
-      companyCode: comp,
-    };
-
-    res.json(payload);
-  }),
-);
-
-// ───────────────────────────────────────────────
-// CHECK VOUCHERS (CDV & ADVANCE)
-// ───────────────────────────────────────────────
-router.get(
-  '/vouchers/masters',
-  asyncHandler(async (req: Request, res: Response) => {
-    const comp = getCompany(req);
-    const type = ((req.query.type as string) || 'all').toLowerCase();
-
-    let sys: any = db.prepare('SELECT * FROM fs_sys_id WHERE company_code = ?').get(comp);
-    if (!sys) sys = db.prepare('SELECT * FROM fs_sys_id ORDER BY Id DESC LIMIT 1').get();
-    const endDate = (sys?.end_date || '2026-09-30').slice(0, 10);
-
-    let rows: any[] = [];
-    if (type === 'current') {
-      rows = db
-        .prepare(
-          `SELECT * FROM fs_checkmas 
-           WHERE (company_code = ? OR company_code = 'KORNET') 
-             AND (is_deleted IS NULL OR is_deleted = 0) 
-             AND j_ck_no NOT LIKE 'ADV%' 
-             AND (j_date IS NULL OR j_date <= ?)
-           ORDER BY j_date DESC, Id DESC`,
-        )
-        .all(comp, endDate) as any[];
-    } else if (type === 'advance') {
-      rows = db
-        .prepare(
-          `SELECT * FROM fs_checkmas 
-           WHERE (company_code = ? OR company_code = 'KORNET') 
-             AND (is_deleted IS NULL OR is_deleted = 0) 
-             AND (j_ck_no LIKE 'ADV%' OR j_date > ?)
-           ORDER BY j_date DESC, Id DESC`,
-        )
-        .all(comp, endDate) as any[];
-    } else {
-      rows = db
-        .prepare(
-          `SELECT * FROM fs_checkmas 
-           WHERE (company_code = ? OR company_code = 'KORNET') 
-             AND (is_deleted IS NULL OR is_deleted = 0) 
-           ORDER BY j_date DESC, Id DESC`,
-        )
-        .all(comp) as any[];
-    }
-
-    res.json({ data: rows.map(mapMaster), count: rows.length });
-  }),
-);
-
-router.get(
-  '/vouchers/masters/:checkNo',
-  asyncHandler(async (req: Request, res: Response) => {
-    const comp = getCompany(req);
-    const checkNo = req.params.checkNo;
-    const row = db
-      .prepare(
-        `SELECT * FROM fs_checkmas 
-         WHERE (company_code = ? OR company_code = 'KORNET') 
-           AND (j_ck_no = ? OR j_jv_no = ?)
-           AND (is_deleted IS NULL OR is_deleted = 0) 
-         LIMIT 1`,
-      )
-      .get(comp, checkNo, checkNo);
-
-    if (!row) {
-      res.status(404).json({ message: `Check ${checkNo} not found` });
-      return;
-    }
-    res.json({ data: mapMaster(row) });
-  }),
-);
-
-router.get(
-  '/vouchers/checkmaster/jv/:jvNo',
-  asyncHandler(async (req: Request, res: Response) => {
-    const comp = getCompany(req);
-    const jvNo = req.params.jvNo;
-    const row = db
-      .prepare(
-        `SELECT * FROM fs_checkmas 
-         WHERE (company_code = ? OR company_code = 'KORNET') 
-           AND j_jv_no = ? 
-           AND (is_deleted IS NULL OR is_deleted = 0) 
-         LIMIT 1`,
-      )
-      .get(comp, jvNo);
-
-    if (!row) {
-      res.status(404).json({ message: `CDV ${jvNo} not found` });
-      return;
-    }
-    res.json({ data: mapMaster(row) });
-  }),
-);
-
-router.get(
-  '/vouchers/checkmaster/no/:checkNo',
-  asyncHandler(async (req: Request, res: Response) => {
-    const comp = getCompany(req);
-    const checkNo = req.params.checkNo;
-    const row = db
-      .prepare(
-        `SELECT * FROM fs_checkmas 
-         WHERE (company_code = ? OR company_code = 'KORNET') 
-           AND j_ck_no = ? 
-           AND (is_deleted IS NULL OR is_deleted = 0) 
-         LIMIT 1`,
-      )
-      .get(comp, checkNo);
-
-    if (!row) {
-      res.status(404).json({ message: `Check ${checkNo} not found` });
-      return;
-    }
-    res.json({ data: mapMaster(row) });
-  }),
-);
-
-router.get(
-  '/vouchers/lines',
-  asyncHandler(async (req: Request, res: Response) => {
-    const comp = getCompany(req);
-    const rows = db
-      .prepare(
-        `SELECT * FROM fs_checkvou 
-         WHERE (company_code = ? OR company_code = 'KORNET') 
-           AND (is_deleted IS NULL OR is_deleted = 0) 
-         ORDER BY Id ASC`,
-      )
-      .all(comp) as any[];
-    res.json({ data: rows.map(mapLine), count: rows.length });
-  }),
-);
-
-router.get(
-  '/vouchers/lines/:checkNo',
-  asyncHandler(async (req: Request, res: Response) => {
-    const comp = getCompany(req);
-    const checkNo = req.params.checkNo;
-    const rows = db
-      .prepare(
-        `SELECT * FROM fs_checkvou 
-         WHERE (company_code = ? OR company_code = 'KORNET') 
-           AND j_ck_no = ? 
-           AND (is_deleted IS NULL OR is_deleted = 0) 
-         ORDER BY Id ASC`,
-      )
-      .all(comp, checkNo) as any[];
-    res.json({ data: rows.map(mapLine), count: rows.length });
-  }),
-);
-
-router.get(
-  '/vouchers/unbalanced',
-  asyncHandler(async (req: Request, res: Response) => {
-    const comp = getCompany(req);
-    const rows = db
-      .prepare(
-        `SELECT v.j_ck_no as ckNo,
-                SUM(CASE WHEN v.j_d_or_c = 'D' THEN v.j_ck_amt ELSE 0 END) as debitTotal,
-                SUM(CASE WHEN v.j_d_or_c = 'C' THEN v.j_ck_amt ELSE 0 END) as creditTotal
-         FROM fs_checkvou v
-         WHERE (v.company_code = ? OR v.company_code = 'KORNET')
-           AND (v.is_deleted IS NULL OR v.is_deleted = 0)
-         GROUP BY v.j_ck_no
-         HAVING ABS(debitTotal - creditTotal) > 0.01`,
-      )
-      .all(comp) as any[];
-
-    const unbalanced = rows.map((r) => ({
-      ckNo: r.ckNo,
-      balance: Math.abs(r.debitTotal - r.creditTotal),
-    }));
-
-    res.json({ data: unbalanced, count: unbalanced.length });
-  }),
-);
-
-router.post(
-  '/vouchers/masters',
-  asyncHandler(async (req: Request, res: Response) => {
-    const comp = getCompany(req);
-    const { jJvNo, jCkNo, jDate, jPayTo, jDesc, jCkAmt, bankNo, supNo } = req.body;
-
-    db.prepare(
-      `INSERT INTO fs_checkmas (j_jv_no, j_ck_no, j_date, j_pay_to, j_ck_amt, j_desc, bank_no, sup_no, company_code, is_deleted, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, datetime('now'), datetime('now'))`,
-    ).run(
-      jJvNo || `CDV-${Date.now()}`,
-      jCkNo || jJvNo || `CHK-${Date.now()}`,
-      jDate ? jDate.slice(0, 10) : new Date().toISOString().slice(0, 10),
-      jPayTo || 'CASH',
-      parseFloat(jCkAmt || 0),
-      jDesc || '',
-      parseInt(bankNo || 1, 10),
-      parseInt(supNo || 0, 10),
-      comp,
-    );
-
-    const inserted: any = db
-      .prepare('SELECT * FROM fs_checkmas WHERE company_code = ? ORDER BY Id DESC LIMIT 1')
-      .get(comp);
-
-    res.status(201).json({ data: mapMaster(inserted) });
-  }),
-);
-
-router.put(
-  '/vouchers/masters/:checkNo',
-  asyncHandler(async (req: Request, res: Response) => {
-    const comp = getCompany(req);
-    const checkNo = req.params.checkNo;
-    const { jJvNo, jCkNo, jDate, jPayTo, jDesc, jCkAmt, bankNo, supNo } = req.body;
-
-    db.prepare(
-      `UPDATE fs_checkmas 
-       SET j_jv_no = COALESCE(?, j_jv_no),
-           j_ck_no = COALESCE(?, j_ck_no),
-           j_date = COALESCE(?, j_date),
-           j_pay_to = COALESCE(?, j_pay_to),
-           j_desc = COALESCE(?, j_desc),
-           j_ck_amt = COALESCE(?, j_ck_amt),
-           bank_no = COALESCE(?, bank_no),
-           sup_no = COALESCE(?, sup_no),
-           updated_at = datetime('now')
-       WHERE (company_code = ? OR company_code = 'KORNET') AND j_ck_no = ?`,
-    ).run(
-      jJvNo,
-      jCkNo,
-      jDate ? jDate.slice(0, 10) : null,
-      jPayTo,
-      jDesc,
-      jCkAmt !== undefined ? parseFloat(jCkAmt) : null,
-      bankNo !== undefined ? parseInt(bankNo, 10) : null,
-      supNo !== undefined ? parseInt(supNo, 10) : null,
-      comp,
-      checkNo,
-    );
-
-    const updated: any = db
-      .prepare('SELECT * FROM fs_checkmas WHERE (company_code = ? OR company_code = \'KORNET\') AND j_ck_no = ?')
-      .get(comp, jCkNo || checkNo);
-
-    res.json({ data: mapMaster(updated) });
-  }),
-);
-
-router.delete(
-  '/vouchers/masters/:checkNo',
-  asyncHandler(async (req: Request, res: Response) => {
-    const comp = getCompany(req);
-    const checkNo = req.params.checkNo;
-
-    db.prepare(
-      `UPDATE fs_checkmas SET is_deleted = 1, deleted_at = datetime('now') WHERE (company_code = ? OR company_code = 'KORNET') AND j_ck_no = ?`,
-    ).run(comp, checkNo);
-
-    db.prepare(
-      `UPDATE fs_checkvou SET is_deleted = 1, deleted_at = datetime('now') WHERE (company_code = ? OR company_code = 'KORNET') AND j_ck_no = ?`,
-    ).run(comp, checkNo);
-
-    res.json({ success: true, message: `Check ${checkNo} deleted` });
-  }),
-);
-
-router.post(
-  '/vouchers/lines',
-  asyncHandler(async (req: Request, res: Response) => {
-    const comp = getCompany(req);
-    const { jCkNo, acctCode, jCkAmt, jDOrC } = req.body;
-
-    const amt = parseFloat(jCkAmt || 0);
-    const dOrC = (jDOrC || 'D').toUpperCase();
-
-    db.prepare(
-      `INSERT INTO fs_checkvou (j_ck_no, acct_code, j_ck_amt, j_d_or_c, company_code, is_deleted, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, 0, datetime('now'), datetime('now'))`,
-    ).run(jCkNo, (acctCode || '').trim().toUpperCase(), amt, dOrC, comp);
-
-    // Sync master amount (total debits)
-    const sumRow: any = db
-      .prepare(
-        `SELECT SUM(j_ck_amt) as total FROM fs_checkvou 
-         WHERE (company_code = ? OR company_code = 'KORNET') AND j_ck_no = ? AND j_d_or_c = 'D' AND (is_deleted IS NULL OR is_deleted = 0)`,
-      )
-      .get(comp, jCkNo);
-
-    if (sumRow?.total) {
-      db.prepare(`UPDATE fs_checkmas SET j_ck_amt = ? WHERE (company_code = ? OR company_code = 'KORNET') AND j_ck_no = ?`).run(
-        sumRow.total,
-        comp,
-        jCkNo,
-      );
-    }
-
-    const inserted: any = db
-      .prepare('SELECT * FROM fs_checkvou WHERE company_code = ? ORDER BY Id DESC LIMIT 1')
-      .get(comp);
-
-    res.status(201).json({ data: mapLine(inserted) });
-  }),
-);
-
-router.put(
-  '/vouchers/lines/:id',
-  asyncHandler(async (req: Request, res: Response) => {
-    const comp = getCompany(req);
-    const lineId = parseInt(req.params.id, 10);
-    const { acctCode, jCkAmt, jDOrC } = req.body;
-
-    const amt = parseFloat(jCkAmt || 0);
-    const dOrC = (jDOrC || 'D').toUpperCase();
-
-    db.prepare(
-      `UPDATE fs_checkvou 
-       SET acct_code = COALESCE(?, acct_code),
-           j_ck_amt = COALESCE(?, j_ck_amt),
-           j_d_or_c = COALESCE(?, j_d_or_c),
-           updated_at = datetime('now')
-       WHERE Id = ?`,
-    ).run(acctCode ? acctCode.trim().toUpperCase() : null, amt, dOrC, lineId);
-
-    const updated: any = db.prepare('SELECT * FROM fs_checkvou WHERE Id = ?').get(lineId);
-
-    if (updated?.j_ck_no) {
-      const sumRow: any = db
-        .prepare(
-          `SELECT SUM(j_ck_amt) as total FROM fs_checkvou 
-           WHERE (company_code = ? OR company_code = 'KORNET') AND j_ck_no = ? AND j_d_or_c = 'D' AND (is_deleted IS NULL OR is_deleted = 0)`,
-        )
-        .get(comp, updated.j_ck_no);
-      if (sumRow?.total !== undefined) {
-        db.prepare(`UPDATE fs_checkmas SET j_ck_amt = ? WHERE (company_code = ? OR company_code = 'KORNET') AND j_ck_no = ?`).run(
-          sumRow.total,
-          comp,
-          updated.j_ck_no,
-        );
-      }
-    }
-
-    res.json({ data: mapLine(updated) });
-  }),
-);
-
-router.delete(
-  '/vouchers/lines/:id',
-  asyncHandler(async (req: Request, res: Response) => {
-    const comp = getCompany(req);
-    const lineId = parseInt(req.params.id, 10);
-    const line: any = db.prepare('SELECT * FROM fs_checkvou WHERE Id = ?').get(lineId);
-
-    db.prepare('DELETE FROM fs_checkvou WHERE Id = ?').run(lineId);
-
-    if (line?.j_ck_no) {
-      const sumRow: any = db
-        .prepare(
-          `SELECT SUM(j_ck_amt) as total FROM fs_checkvou 
-           WHERE (company_code = ? OR company_code = 'KORNET') AND j_ck_no = ? AND j_d_or_c = 'D' AND (is_deleted IS NULL OR is_deleted = 0)`,
-        )
-        .get(comp, line.j_ck_no);
-      db.prepare(`UPDATE fs_checkmas SET j_ck_amt = ? WHERE (company_code = ? OR company_code = 'KORNET') AND j_ck_no = ?`).run(
-        sumRow?.total ?? 0,
-        comp,
-        line.j_ck_no,
-      );
-    }
-
-    res.json({ success: true, message: 'Line deleted' });
-  }),
-);
-
-// ───────────────────────────────────────────────
-// CHART OF ACCOUNTS
-// ───────────────────────────────────────────────
-router.get(
-  '/accounts',
-  asyncHandler(async (req: Request, res: Response) => {
-    const comp = getCompany(req);
-    let rows: any[] = db
-      .prepare(
-        `SELECT * FROM fs_accounts 
-         WHERE company_code = ? 
-         ORDER BY acct_code ASC`,
-      )
-      .all(comp) as any[];
-
-    if (rows.length === 0) {
-      rows = db.prepare('SELECT * FROM fs_accounts WHERE company_code = \'KORNET\' ORDER BY acct_code ASC').all() as any[];
-    }
-    if (rows.length === 0) {
-      rows = db.prepare('SELECT * FROM fs_accounts LIMIT 120').all() as any[];
-    }
-
-    res.json({ data: rows.map(mapAccount), count: rows.length });
-  }),
-);
-
-// ───────────────────────────────────────────────
-// BANKS & SUPPLIERS
-// ───────────────────────────────────────────────
-router.get(
-  '/banks',
-  asyncHandler(async (req: Request, res: Response) => {
-    const comp = getCompany(req);
-    let rows: any[] = db.prepare('SELECT * FROM fs_banks WHERE company_code = ? ORDER BY bank_no ASC').all(comp) as any[];
-    if (rows.length === 0) {
-      rows = db.prepare('SELECT * FROM fs_banks WHERE company_code = \'KORNET\' ORDER BY bank_no ASC').all() as any[];
-    }
-    if (rows.length === 0) {
-      rows = db.prepare('SELECT * FROM fs_banks ORDER BY bank_no ASC').all() as any[];
-    }
-    res.json({ data: rows.map(mapBank), count: rows.length });
-  }),
-);
-
-router.get(
-  '/suppliers',
-  asyncHandler(async (req: Request, res: Response) => {
-    const comp = getCompany(req);
-    let rows: any[] = db.prepare('SELECT * FROM fs_supplier WHERE company_code = ? ORDER BY sup_no ASC').all(comp) as any[];
-    if (rows.length === 0) {
-      rows = db.prepare('SELECT * FROM fs_supplier WHERE company_code = \'KORNET\' ORDER BY sup_no ASC').all() as any[];
-    }
-    if (rows.length === 0) {
-      rows = db.prepare('SELECT * FROM fs_supplier ORDER BY sup_no ASC').all() as any[];
-    }
-    res.json({ data: rows.map(mapSupplier), count: rows.length });
-  }),
-);
-
-router.get(
-  '/signatories',
-  asyncHandler(async (_req: Request, res: Response) => {
-    res.json({
-      data: [
-        { id: 1, name: 'Engr. Roberto M. Kornet', title: 'President & CEO', role: 'Executive Signatory' },
-        { id: 2, name: 'Ma. Elena V. Santos, CPA', title: 'Chief Financial Officer', role: 'Comptroller / Finance' },
-        { id: 3, name: 'Dennis R. Alcantara', title: 'Operations & Fleet Director', role: 'Operations' },
-      ],
-    });
-  }),
-);
-
-// ───────────────────────────────────────────────
-// ADVANCE CHECKS & TRANSFER CDB
-// ───────────────────────────────────────────────
-router.get(
-  '/advance-checks',
-  asyncHandler(async (req: Request, res: Response) => {
-    const comp = getCompany(req);
-    let sys: any = db.prepare('SELECT * FROM fs_sys_id WHERE company_code = ?').get(comp);
-    if (!sys) sys = db.prepare('SELECT * FROM fs_sys_id ORDER BY Id DESC LIMIT 1').get();
-    const endDate = (sys?.end_date || '2026-09-30').slice(0, 10);
-
-    const rows = db
-      .prepare(
-        `SELECT * FROM fs_checkmas 
-         WHERE (company_code = ? OR company_code = 'KORNET') 
-           AND (is_deleted IS NULL OR is_deleted = 0) 
-           AND (j_ck_no LIKE 'ADV%' OR j_date > ?)
-         ORDER BY j_date ASC`,
-      )
-      .all(comp, endDate) as any[];
-
-    res.json({ data: rows.map(mapMaster), count: rows.length });
-  }),
-);
-
-router.post(
-  '/transfer-advance-cdb',
-  asyncHandler(async (req: Request, res: Response) => {
-    const comp = getCompany(req);
-    const { fromDate, toDate } = req.query;
-
-    let sys: any = db.prepare('SELECT * FROM fs_sys_id WHERE company_code = ?').get(comp);
-    if (!sys) sys = db.prepare('SELECT * FROM fs_sys_id ORDER BY Id DESC LIMIT 1').get();
-    const targetDate = sys?.beg_date?.slice(0, 10) || new Date().toISOString().slice(0, 10);
-
-    const from = String(fromDate || '2000-01-01');
-    const to = String(toDate || '2099-12-31');
-
-    const advanceChecks = db
-      .prepare(
-        `SELECT * FROM fs_checkmas 
-         WHERE (company_code = ? OR company_code = 'KORNET') 
-           AND (is_deleted IS NULL OR is_deleted = 0) 
-           AND (j_ck_no LIKE 'ADV%' OR (j_date >= ? AND j_date <= ?))`,
-      )
-      .all(comp, from, to) as any[];
-
-    let transferredCount = 0;
-    for (const c of advanceChecks) {
-      const newCkNo = c.j_ck_no.startsWith('ADV') ? c.j_ck_no.replace(/^ADV/, 'CDV') : c.j_ck_no;
-      db.prepare(
-        `UPDATE fs_checkmas SET j_ck_no = ?, j_date = ?, updated_at = datetime('now') WHERE Id = ?`,
-      ).run(newCkNo, targetDate, c.Id);
-
-      db.prepare(`UPDATE fs_checkvou SET j_ck_no = ? WHERE j_ck_no = ?`).run(newCkNo, c.j_ck_no);
-      transferredCount++;
-    }
-
-    res.json({
-      success: true,
-      transferredCount,
-      message: `Successfully transferred ${transferredCount} Advance CDVs to current active period (${targetDate}).`,
-    });
-  }),
-);
-
-// ───────────────────────────────────────────────
-// POSTING & MONTH-END
-// ───────────────────────────────────────────────
-router.post(
-  '/post',
-  asyncHandler(async (req: Request, res: Response) => {
-    const comp = getCompany(req);
-
-    // Post all check vouchers into fs_pournals
-    const vouchers = db
-      .prepare(
-        `SELECT m.j_jv_no, m.j_date, v.acct_code, v.j_ck_amt, v.j_d_or_c 
-         FROM fs_checkmas m
-         JOIN fs_checkvou v ON m.j_ck_no = v.j_ck_no
-         WHERE (m.company_code = ? OR m.company_code = 'KORNET')
-           AND (m.is_deleted IS NULL OR m.is_deleted = 0)
-           AND (v.is_deleted IS NULL OR v.is_deleted = 0)`,
-      )
-      .all(comp) as any[];
-
-    for (const v of vouchers) {
-      db.prepare(
-        `INSERT INTO fs_pournals (j_jv_no, j_date, acct_code, j_ck_amt, j_d_or_c, company_code, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`,
-      ).run(v.j_jv_no, v.j_date, v.acct_code, v.j_ck_amt, v.j_d_or_c, comp);
-    }
-
-    res.json({
-      success: true,
-      postedCount: vouchers.length,
-      message: `Successfully committed ${vouchers.length} line items to General Ledger (fs_pournals).`,
-    });
-  }),
-);
-
-router.post(
-  '/month-end',
-  asyncHandler(async (req: Request, res: Response) => {
-    const comp = getCompany(req);
-    let sys: any = db.prepare('SELECT * FROM fs_sys_id WHERE company_code = ?').get(comp);
-    if (!sys) sys = db.prepare('SELECT * FROM fs_sys_id ORDER BY Id DESC LIMIT 1').get();
-
-    let nextMonth = (sys?.pres_mo ?? 9) + 1;
-    let nextYear = sys?.pres_yr ?? 2026;
-    if (nextMonth > 12) {
-      nextMonth = 1;
-      nextYear += 1;
-    }
-
-    const pad = (n: number) => String(n).padStart(2, '0');
-    const begDate = `${nextYear}-${pad(nextMonth)}-01 00:00:00`;
-    const lastDay = new Date(nextYear, nextMonth, 0).getDate();
-    const endDate = `${nextYear}-${pad(nextMonth)}-${pad(lastDay)} 00:00:00`;
-
-    db.prepare(
-      `UPDATE fs_sys_id 
-       SET pres_mo = ?, pres_yr = ?, beg_date = ?, end_date = ?, updated_at = datetime('now') 
-       WHERE company_code = ?`,
-    ).run(nextMonth, nextYear, begDate, endDate, comp);
-
-    res.json({
-      success: true,
-      currentMonth: nextMonth,
-      currentYear: nextYear,
-      begDate,
-      endDate,
-      message: `Fiscal period rolled over to ${nextYear}-${pad(nextMonth)}.`,
-    });
-  }),
-);
-
-// ───────────────────────────────────────────────
-// FINANCIAL REPORTS (TRIAL BALANCE, P&L, ETC.)
-// ───────────────────────────────────────────────
-router.get(
-  '/reports/:reportType',
-  asyncHandler(async (req: Request, res: Response) => {
-    const comp = getCompany(req);
-    const { reportType } = req.params;
-
-    let accounts: any[] = db
-      .prepare('SELECT * FROM fs_accounts WHERE company_code = ? ORDER BY acct_code ASC')
-      .all(comp) as any[];
-
-    if (accounts.length === 0) {
-      accounts = db.prepare('SELECT * FROM fs_accounts WHERE company_code = \'KORNET\' ORDER BY acct_code ASC').all() as any[];
-    }
-
-    const totalDebits = accounts.reduce((acc, a) => acc + (parseFloat(a.cur_debit || 0) || 0), 0);
-    const totalCredits = accounts.reduce((acc, a) => acc + (parseFloat(a.cur_credit || 0) || 0), 0);
-
-    const isBalanced = Math.abs(totalDebits - totalCredits) < 0.01;
-
-    let sys: any = db.prepare('SELECT * FROM fs_sys_id WHERE company_code = ?').get(comp);
-    if (!sys) sys = db.prepare('SELECT * FROM fs_sys_id ORDER BY Id DESC LIMIT 1').get();
-    const periodEnding = sys?.end_date?.slice(0, 10) || '2026-09-30';
-
-    const mappedLines = accounts.map((a) => ({
-      accountCode: a.acct_code || '',
-      accountDescription: a.acct_desc || '',
-      openingBalance: parseFloat(a.open_bal || 0),
-      debitMovement: parseFloat(a.cur_debit || 0),
-      creditMovement: parseFloat(a.cur_credit || 0),
-      endingBalance: parseFloat(a.end_bal || 0),
-      transactions: [],
-    }));
-
-    res.json({
-      reportType,
-      companyCode: comp,
-      generatedAt: new Date().toISOString(),
-      periodEnding,
-      data: accounts.map(mapAccount),
-      lines: mappedLines,
-      inBalance: isBalanced,
-      totalDebit: totalDebits,
-      totalCredit: totalCredits,
-      totals: {
-        totalDebits,
-        totalCredits,
-        isBalanced,
-      },
-    });
-  }),
-);
-
-// ───────────────────────────────────────────────
-// DATA BROWSER / QUERY VIEWER
-// ───────────────────────────────────────────────
-router.get(
-  '/query/:queryType',
-  asyncHandler(async (req: Request, res: Response) => {
-    const comp = getCompany(req);
-    const qt = req.params.queryType.toLowerCase();
-
-    let table = 'fs_accounts';
-    if (qt === 'cdv') table = 'fs_checkmas';
-    else if (qt === 'receipt') table = 'fs_cashrcpt';
-    else if (qt === 'sales') table = 'fs_salebook';
-    else if (qt === 'general') table = 'fs_journals';
-    else if (qt === 'purchase') table = 'fs_purcbook';
-    else if (qt === 'adjustment') table = 'fs_adjstmnt';
-
-    try {
-      const rows = db.prepare(`SELECT * FROM ${table} WHERE (company_code = ? OR company_code = 'KORNET') LIMIT 100`).all(comp);
-      res.json({ queryType: qt, count: rows.length, data: rows });
-    } catch {
-      const fallback = db.prepare(`SELECT * FROM ${table} LIMIT 100`).all();
-      res.json({ queryType: qt, count: fallback.length, data: fallback });
-    }
-  }),
-);
-
-// ───────────────────────────────────────────────
-// AUTOMATED BRIDGE PIPELINE (DO X IN LOGISTICS → POP UP IN FS AS A CHECK)
-// ───────────────────────────────────────────────
-router.post(
-  '/bridge/create-check',
-  asyncHandler(async (req: Request, res: Response) => {
-    const comp = getCompany(req);
-    const {
-      checkNo,
-      jvNo,
-      date,
-      payee,
-      amount,
-      description,
-      bankNo = 1,
-      supNo = 0,
-      expenseAccount = '5010', // Default: Ocean Freight Carrier Expense
-      assetAccount = '1010', // Default: BDO Cash/Bank
-      sourceRef,
-    } = req.body;
-
-    const numAmount = parseFloat(amount || 0);
-    const today = date ? date.slice(0, 10) : new Date().toISOString().slice(0, 10);
-    const resolvedCheckNo = checkNo || `CHK-${Math.floor(100000 + Math.random() * 900000)}`;
-    const resolvedJvNo = jvNo || `CDV-${today.replace(/-/g, '')}-${resolvedCheckNo.replace(/[^0-9]/g, '')}`;
-    const desc = description || `Logistics Operational Settlement Ref: ${sourceRef || 'OPS-DISBURSE'}`;
-
-    // 1. Insert into fs_checkmas (FS Check Master)
-    db.prepare(
-      `INSERT INTO fs_checkmas (j_jv_no, j_ck_no, j_date, j_pay_to, j_ck_amt, j_desc, bank_no, sup_no, company_code, is_deleted, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, datetime('now'), datetime('now'))`,
-    ).run(resolvedJvNo, resolvedCheckNo, today, payee || 'CARRIER / VENDOR', numAmount, desc, parseInt(bankNo, 10), parseInt(supNo, 10), comp);
-
-    // 2. Insert Balanced Debit line in fs_checkvou (Expense Account)
-    db.prepare(
-      `INSERT INTO fs_checkvou (j_ck_no, acct_code, j_ck_amt, j_d_or_c, company_code, is_deleted, created_at, updated_at)
-       VALUES (?, ?, ?, 'D', ?, 0, datetime('now'), datetime('now'))`,
-    ).run(resolvedCheckNo, expenseAccount.trim().toUpperCase(), numAmount, comp);
-
-    // 3. Insert Balanced Credit line in fs_checkvou (Bank/Cash Account)
-    db.prepare(
-      `INSERT INTO fs_checkvou (j_ck_no, acct_code, j_ck_amt, j_d_or_c, company_code, is_deleted, created_at, updated_at)
-       VALUES (?, ?, ?, 'C', ?, 0, datetime('now'), datetime('now'))`,
-    ).run(resolvedCheckNo, assetAccount.trim().toUpperCase(), numAmount, comp);
-
-    // 4. Also record in Prisma CheckDisbursement in kornet.db for dual-system sync
-    try {
-      await prisma.checkDisbursement.create({
-        data: {
-          companyCode: comp,
-          checkNo: resolvedCheckNo,
-          status: 'Posted',
-          payee: payee || 'CARRIER / VENDOR',
-          bank: `Bank #${bankNo}`,
-          amount: numAmount,
-          currency: 'PHP',
-          glAccount: expenseAccount,
-          memo: desc,
-          jeNo: resolvedJvNo,
-          postedAt: new Date(),
-          createdBy: req.user?.username || 'SYSTEM_BRIDGE',
-        },
-      });
-    } catch (e) {
-      console.warn('[fs-bridge] Prisma CheckDisbursement sync notice:', e);
-    }
-
-    const createdMaster: any = db
-      .prepare('SELECT * FROM fs_checkmas WHERE company_code = ? AND j_ck_no = ?')
-      .get(comp, resolvedCheckNo);
-
-    const createdLines = db
-      .prepare('SELECT * FROM fs_checkvou WHERE company_code = ? AND j_ck_no = ?')
-      .all(comp, resolvedCheckNo) as any[];
-
-    res.status(201).json({
-      success: true,
-      message: `Automated Check created in FS! CDV Voucher: ${resolvedJvNo}, Check: ${resolvedCheckNo}`,
-      data: {
-        master: mapMaster(createdMaster),
-        lines: createdLines.map(mapLine),
-        balanced: true,
-      },
-    });
-  }),
-);
+      db().exec('COMMIT');
+    }catch(e){ db().exec('ROLLBACK'); errors.push(`${journal}/${ref}: ${e instanceof Error?e.message:String(e)}`); }
+  };
+  for(const [_,cfg] of Object.entries(JOURNAL_TABLES)){
+    const refs=db().prepare(`SELECT DISTINCT j_jv_no ref, MIN(j_date) dt FROM ${cfg.table} WHERE company_code=? AND ${activeClause()} AND j_jv_no NOT IN (SELECT ref_no FROM fs_post_log WHERE company_code=?) GROUP BY j_jv_no`).all(comp,comp) as any[];
+    for(const r of refs) postRows(cfg.journal,r.ref,iso(r.dt),getUnpostedRows(cfg.table,comp,r.ref));
+  }
+  const checks=db().prepare(`SELECT * FROM fs_checkmas WHERE company_code=? AND ${activeClause()} AND j_jv_no NOT IN (SELECT ref_no FROM fs_post_log WHERE company_code=?)`).all(comp,comp) as any[];
+  for(const m of checks){ const rows=db().prepare(`SELECT ?, j_date, acct_code, j_ck_amt, j_d_or_c FROM fs_checkvou WHERE company_code=? AND j_ck_no=? AND ${activeClause()}`).all(m.j_jv_no,comp,m.j_ck_no) as any[]; for(const r of rows){ r.j_jv_no=m.j_jv_no; r.j_date=m.j_date; } postRows('CDB',m.j_jv_no,iso(m.j_date),rows); }
+  recomputeCompanyBalances(comp); await audit(req,'BULK_POST','FsLedger',comp,{recordsPosted,errors});
+  res.status(errors.length?207:200).json({success:errors.length===0,recordsPosted,errors,message:errors.length?'Posting completed with validation errors.':'Posting completed successfully.'});
+}));router.post('/post', asyncHandler(async (req,res)=>{ const comp=company(req); recomputeCompanyBalances(comp); res.json({ success:true, recordsPosted:0, message:'Use /fs/posting for staged posting; balances recomputed.' }); }));
+
+router.get('/reports/:reportType', asyncHandler(async (req,res)=>{ const reportType=req.params.reportType, period=getPeriod(company(req)); const tb=buildTrialBalance(req); const from=String(req.query.from||period?.begDate||''), to=String(req.query.to||req.query.asOf||period?.endDate||''); let lines:any[]=tb.rows; const totals:any={ totalDebits:tb.totalDebit, totalCredits:tb.totalCredit, isBalanced:tb.inBalance }; if(reportType==='income-statement'){ lines=tb.rows.filter((a)=>a.glReport==='IS'); totals.netIncome=toMoney(lines.reduce((s,a)=>s+(a.formula==='CD'?a.endingBalance:-a.endingBalance),0)); } else if(reportType==='balance-sheet'){ lines=tb.rows.filter((a)=>String(a.glReport||'').startsWith('BA')||String(a.glReport||'').startsWith('BL')); const income=toMoney(tb.rows.filter((a)=>a.glReport==='IS').reduce((s,a)=>s+(a.formula==='CD'?a.endingBalance:-a.endingBalance),0)); const assets=toMoney(tb.rows.filter((a)=>String(a.glReport||'').startsWith('BA')).reduce((s,a)=>s+a.endingBalance,0)); const liabEq=toMoney(tb.rows.filter((a)=>String(a.glReport||'').startsWith('BL')).reduce((s,a)=>s+a.endingBalance,0)+income); totals.assets=assets; totals.liabilitiesAndEquity=liabEq; totals.currentEarnings=income; totals.balanceCheck=toMoney(assets-liabEq); } else if(reportType==='general-ledger'){ const acct=String(req.query.acctCode||req.query.account||''); const params:any[]=[company(req)]; let where='company_code=?'; if(acct){where+=' AND acct_code=?'; params.push(acct);} if(from){where+=' AND date(j_date)>=date(?)'; params.push(from);} if(to){where+=' AND date(j_date)<=date(?)'; params.push(to);} const rows=db().prepare(`SELECT * FROM fs_pournals WHERE ${where} ORDER BY acct_code,j_date,Id`).all(...params) as any[]; const running=new Map<string,number>(); lines=rows.map((r)=>{ const bal=toMoney((running.get(r.acct_code)||0)+(r.j_d_or_c==='D'?toMoney(r.j_ck_amt):-toMoney(r.j_ck_amt))); running.set(r.acct_code,bal); return {...mapJournal(r), refNo:r.j_jv_no, runningBalance:bal}; }); } else if(['cdv','receipts','sales','journals','purchase','adjustments'].includes(reportType)){ const table=reportType==='cdv'?'fs_checkmas':(JOURNAL_TABLES[reportType==='journals'?'general':reportType]?.table||'fs_journals'); const rows=db().prepare(`SELECT * FROM ${table} WHERE company_code=? AND ${activeClause()} ORDER BY j_date,Id`).all(company(req)) as any[]; lines=table==='fs_checkmas'?rows.map(mapMaster):rows.map(mapJournal); } res.json({ reportType, companyCode:company(req), generatedAt:new Date().toISOString(), periodEnding:to||period?.endDate, data:lines, lines, inBalance:tb.inBalance, totalDebit:tb.totalDebit, totalCredit:tb.totalCredit, totals }); }));
+router.get('/month-end/checklist', asyncHandler(async (req,res)=>{ const tb=buildTrialBalance(req), comp=company(req); const counts={ checks:unpostedCount('fs_checkmas',comp), receipts:unpostedCount('fs_cashrcpt',comp), sales:unpostedCount('fs_salebook',comp), journals:unpostedCount('fs_journals',comp), purchase:unpostedCount('fs_purcbook',comp), adjustments:unpostedCount('fs_adjstmnt',comp) }; const unposted=Object.values(counts).reduce((a,b)=>a+b,0); res.json({ data:{ tbBalanced:tb.inBalance,totalDebit:tb.totalDebit,totalCredit:tb.totalCredit,unposted,counts,ok:tb.inBalance&&unposted===0 } }); }));
+router.post('/month-end/close', asyncHandler(async (req,res)=>{ const check=buildTrialBalance(req), comp=company(req); const unposted=['fs_checkmas','fs_cashrcpt','fs_salebook','fs_journals','fs_purcbook','fs_adjstmnt'].reduce((s,t)=>s+unpostedCount(t,comp),0); const force=req.body?.force===true; if((!check.inBalance||unposted>0)&&!(force&&['admin','superadmin'].includes(req.user?.role||'')&&req.body?.reason)) throw conflict('Month-end checklist failed; admin force requires reason'); const p=getPeriod(comp); if(!p) throw notFound('Fiscal period not found'); const next=new Date(Date.UTC(p.currentYear,p.currentMonth,1)); const m=next.getUTCMonth()+1, y=next.getUTCFullYear(); const beg=`${y}-${String(m).padStart(2,'0')}-01`; const end=`${y}-${String(m).padStart(2,'0')}-${String(new Date(Date.UTC(y,m,0)).getUTCDate()).padStart(2,'0')}`; db().prepare('UPDATE fs_sys_id SET pres_mo=?, pres_yr=?, beg_date=?, end_date=?, updated_at=datetime(\'now\') WHERE company_code=?').run(m,y,`${beg} 00:00:00`,`${end} 00:00:00`,comp); await audit(req,force?'MONTH_END_FORCE_CLOSE':'MONTH_END_CLOSE','FsPeriod',comp,{reason:req.body?.reason,unposted}); res.json({ success:true,currentMonth:m,currentYear:y,begDate:beg,endDate:end }); }));
+router.post('/month-end', asyncHandler(async (_req,_res)=>{ throw badRequest('Use /month-end/close'); }));
+router.get('/query/:queryType', asyncHandler(async (req,res)=>{ const qt=req.params.queryType.toLowerCase(), table=QUERY_TABLES[qt]; if(!table) throw notFound('Query type not found'); const rows=db().prepare(`SELECT * FROM ${table} WHERE company_code=? LIMIT 100`).all(company(req)) as any[]; res.json({ queryType:qt, count:rows.length, data:rows }); }));
+router.post('/bridge/create-check', asyncHandler(async (req,res)=>{ const b=req.body??{}, amount=toMoney(b.amount); if(amount<=0) throw badRequest('amount is required'); const refNo=String(b.sourceRef||b.checkNo||`BRIDGE-${Date.now()}`); const entry:LedgerEntry={ companyCode:company(req), journal:'CDB', refNo, date:iso(b.date||new Date().toISOString()), payee:b.payee||'CARRIER / VENDOR', description:b.description||`Logistics settlement ${refNo}`, bankNo:Number(b.bankNo||1), supNo:Number(b.supNo||0), checkNo:b.checkNo, userId:req.user?.sub, lines:[{acctCode:String(b.expenseAccount||'4510').trim().toUpperCase(),dc:'D',amount},{acctCode:String(b.assetAccount||'1110').trim().toUpperCase(),dc:'C',amount}] }; const trial=trialPost(entry); if(!trial.ok) throw badRequest('Invalid bridge check', trial.errors); const posted=finalPost(entry); await audit(req,'BRIDGE_CREATE_CHECK','FsCheckMaster',refNo,posted); res.status(201).json({ success:true, message:`Automated check posted to FS journal ${posted.jvNo}`, data:{...posted, balanced:true} }); }));
 
 export default router;
+
+

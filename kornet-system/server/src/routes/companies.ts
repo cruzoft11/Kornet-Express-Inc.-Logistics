@@ -38,13 +38,13 @@ router.get(
 
 router.post(
   '/',
-  requireRole('manager'),
+  requireRole('admin', 'superadmin'),
   asyncHandler(async (req, res) => {
     const body = companyCreate.parse(req.body);
     const exists = await prisma.company.findUnique({ where: { code: body.code } });
     if (exists) throw conflict('Company code already exists');
     const company = await prisma.company.create({
-      data: { ...body, active: body.active ?? true },
+      data: { ...body, active: Boolean(body.active ?? true) },
     });
     res.status(201).json(company);
   }),
@@ -52,7 +52,7 @@ router.post(
 
 router.patch(
   '/:id',
-  requireRole('manager'),
+  requireRole('admin', 'superadmin'),
   asyncHandler(async (req, res) => {
     const body = companyUpdate.parse(req.body);
     const existing = await prisma.company.findUnique({ where: { id: req.params.id } });
@@ -64,7 +64,7 @@ router.patch(
 
 router.delete(
   '/:id',
-  requireRole('manager'),
+  requireRole('admin', 'superadmin'),
   asyncHandler(async (req, res) => {
     const existing = await prisma.company.findUnique({ where: { id: req.params.id } });
     if (!existing) throw notFound('Company not found');

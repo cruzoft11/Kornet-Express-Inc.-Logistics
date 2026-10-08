@@ -17,7 +17,7 @@ const router = Router();
 const loginAttempts = new Map<string, { failures: number; firstFailureAt: number; blockedUntil: number }>();
 const MAX_LOGIN_FAILURES = 5;
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
-const LOGIN_BLOCK_MS = 60 * 1000;
+const LOGIN_BLOCK_MS = 15 * 60 * 1000;
 
 function loginAttemptKey(req: { ip?: string }, username: string): string {
   return `${req.ip || 'unknown'}:${username.trim().toLowerCase()}`;
@@ -165,7 +165,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const current = String(req.body?.currentPassword ?? '');
     const next = String(req.body?.newPassword ?? '');
-    if (next.length < 6) throw unauthorized('New password too short');
+    if (next.length < 10) throw unauthorized('New password must be at least 10 characters');
     const user = await prisma.user.findUnique({ where: { id: req.user!.sub } });
     if (!user) throw notFound('User not found');
     const ok = await verifyPassword(current, user.passwordHash);

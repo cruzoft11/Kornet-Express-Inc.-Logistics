@@ -15,10 +15,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js 20
+      - name: Set up Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Install Root & Frontend Dependencies
         working-directory: kornet-system
@@ -42,6 +42,9 @@ jobs:
           cp -r kornet-system/dist deploy-bundle/dist
           # Copy backend
           cp -r kornet-system/server deploy-bundle/server
+          # Ensure .db files are never packaged into production deployment
+          rm -f deploy-bundle/server/prisma/data/*.db
+          rm -f deploy-bundle/server/*.db
           # Copy package.json & lockfile
           cp kornet-system/package.json deploy-bundle/package.json
           cp kornet-system/package-lock.json deploy-bundle/package-lock.json

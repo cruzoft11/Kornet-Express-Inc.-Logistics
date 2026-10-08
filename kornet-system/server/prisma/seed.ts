@@ -3,205 +3,61 @@ import bcrypt from 'bcryptjs';
 import { env } from '../src/env.js';
 
 const prisma = new PrismaClient();
-
 const KORNET = 'KORNET';
 
-// Real Kornet Express Inc. profile (established 2000, Parañaque City, Philippines).
-const companies: Array<{
-  code: string;
-  name: string;
-  legalName?: string;
-  address?: string;
-  phone?: string;
-  email?: string;
-  branch?: string;
-}> = [
-  {
-    code: KORNET,
-    name: 'Kornet Express Freight & Logistics',
-    legalName: 'Kornet Express, Inc.',
-    address: 'JJM Building, No. 5 Ninoy Aquino Avenue, Brgy. San Dionisio, Parañaque City, Metro Manila, Philippines',
-    phone: '+63 2 8826 0012 to 14',
-    email: 'cs.impex@kornet.com.ph',
-    branch: 'Head Office',
-  },
-  { code: 'cyberfridge', name: 'CYBERFRIDGE GENERAL SERVICES INC' },
-  { code: 'johntrix', name: 'JOHNTRIX TECHNICAL SERVICES INC.' },
-  { code: 'thermalex', name: 'THERMALEX GENERAL SERVICES INC' },
-  { code: 'gmixteam', name: 'GMIXTEAM GENERAL SERVICES INC' },
-  { code: 'dynamiq', name: 'DYNAMIQ CIRQUE GENERAL SERVICES INC' },
-  { code: 'metaleon', name: 'METALEON GENERAL SERVICES INC' },
-  { code: '3jcrt', name: '3JCRT GENERAL SERVICES INC' },
-  { code: 'gian', name: 'GIAN GENERAL SERVICES INC' },
-  { code: 'jimi', name: 'JIMI GENERAL SERVICES INC' },
-  { code: 'lmjay', name: 'LMJAY GENERAL SERVICES INC' },
-  { code: 'jemt', name: 'JEMT GENERAL SERVICES INC' },
-  { code: 'jasc', name: 'JASC GENERAL SERVICES INC' },
-  { code: 'rcmi', name: 'RCMI GENERAL SERVICES INC' },
-  { code: 'kote', name: 'KOTE GENERAL SERVICES INC' },
-  { code: 'magrofil', name: 'Magrofil Industrial Services' },
-];
-
 const ports = [
-  { code: 'MNLN', name: 'Manila North Harbor', country: 'PH', type: 'sea' },
-  { code: 'MNLS', name: 'Manila South Harbor', country: 'PH', type: 'sea' },
-  { code: 'MICT', name: 'Manila International Container Terminal', country: 'PH', type: 'sea' },
-  { code: 'BTG', name: 'Batangas International Port', country: 'PH', type: 'sea' },
-  { code: 'SUB', name: 'Subic Bay Freeport', country: 'PH', type: 'sea' },
-  { code: 'CEB', name: 'Port of Cebu', country: 'PH', type: 'sea' },
-  { code: 'CDO', name: 'Port of Cagayan de Oro', country: 'PH', type: 'sea' },
-  { code: 'DVO', name: 'Sasa Wharf, Davao', country: 'PH', type: 'sea' },
-  { code: 'ILO', name: 'Port of Iloilo', country: 'PH', type: 'sea' },
-  { code: 'GES', name: 'Makar Wharf, General Santos', country: 'PH', type: 'sea' },
-  { code: 'MNL', name: 'Ninoy Aquino Intl Airport (NAIA)', country: 'PH', type: 'air' },
-  { code: 'CRK', name: 'Clark International Airport', country: 'PH', type: 'air' },
-  { code: 'HKG', name: 'Port of Hong Kong', country: 'HK', type: 'sea' },
-  { code: 'SIN', name: 'Port of Singapore', country: 'SG', type: 'sea' },
-  { code: 'KHH', name: 'Port of Kaohsiung', country: 'TW', type: 'sea' },
-  { code: 'SGN', name: 'Port of Ho Chi Minh (Cat Lai)', country: 'VN', type: 'sea' },
-  { code: 'HPH', name: 'Port of Hai Phong', country: 'VN', type: 'sea' },
-  { code: 'NGB', name: 'Port of Ningbo', country: 'CN', type: 'sea' },
-  { code: 'SHA', name: 'Port of Shanghai', country: 'CN', type: 'sea' },
-  { code: 'LAX', name: 'Port of Los Angeles', country: 'US', type: 'sea' },
-];
+  ['PHMNL', 'PHMNL', 'Manila', 'PH', 'SEA', null], ['PHMNS', 'PHMNL', 'Manila South Harbor', 'PH', 'SEA', null], ['PHMNN', 'PHMNL', 'Manila North Harbor', 'PH', 'SEA', null],
+  ['PHCEB', 'PHCEB', 'Cebu', 'PH', 'SEA', null], ['PHDVO', 'PHDVO', 'Davao', 'PH', 'SEA', null], ['PHBTG', 'PHBTG', 'Batangas', 'PH', 'SEA', null], ['PHSFS', 'PHSFS', 'Subic Bay', 'PH', 'SEA', null],
+  ['PHCGY', 'PHCGY', 'Cagayan de Oro', 'PH', 'SEA', null], ['PHILO', 'PHILO', 'Iloilo', 'PH', 'SEA', null], ['PHGES', 'PHGES', 'General Santos', 'PH', 'SEA', null], ['PHZAM', 'PHZAM', 'Zamboanga', 'PH', 'SEA', null], ['PHTAG', 'PHTAG', 'Tagbilaran', 'PH', 'SEA', null],
+  ['CNSHA', 'CNSHA', 'Shanghai', 'CN', 'SEA', null], ['SGSIN', 'SGSIN', 'Singapore', 'SG', 'SEA', null], ['HKHKG', 'HKHKG', 'Hong Kong', 'HK', 'SEA', null], ['JPTYO', 'JPTYO', 'Tokyo', 'JP', 'SEA', null], ['KRPUS', 'KRPUS', 'Busan', 'KR', 'SEA', null],
+  ['USLAX', 'USLAX', 'Los Angeles', 'US', 'SEA', null], ['USLGB', 'USLGB', 'Long Beach', 'US', 'SEA', null], ['AEJEA', 'AEJEA', 'Jebel Ali', 'AE', 'SEA', null], ['NLRTM', 'NLRTM', 'Rotterdam', 'NL', 'SEA', null], ['DEHAM', 'DEHAM', 'Hamburg', 'DE', 'SEA', null],
+  ['MNL', null, 'Ninoy Aquino International Airport', 'PH', 'AIR', 'MNL'], ['CEB', null, 'Mactan-Cebu International Airport', 'PH', 'AIR', 'CEB'], ['DVO', null, 'Francisco Bangoy International Airport', 'PH', 'AIR', 'DVO'], ['CRK', null, 'Clark International Airport', 'PH', 'AIR', 'CRK'], ['ILO', null, 'Iloilo International Airport', 'PH', 'AIR', 'ILO'],
+  ['HKG', null, 'Hong Kong International Airport', 'HK', 'AIR', 'HKG'], ['SIN', null, 'Singapore Changi Airport', 'SG', 'AIR', 'SIN'], ['NRT', null, 'Narita International Airport', 'JP', 'AIR', 'NRT'], ['ICN', null, 'Incheon International Airport', 'KR', 'AIR', 'ICN'], ['LAX', null, 'Los Angeles International Airport', 'US', 'AIR', 'LAX'], ['DXB', null, 'Dubai International Airport', 'AE', 'AIR', 'DXB'],
+] as const;
 
 const carriers = [
-  { name: 'Maersk Line', scac: 'MAEU', mode: 'ocean' },
-  { name: 'MSC', scac: 'MSCU', mode: 'ocean' },
-  { name: 'CMA CGM', scac: 'CMDU', mode: 'ocean' },
-  { name: 'Evergreen Line', scac: 'EGLV', mode: 'ocean' },
-  { name: 'COSCO Shipping', scac: 'COSU', mode: 'ocean' },
-  { name: 'OOCL', scac: 'OOLU', mode: 'ocean' },
-  { name: 'Wan Hai Lines', scac: 'WHLC', mode: 'ocean' },
-  { name: 'PIL (Pacific Intl Lines)', scac: 'PABV', mode: 'ocean' },
-  { name: '2GO Freight', scac: '', mode: 'ocean' },
-  { name: 'Philippine Airlines Cargo', scac: 'PR', mode: 'air' },
-  { name: 'Cebu Pacific Cargo', scac: '5J', mode: 'air' },
-  { name: 'Cathay Cargo', scac: 'CX', mode: 'air' },
-  { name: 'Singapore Airlines Cargo', scac: 'SQ', mode: 'air' },
-  { name: 'Kornet Express Trucking', scac: '', mode: 'land' },
-];
+  ['MAEU', 'Maersk', 'MAEU', null], ['MSCU', 'Mediterranean Shipping Company (MSC)', 'MSCU', null], ['CMDU', 'CMA CGM', 'CMDU', null], ['COSU', 'COSCO Shipping Lines', 'COSU', null], ['EGLV', 'Evergreen Line', 'EGLV', null], ['ONEY', 'Ocean Network Express (ONE)', 'ONEY', null], ['HLCU', 'Hapag-Lloyd', 'HLCU', null], ['WHLC', 'Wan Hai Lines', 'WHLC', null],
+  ['PAL', 'Philippine Airlines', null, '079'], ['CEB', 'Cebu Pacific Air', null, '203'], ['CPA', 'Cathay Pacific', null, '160'], ['SIA', 'Singapore Airlines', null, '618'], ['UAE', 'Emirates', null, '176'], ['KAL', 'Korean Air', null, '180'],
+] as const;
 
-const billingCodes = [
-  { code: 'OFR', description: 'Ocean Freight', glAccount: '4010', defaultRate: 0, taxable: true },
-  { code: 'AFR', description: 'Air Freight', glAccount: '4011', defaultRate: 0, taxable: true },
-  { code: 'THC', description: 'Terminal Handling Charge', glAccount: '4020', defaultRate: 0, taxable: true },
-  { code: 'DOC', description: 'Documentation Fee', glAccount: '4030', defaultRate: 1500, taxable: true },
-  { code: 'BRK', description: 'Customs Brokerage Fee', glAccount: '4040', defaultRate: 0, taxable: true },
-  { code: 'ARR', description: 'Arrastre Charge', glAccount: '4050', defaultRate: 0, taxable: true },
-  { code: 'WHF', description: 'Wharfage', glAccount: '4051', defaultRate: 0, taxable: true },
-  { code: 'TRK', description: 'Trucking / Delivery', glAccount: '4060', defaultRate: 0, taxable: true },
-  { code: 'HND', description: 'Handling Fee', glAccount: '4070', defaultRate: 0, taxable: true },
-  { code: 'STG', description: 'Storage / Warehousing', glAccount: '4080', defaultRate: 0, taxable: true },
-  { code: 'INS', description: 'Cargo Insurance', glAccount: '4090', defaultRate: 0, taxable: false },
-  { code: 'DEM', description: 'Demurrage / Detention', glAccount: '4091', defaultRate: 0, taxable: true },
-];
+const billing = [
+  ['OFRT','Ocean Freight','FREIGHT','OCEAN','PER_WM','ZERO_RATED','4210','4510'], ['AFRT','Air Freight','FREIGHT','AIR','PER_KG','ZERO_RATED','4211','4511'], ['FSC','Fuel Surcharge','FREIGHT','OCEAN,AIR','PER_SHPT','ZERO_RATED','4210','4510'], ['BAF','Bunker Adjustment Factor','FREIGHT','OCEAN','PER_CNTR','ZERO_RATED','4210','4510'], ['CAF','Currency Adjustment Factor','FREIGHT','OCEAN','PCT','ZERO_RATED','4210','4510'],
+  ['THC','Terminal Handling Charge','ORIGIN','OCEAN','PER_CNTR','VATABLE','4215','4515'], ['DOC','Documentation Fee','DOCS','OCEAN,AIR','PER_FILE','VATABLE','4215','4515'], ['BLF','Bill of Lading Fee','DOCS','OCEAN','PER_BL','VATABLE','4215','4515'], ['AWBF','Air Waybill Fee','DOCS','AIR','PER_AWB','VATABLE','4215','4515'], ['SEC','Security Surcharge','ORIGIN','AIR','PER_KG','VATABLE','4215','4515'], ['CFS','Container Freight Station','WAREHOUSE','OCEAN','PER_CBM','VATABLE','4214','4514'],
+  ['ARR','Arrastre','REIMBURSABLE','OCEAN','MANUAL','NON_VAT_REIMBURSABLE','1130','1130'], ['WHF','Wharfage','REIMBURSABLE','OCEAN','MANUAL','NON_VAT_REIMBURSABLE','1130','1130'], ['DUT','Duties and Taxes','REIMBURSABLE','OCEAN,AIR','MANUAL','NON_VAT_REIMBURSABLE','1130','1130'],
+  ['BRK','Brokerage Fee','CUSTOMS','OCEAN,AIR','PER_SHPT','VATABLE','4212','4512'], ['TRK','Trucking','TRUCKING','DOMESTIC,OCEAN,AIR,PD','PER_SHPT','VATABLE','4213','4513'], ['PUP','Pickup','TRUCKING','PD','PER_SHPT','VATABLE','4213','4513'], ['DEL','Delivery','TRUCKING','PD','PER_SHPT','VATABLE','4213','4513'], ['STO','Storage','WAREHOUSE','OCEAN,AIR,VEHICLE','PER_CBM','VATABLE','4214','4514'], ['HDL','Handling','OTHER','OCEAN,AIR,VEHICLE','PER_SHPT','VATABLE','4215','4515'], ['INS','Insurance','INSURANCE','OCEAN,AIR','PCT','VATABLE','4215','4515'], ['DEM','Demurrage','OTHER','OCEAN','PER_CNTR','VATABLE','4215','4515'], ['DET','Detention','OTHER','OCEAN','PER_CNTR','VATABLE','4215','4515'], ['VHD','Vehicle Handling','OTHER','VEHICLE','PER_UNIT','VATABLE','4216','4515'],
+] as const;
 
-const integrations = [
-  { key: 'barcode-scanner', name: 'Barcode / QR Scanner', category: 'hardware' },
-  { key: 'signature-pad', name: 'POD Signature Capture', category: 'hardware' },
-  { key: 'label-printer', name: 'Label / Waybill Printer', category: 'printing' },
-  { key: 'boc-e2m', name: 'Bureau of Customs e2m', category: 'government' },
-  { key: 'carrier-api', name: 'Carrier Tracking API', category: 'carrier' },
-];
+const settings: Record<string, unknown> = {
+  marginThresholdPct: 15,
+  defaultCurrency: 'PHP',
+  vatRate: 12,
+  glDefaults: { arTrade: '1123', apTrade: '2112', cashDefault: '1110', outputVat: '2122', inputVat: '1142', ewtReceivable: '1128', ewtPayable: '2166', advancesToClients: '1130', customerDeposits: '2117', fxGainLoss: '4303', revenueDefault: '4215', costDefault: '4515' },
+  bankAccounts: { '0': '1110', '1': '1110' },
+  withholdOnVendors: true,
+};
 
 async function main() {
-  // Companies
-  for (const c of companies) {
-    await prisma.company.upsert({
-      where: { code: c.code },
-      update: {
-        name: c.name,
-        legalName: c.legalName ?? null,
-        address: c.address ?? null,
-        phone: c.phone ?? null,
-        email: c.email ?? null,
-        branch: c.branch ?? null,
-      },
-      create: {
-        code: c.code,
-        name: c.name,
-        legalName: c.legalName ?? null,
-        address: c.address ?? null,
-        phone: c.phone ?? null,
-        email: c.email ?? null,
-        branch: c.branch ?? null,
-      },
-    });
-  }
-
-  // Admin user (all-company access)
+  await prisma.company.upsert({ where: { code: KORNET }, update: { name: 'Kornet Express Inc.', legalName: 'Kornet Express Inc.', active: true }, create: { code: KORNET, name: 'Kornet Express Inc.', legalName: 'Kornet Express Inc.', active: true } });
   const passwordHash = await bcrypt.hash(env.seed.adminPassword, 10);
-  await prisma.user.upsert({
-    where: { username: env.seed.adminUsername },
-    update: {},
-    create: {
-      username: env.seed.adminUsername,
-      passwordHash,
-      fullName: 'System Administrator',
-      email: 'cs.impex@kornet.com.ph',
-      role: 'superadmin',
-      active: true,
-      canAccessFs: true,
-      companies: JSON.stringify([]),
-    },
-  });
+  await prisma.user.upsert({ where: { username: env.seed.adminUsername }, update: { role: 'superadmin', canAccessFs: true, active: true }, create: { username: env.seed.adminUsername, passwordHash, fullName: 'System Administrator', role: 'superadmin', active: true, canAccessFs: true, companies: JSON.stringify([]) } });
 
-  // Reference directories for KORNET — only if empty (avoid clobbering edits)
-  if ((await prisma.port.count({ where: { companyCode: KORNET } })) === 0) {
-    await prisma.port.createMany({ data: ports.map((p) => ({ ...p, companyCode: KORNET })) });
+  for (const [code, unlocode, name, country, kind, iata] of ports) {
+    await prisma.port.upsert({ where: { companyCode_code: { companyCode: KORNET, code } }, update: { unlocode, name, country, kind, type: kind.toLowerCase(), iata }, create: { companyCode: KORNET, code, unlocode, name, country, kind, type: kind.toLowerCase(), iata } });
   }
-  if ((await prisma.carrier.count({ where: { companyCode: KORNET } })) === 0) {
-    await prisma.carrier.createMany({ data: carriers.map((c) => ({ ...c, companyCode: KORNET })) });
+  for (const [code, name, scac, iataCode] of carriers) {
+    await prisma.party.upsert({ where: { companyCode_code: { companyCode: KORNET, code } }, update: { name, isCarrier: true, isVendor: true, scac, iataCode, active: true }, create: { companyCode: KORNET, code, name, isCarrier: true, isVendor: true, scac, iataCode, active: true } });
+    await prisma.carrier.create({ data: { companyCode: KORNET, name, scac: scac ?? iataCode ?? undefined, mode: scac ? 'ocean' : 'air' } }).catch(() => undefined);
   }
-  if ((await prisma.billingCode.count({ where: { companyCode: KORNET } })) === 0) {
-    await prisma.billingCode.createMany({
-      data: billingCodes.map((b) => ({ ...b, companyCode: KORNET })),
-    });
+  for (const [code, description, category, modes, defaultUnit, vatClass, revenueAccount, costAccount] of billing) {
+    await prisma.billingCode.upsert({ where: { companyCode_code: { companyCode: KORNET, code } }, update: { description, category, modes, defaultUnit, vatClass, revenueAccount, costAccount, glAccount: revenueAccount, taxable: vatClass === 'VATABLE', active: true }, create: { companyCode: KORNET, code, description, category, modes, defaultUnit, vatClass, revenueAccount, costAccount, glAccount: revenueAccount, taxable: vatClass === 'VATABLE', active: true } });
   }
-  if ((await prisma.driver.count({ where: { companyCode: KORNET } })) === 0) {
-    await prisma.driver.createMany({
-      data: [
-        { companyCode: KORNET, name: 'Eduardo Santos', licenseNo: 'N01-12-889021', phone: '+63 917 555 1021', plateHint: 'NCL-8921', status: 'Available' },
-        { companyCode: KORNET, name: 'Danilo Ramos', licenseNo: 'C03-09-441092', phone: '+63 920 888 3491', plateHint: 'CBA-4492', status: 'Available' },
-        { companyCode: KORNET, name: 'Rodrigo Mendoza', licenseNo: 'B02-14-663910', phone: '+63 918 222 7109', plateHint: 'NAA-1102', status: 'Available' },
-        { companyCode: KORNET, name: 'Vicente Dela Cruz', licenseNo: 'G07-16-552199', phone: '+63 929 444 8210', plateHint: 'GAL-9901', status: 'Available' },
-        { companyCode: KORNET, name: 'Arnel Bautista', licenseNo: 'L11-18-771203', phone: '+63 919 777 5543', plateHint: 'LAA-3320', status: 'Available' },
-        { companyCode: KORNET, name: 'Nestor Magpantay', licenseNo: 'K10-15-339011', phone: '+63 928 333 9811', plateHint: 'KAB-6120', status: 'Available' },
-      ],
-    });
+  for (const [key, value] of Object.entries(settings)) {
+    await prisma.companySetting.upsert({ where: { companyCode_key: { companyCode: KORNET, key } }, update: { value: JSON.stringify(value) }, create: { companyCode: KORNET, key, value: JSON.stringify(value) } });
   }
-  if ((await prisma.fleetVehicle.count({ where: { companyCode: KORNET } })) === 0) {
-    await prisma.fleetVehicle.createMany({
-      data: [
-        { companyCode: KORNET, plateNo: 'NCL-8921', type: '10-Wheeler Wing Van', make: 'Isuzu Giga 6UZ1', capacity: '15000 kg / 58 cbm', status: 'Available' },
-        { companyCode: KORNET, plateNo: 'CBA-4492', type: '40ft Container Chassis', make: 'Hino 700 Prime Mover', capacity: '28000 kg / 76 cbm', status: 'Available' },
-        { companyCode: KORNET, plateNo: 'NAA-1102', type: 'Reefer Truck', make: 'Mitsubishi Fuso Fighter', capacity: '8500 kg / 32 cbm', status: 'Available' },
-        { companyCode: KORNET, plateNo: 'GAL-9901', type: '4-Wheeler Closed Van', make: 'Isuzu Elf NPR', capacity: '4200 kg / 18 cbm', status: 'Available' },
-        { companyCode: KORNET, plateNo: 'LAA-3320', type: '10-Wheeler Wing Van', make: 'UD Trucks Quester', capacity: '16000 kg / 60 cbm', status: 'Available' },
-        { companyCode: KORNET, plateNo: 'KAB-6120', type: '40ft Container Chassis', make: 'Isuzu EXR Heavy Tractor', capacity: '30000 kg / 76 cbm', status: 'Available' },
-      ],
-    });
+  for (const it of [{ key: 'barcode-scanner', name: 'Barcode / QR Scanner', category: 'hardware' }, { key: 'signature-pad', name: 'POD Signature Capture', category: 'hardware' }, { key: 'label-printer', name: 'Label / Waybill Printer', category: 'printing' }, { key: 'boc-e2m', name: 'Bureau of Customs e2m', category: 'government' }, { key: 'carrier-api', name: 'Carrier Tracking API', category: 'carrier' }]) {
+    await prisma.integration.upsert({ where: { companyCode_key: { companyCode: KORNET, key: it.key } }, update: {}, create: { companyCode: KORNET, ...it } });
   }
-  for (const it of integrations) {
-    await prisma.integration.upsert({
-      where: { companyCode_key: { companyCode: KORNET, key: it.key } },
-      update: {},
-      create: { companyCode: KORNET, key: it.key, name: it.name, category: it.category },
-    });
-  }
-
-  // eslint-disable-next-line no-console
-  console.log(
-    `Seed complete. Admin: ${env.seed.adminUsername} / ${env.seed.adminPassword}  (change after first login)`,
-  );
+  console.log(`Seed complete. Admin: ${env.seed.adminUsername} / ${env.seed.adminPassword}`);
 }
 
-main()
-  .then(() => prisma.$disconnect())
-  .catch(async (e) => {
-    // eslint-disable-next-line no-console
-    console.error(e);
-    await prisma.$disconnect();
-    process.exit(1);
-  });
+main().then(() => prisma.$disconnect()).catch(async (e) => { console.error(e); await prisma.$disconnect(); process.exit(1); });

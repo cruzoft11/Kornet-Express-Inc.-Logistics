@@ -6,7 +6,13 @@ import { hashPassword } from '../lib/auth.js';
 import { userCreate, userUpdate } from '../schemas.js';
 
 const router = Router();
-router.use(requireAuth, requireRole('manager'));
+router.use(requireAuth, requireRole('admin', 'superadmin'));
+
+function assertCanAssignRole(actorRole: string | undefined, targetRole: string | undefined) {
+  if (targetRole === 'superadmin' && actorRole !== 'superadmin') {
+    throw conflict('Only a superadmin can grant superadmin role');
+  }
+}
 
 function publicUser(u: {
   id: string;
@@ -52,6 +58,7 @@ router.post(
   '/',
   asyncHandler(async (req, res) => {
     const body = userCreate.parse(req.body);
+    assertCanAssignRole(req.user?.role, body.role);
     const exists = await prisma.user.findUnique({ where: { username: body.username } });
     if (exists) throw conflict('Username already taken');
     const user = await prisma.user.create({
@@ -74,6 +81,7 @@ router.patch(
   '/:id',
   asyncHandler(async (req, res) => {
     const body = userUpdate.parse(req.body);
+    assertCanAssignRole(req.user?.role, body.role);
     const existing = await prisma.user.findUnique({ where: { id: req.params.id } });
     if (!existing) throw notFound('User not found');
     const data: Record<string, unknown> = {};
