@@ -1,6 +1,24 @@
 # Kornet Express v2 Overhaul — Handoff for the Next AI Agent
 
-_Last updated: 2026-10-08. Written by the orchestrating agent when its context budget ran out._
+_Last updated: 2026-10-09 after production DB configuration and UI text QA._
+
+## Production state — 2026-10-09
+
+This section supersedes older deployment/status statements below where they conflict:
+
+- Commits `c5fc8ee` (fixed single-company KORNET scope) and `e6ada56` (Azure startup schema sync and database schema error handling) were pushed to `main`. GitHub Actions deployment run `37854955702` completed successfully.
+- Azure production API health returned HTTP 200. An authenticated browser check confirmed `/api/dashboard/summary`, shipments, quotes, parties, and ports all returned HTTP 200 after deployment. The dashboard reports 8 shipment files.
+- Root cause of the former dashboard failure: Prisma returned `P2021`/`P2022` because the live SQLite database did not match the current schema. The App Service had neither `NODE_ENV` nor `DATABASE_URL` configured. Production startup now detects Azure via `WEBSITE_SITE_NAME` and executes its existing backed-up, non-destructive SQLite schema synchronization.
+- After verifying the live file with App Service Kudu, `DATABASE_URL` was set directly in Azure to `file:/home/site/wwwroot/server/prisma/data/kornet.db`. This is the existing 839,680-byte production DB; no DB was copied or replaced. The existing `accounting.db` (6,447,104 bytes) is in the same directory. `/home/data` does not exist on this app. The App Service restarted; health remained HTTP 200 and both DB files remained present.
+- `NODE_ENV` and JWT secret settings are still absent. Because the code treats an unset `NODE_ENV` as development, the server is still using built-in development JWT secret fallbacks. **This is a production security issue.** Do not set `NODE_ENV=production` until strong `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET` values have been securely configured; rotating JWT keys invalidates current sessions and needs a planned re-login.
+- Authenticated smoke-test data was intentionally created in production per the user's request:
+  - Party `QA-20261008231909`, `QA ONLY - Production Smoke Test 20261008231909`.
+  - Draft quote `QT-2026-00001`, linked to that party, with a clearly marked QA-only note.
+  - An unposted, open `DOC` quote charge of PHP 100; server calculation returned PHP 12 VAT. It has a QA-only note and is not invoiced or posted to the ledger.
+  - The quote was **not** converted to a shipment; do not mistake these synthetic records for customer business. The quote sequence has advanced to `QT-2026-00001`.
+- QA still outstanding: no comprehensive module, shipment-to-invoice/AP, accounting bridge, or ledger posting test has been completed. The dashboard's MTD/AR/AP figures were zero and it reported 20 staged bridge items; verify whether these reflect expected production data before posting or clearing anything. No financial transaction was posted during this QA. Continue with a controlled test plan and safe void/cleanup procedures.
+- Source contained mojibake punctuation and labels (`â€”`, `â†’`, `â€¦`, `NestlÃ©`) in UI and seed text. UI/seed strings were corrected locally and both frontend/backend builds passed; this text fix has not yet been committed or deployed.
+- The pre-existing working-tree change to `.github/workflows/azure-deploy.yml` and untracked scripts `check-accts.mjs`, `check-co.mjs`, `check-fs.mjs`, and `list-tables.mjs` remain uncommitted and must be preserved/reviewed separately.
 
 ---
 
@@ -28,10 +46,8 @@ The full original request:
 - The user also asked to economize tokens: use cheaper/lower models for sub-agents **without sacrificing quality**.
 
 ### Hard rules
-- Work only on local git branch **`overhaul/v2`**.
-- **NEVER push.** `.github/workflows/azure-deploy.yml` auto-deploys main/master to the Azure Web App `kornet-logistics-prod`.
-- Nothing is committed yet. All work is uncommitted on `overhaul/v2`.
-- Never write test data to a live or real accounting database without an isolated QA target and explicit cleanup plan. Kornet is a single-company system (`KORNET`); do not add company selection or user company assignments. Existing company-code database columns are compatibility data and must not be deleted or repurposed without a verified backup.
+- The current production fixes are committed and deployed from **`main`** as listed above. Future deployment changes require an explicit user request because pushes to `main` auto-deploy.
+- Production QA data was added only under the user's explicit request and is marked QA-only; do not add financial postings or other irreversible test data without a safe void/cleanup plan. Kornet is a single-company system (`KORNET`); do not add company selection or user company assignments. Existing company-code database columns are compatibility data and must not be deleted or repurposed without a verified backup.
 - Original DB backups:
   - `C:\Users\hans\.copilot\session-state\ff1149ac-6bbf-49f9-948e-787f47aac07f\files\db-backup\`
   - files: `accounting.db`, `kornet.db`

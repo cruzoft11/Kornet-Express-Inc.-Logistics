@@ -1,7 +1,7 @@
 ﻿import { useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import * as TabsPrimitive from '@radix-ui/react-tabs'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, PackageOpen } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { Button } from './button'
 
@@ -238,7 +238,7 @@ export function ModulePlaceholder({ title, description }: { title: string; descr
     <div className="flex h-full min-h-[28rem] items-center justify-center p-6">
       <div className="max-w-md text-center">
         <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl bg-muted text-secondary">
-          âŒ
+          <PackageOpen className="size-6" aria-hidden="true" />
         </div>
         <h2 className="text-xl font-semibold">{title}</h2>
         <p className="mt-2 text-sm text-muted-foreground">{description ?? 'This module is being rebuilt on the Kornet v2 component library.'}</p>

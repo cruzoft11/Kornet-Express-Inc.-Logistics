@@ -1,4 +1,4 @@
-// Kornet Express Logistics v2 â€” Prisma data model
+// Kornet Express Logistics v2 — Prisma data model
 // SQLite via Prisma. JSON-shaped fields are stored as strings for portability.
 
 generator client {

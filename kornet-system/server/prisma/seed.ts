@@ -68,18 +68,18 @@ const billing = [
 ] as const;
 
 const customers = [
-  { code: 'CUST-SMC', name: 'San Miguel Yamamura Packaging Corp.', address: '40 San Miguel Ave, Ortigas Center, Mandaluyong City, Metro Manila', tin: '000-123-456-000', contact: 'Ramon Castillo Â· 0917-888-1122', email: 'rcastillo@smg.sanmiguel.com.ph' },
-  { code: 'CUST-URC', name: 'Universal Robina Corporation', address: 'Eulogio Rodriguez Jr Ave, Bagong Ilog, Pasig, Metro Manila', tin: '000-234-567-000', contact: 'Elena Bautista Â· 0918-999-3344', email: 'elena.bautista@urc.com.ph' },
-  { code: 'CUST-TMP', name: 'Toyota Motor Philippines Corp.', address: 'Toyota Special Economic Zone, Santa Rosa-Tagaytay Rd, Santa Rosa, Laguna', tin: '000-345-678-000', contact: 'Kenji Tanaka Â· 0917-555-8899', email: 'logistics@toyota.com.ph' },
-  { code: 'CUST-NESTLE', name: 'NestlÃ© Philippines Inc.', address: 'Cabuyao Industrial Park, Brgy. Niugan, Cabuyao, Laguna', tin: '000-456-789-000', contact: 'Carlos Mendoza Â· 0920-777-6655', email: 'supplychain@ph.nestle.com' },
-  { code: 'CUST-MONDE', name: 'Monde Nissin Corporation', address: 'Felix Reyes St, Balibago, Santa Rosa, Laguna', tin: '000-567-890-000', contact: 'Grace Lim Â· 0917-333-2211', email: 'grace.lim@mondenissin.com' },
+  { code: 'CUST-SMC', name: 'San Miguel Yamamura Packaging Corp.', address: '40 San Miguel Ave, Ortigas Center, Mandaluyong City, Metro Manila', tin: '000-123-456-000', contact: 'Ramon Castillo · 0917-888-1122', email: 'rcastillo@smg.sanmiguel.com.ph' },
+  { code: 'CUST-URC', name: 'Universal Robina Corporation', address: 'Eulogio Rodriguez Jr Ave, Bagong Ilog, Pasig, Metro Manila', tin: '000-234-567-000', contact: 'Elena Bautista · 0918-999-3344', email: 'elena.bautista@urc.com.ph' },
+  { code: 'CUST-TMP', name: 'Toyota Motor Philippines Corp.', address: 'Toyota Special Economic Zone, Santa Rosa-Tagaytay Rd, Santa Rosa, Laguna', tin: '000-345-678-000', contact: 'Kenji Tanaka · 0917-555-8899', email: 'logistics@toyota.com.ph' },
+  { code: 'CUST-NESTLE', name: 'Nestlé Philippines Inc.', address: 'Cabuyao Industrial Park, Brgy. Niugan, Cabuyao, Laguna', tin: '000-456-789-000', contact: 'Carlos Mendoza · 0920-777-6655', email: 'supplychain@ph.nestle.com' },
+  { code: 'CUST-MONDE', name: 'Monde Nissin Corporation', address: 'Felix Reyes St, Balibago, Santa Rosa, Laguna', tin: '000-567-890-000', contact: 'Grace Lim · 0917-333-2211', email: 'grace.lim@mondenissin.com' },
 ];
 
 const agents = [
-  { code: 'AGT-LAX', name: 'Pacific Forwarding Logistics LLC', address: '19200 S Western Ave, Torrance, CA 90501, USA', contact: 'John Miller Â· +1-310-555-0144' },
-  { code: 'AGT-TYO', name: 'Nippon Cargo & Express KK', address: '2-1-1 Nihonbashi, Chuo-ku, Tokyo 103-0027, Japan', contact: 'Takeshi Sato Â· +81-3-5555-0199' },
-  { code: 'AGT-SIN', name: 'Lion City Freight Logistics Pte Ltd', address: '10 Changi South St 2, Singapore 486596', contact: 'Marcus Tan Â· +65-6555-0188' },
-  { code: 'AGT-HKG', name: 'Kowloon Air Express Ltd', address: 'Tower 2, Metroplaza, Kwai Fong, Hong Kong', contact: 'David Wong Â· +852-2555-0177' },
+  { code: 'AGT-LAX', name: 'Pacific Forwarding Logistics LLC', address: '19200 S Western Ave, Torrance, CA 90501, USA', contact: 'John Miller · +1-310-555-0144' },
+  { code: 'AGT-TYO', name: 'Nippon Cargo & Express KK', address: '2-1-1 Nihonbashi, Chuo-ku, Tokyo 103-0027, Japan', contact: 'Takeshi Sato · +81-3-5555-0199' },
+  { code: 'AGT-SIN', name: 'Lion City Freight Logistics Pte Ltd', address: '10 Changi South St 2, Singapore 486596', contact: 'Marcus Tan · +65-6555-0188' },
+  { code: 'AGT-HKG', name: 'Kowloon Air Express Ltd', address: 'Tower 2, Metroplaza, Kwai Fong, Hong Kong', contact: 'David Wong · +852-2555-0177' },
 ];
 
 const settings: Record<string, unknown> = {
@@ -225,7 +225,7 @@ async function main() {
   await prisma.dispatchRoute.create({
     data: {
       companyCode: KORNET, routeNo: 'DT-2026-0001', stage: 'IN_TRANSIT', origin: 'Monde Nissin Plant, Santa Rosa, Laguna', destination: 'Shopee Hub, Calamba Logistics Center',
-      driverName: 'Juan Dela Cruz', vehiclePlate: 'NBD 1234', cargoRef: 'PO-98442 Â· 480 Cartons Noodles', scheduledAt: new Date(), remarks: 'Priority morning delivery',
+      driverName: 'Juan Dela Cruz', vehiclePlate: 'NBD 1234', cargoRef: 'PO-98442 · 480 Cartons Noodles', scheduledAt: new Date(), remarks: 'Priority morning delivery',
     },
   });
 
@@ -355,7 +355,7 @@ async function main() {
   await prisma.transportDoc.create({
     data: {
       companyCode: KORNET, shipmentId: ae.id, docType: 'HOUSE_AWB', docNo: 'KNE-HAWB-2026-0089', status: 'ISSUED',
-      shipperName: 'NestlÃ© Philippines Inc.', consigneeName: 'Lion City Freight Logistics Pte Ltd', issuePlace: 'Manila', issueDate: new Date(),
+      shipperName: 'Nestlé Philippines Inc.', consigneeName: 'Lion City Freight Logistics Pte Ltd', issuePlace: 'Manila', issueDate: new Date(),
     },
   });
   await prisma.transportDoc.create({
@@ -403,9 +403,9 @@ async function main() {
       bookingNo: 'TT-2026-0042', carrierBookingRef: 'GP-8831',
       shipperPartyId: custMap.get('CUST-MONDE'), consigneePartyId: custMap.get('CUST-SMC'), billToPartyId: custMap.get('CUST-MONDE'),
       placeOfReceipt: 'Monde Nissin Facility, Santa Rosa, Laguna', finalDestination: 'SMC Canlubang Distribution Hub, Calamba',
-      vessel: 'NBD 1234', voyage: 'N01-14-123456', flightNo: 'Juan Dela Cruz Â· 0917-555-0123',
+      vessel: 'NBD 1234', voyage: 'N01-14-123456', flightNo: 'Juan Dela Cruz · 0917-555-0123',
       commodity: 'Lucky Me Consumer Instant Noodles & Baked Goods', freightTerm: 'PREPAID', currency: 'PHP',
-      remarks: '10W Wing Van Â· Warehouse Gate Pass GP-8831 Â· Sealed Truck',
+      remarks: '10W Wing Van · Warehouse Gate Pass GP-8831 · Sealed Truck',
       createdBy: admin.id,
     },
   });
@@ -416,7 +416,7 @@ async function main() {
     data: {
       companyCode: KORNET, shipmentId: dt.id, docType: 'DELIVERY_RECEIPT', docNo: 'DR-2026-0015', status: 'ISSUED',
       shipperName: 'Monde Nissin Corporation', consigneeName: 'San Miguel Yamamura Packaging',
-      handlingInfo: 'Driver: Juan Dela Cruz (Plate: NBD 1234) Â· Trip Ticket: TT-2026-0042', issuePlace: 'Laguna', issueDate: new Date(),
+      handlingInfo: 'Driver: Juan Dela Cruz (Plate: NBD 1234) · Trip Ticket: TT-2026-0042', issuePlace: 'Laguna', issueDate: new Date(),
     },
   });
   await prisma.charge.create({
@@ -449,7 +449,7 @@ async function main() {
     data: {
       companyCode: KORNET, wrNo: 'WR-2026-0004', vin: '5N1AL0MM4EC456789', make: 'Nissan', model: 'Navara PRO-4X 4x4', year: 2023,
       color: 'Stealth Gray', status: 'HOLD', hold: true,
-      shipperName: 'NestlÃ© Philippines Inc.', consigneeName: 'Oceanic Motors Australia', finalDestination: 'Sydney, Australia',
+      shipperName: 'Nestlé Philippines Inc.', consigneeName: 'Oceanic Motors Australia', finalDestination: 'Sydney, Australia',
     },
   });
 
@@ -474,7 +474,7 @@ async function main() {
   await prisma.pdOrder.create({
     data: {
       companyCode: KORNET, orderNo: 'PD-2026-0003', type: 'PICKUP', status: 'COMPLETED',
-      shipperName: 'NestlÃ© Philippines Inc.', originAddr: 'Cabuyao Industrial Park, Laguna',
+      shipperName: 'Nestlé Philippines Inc.', originAddr: 'Cabuyao Industrial Park, Laguna',
       consigneeName: 'NAIA International Cargo Terminal', destAddr: 'NAIA Cargo Area, Pasay City',
       date: new Date(Date.now() - 86400000), podSignedBy: 'R. Tan (PAL Cargo Acceptance)', podAt: new Date(Date.now() - 40000000),
       equipmentType: '6W Forward Van', instructions: 'Keep cargo dry and ambient temperature.',
@@ -504,7 +504,7 @@ async function main() {
   const inv2 = await prisma.invoice.create({
     data: {
       companyCode: KORNET, invoiceNo: 'SI-2026-00002', status: 'POSTED', shipmentId: ae.id,
-      billToPartyId: custMap.get('CUST-NESTLE'), billToName: 'NestlÃ© Philippines Inc.',
+      billToPartyId: custMap.get('CUST-NESTLE'), billToName: 'Nestlé Philippines Inc.',
       billToAddress: 'Cabuyao Industrial Park, Laguna', billToTin: '000-456-789-000',
       date: new Date(), dueDate: new Date(Date.now() + 30 * 86400000),
       currency: 'PHP', totalAmount: 164816, balance: 164816,

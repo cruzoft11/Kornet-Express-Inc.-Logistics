@@ -649,7 +649,7 @@ export function ShipmentWorkspace({ mode }: ShipmentWorkspaceProps) {
                     )}
                   </div>
                   <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                    {draft.mode} {draft.direction} Â· {draft.loadType} Â· Lane: {draft.polCode || 'â€”'} â†’ {draft.podCode || 'â€”'}
+                    {draft.mode} {draft.direction} · {draft.loadType} · Lane: {draft.polCode || '—'} → {draft.podCode || '—'}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -825,7 +825,7 @@ export function ShipmentWorkspace({ mode }: ShipmentWorkspaceProps) {
             <SearchBox
               value={filters.q || ''}
               onChange={(q) => setFilters((f) => ({ ...f, q }))}
-              placeholder="Search file, booking, consigneeâ€¦"
+              placeholder="Search file, booking, consignee…"
             />
           </div>
           <Select
@@ -860,7 +860,7 @@ export function ShipmentWorkspace({ mode }: ShipmentWorkspaceProps) {
         <div className="w-full min-w-0">
           {listQuery.isLoading ? (
             <div className="flex h-64 items-center justify-center rounded-xl border bg-card">
-              <KornetLoader size="lg" text="Loading filesâ€¦" />
+              <KornetLoader size="lg" text="Loading files…" />
             </div>
           ) : (
             <DataGrid
@@ -892,7 +892,7 @@ export function ShipmentWorkspace({ mode }: ShipmentWorkspaceProps) {
                   header: 'Routing',
                   cell: (row) => (
                     <span className="font-mono text-xs">
-                      {row.polCode || 'â€”'} â†’ {row.podCode || 'â€”'}
+                      {row.polCode || '—'} → {row.podCode || '—'}
                     </span>
                   ),
                 },
@@ -948,7 +948,7 @@ export function ShipmentWorkspace({ mode }: ShipmentWorkspaceProps) {
                       <StatusPill status={row.status} />
                     </div>
                     <p className="truncate text-xs text-muted-foreground">
-                      {row.polCode || 'â€”'} â†’ {row.podCode || 'â€”'} Â· {formatDate(row.etd)}
+                      {row.polCode || '—'} → {row.podCode || '—'} · {formatDate(row.etd)}
                     </p>
                   </button>
                 )
@@ -964,7 +964,7 @@ export function ShipmentWorkspace({ mode }: ShipmentWorkspaceProps) {
         <div className="w-full min-w-0">
           {shipmentQuery.isLoading ? (
             <div className="flex h-96 items-center justify-center rounded-xl border bg-card">
-              <KornetLoader size="lg" text="Loading shipment fileâ€¦" />
+              <KornetLoader size="lg" text="Loading shipment file…" />
             </div>
           ) : (
             renderEditorCard()
@@ -980,7 +980,7 @@ export function ShipmentWorkspace({ mode }: ShipmentWorkspaceProps) {
         >
           {closeCheckQuery.isLoading ? (
             <div className="flex items-center justify-center p-6">
-              <KornetLoader size="md" text="Evaluating closing blockersâ€¦" />
+              <KornetLoader size="md" text="Evaluating closing blockers…" />
             </div>
           ) : (
             <div className="space-y-3">
@@ -1007,7 +1007,7 @@ export function ShipmentWorkspace({ mode }: ShipmentWorkspaceProps) {
               <Textarea
                 value={overrideReason}
                 onChange={(event) => setOverrideReason(event.target.value)}
-                placeholder="Manager override reason (if margin below threshold or unbilled waiver applies)â€¦"
+                placeholder="Manager override reason (if margin below threshold or unbilled waiver applies)…"
               />
               <div className="flex justify-end gap-2 pt-2">
                 <Button variant="outline" onClick={() => setCloseOpen(false)}>

@@ -51,7 +51,7 @@ function AppRoutesView() {
                 <Suspense
                   fallback={
                     <div className="flex min-h-[50vh] w-full items-center justify-center p-8">
-                      <KornetLoader size="lg" text="Loading moduleâ€¦" />
+                      <KornetLoader size="lg" text="Loading module…" />
                     </div>
                   }
                 >
@@ -187,8 +187,8 @@ export default function AppShell() {
             className="hidden h-10 min-w-[18rem] items-center gap-2 rounded-lg border bg-card px-3 text-left text-sm text-muted-foreground shadow-xs transition-colors hover:bg-muted md:flex"
           >
             <Search className="size-4" />
-            <span className="flex-1">Search docs, containers, invoicesâ€¦</span>
-            <Kbd>âŒ˜K</Kbd>
+            <span className="flex-1">Search docs, containers, invoices…</span>
+            <Kbd>⌘K</Kbd>
           </button>
           <div className="hidden items-center rounded-full border bg-card px-3 py-1 text-xs font-medium text-muted-foreground xl:flex">
             <span className="mr-2 size-2 rounded-full bg-success" />{company}
@@ -204,7 +204,7 @@ export default function AppShell() {
             <div className="invisible absolute right-0 z-dropdown mt-2 w-72 rounded-2xl border bg-popover/95 backdrop-blur-md p-3 opacity-0 shadow-2xl transition-all duration-200 group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
               <div className="px-2 py-2 border-b mb-2">
                 <p className="font-semibold text-sm">{user?.fullName || user?.username}</p>
-                <p className="text-xs text-muted-foreground">{user?.role} Â· {company}</p>
+                <p className="text-xs text-muted-foreground">{user?.role} · {company}</p>
               </div>
               <div className="space-y-1 mb-2">
                 <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-muted/60 transition-colors">
@@ -279,7 +279,7 @@ function CommandPalette({ open, onOpenChange, routes }: { open: boolean; onOpenC
             <Search className="mr-2 size-4 text-muted-foreground" />
             <Command.Input
               className="h-12 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-              placeholder="Type a module, action, BL, AWB, VIN, invoiceâ€¦"
+              placeholder="Type a module, action, BL, AWB, VIN, invoice…"
               value={query}
               onValueChange={setQuery}
             />
@@ -379,7 +379,7 @@ function Shortcuts({ open, onOpenChange, hotkeys }: { open: boolean; onOpenChang
           {unique.map((h) => (
             <div key={`${h.key}-${h.description}`} className="flex items-center justify-between rounded-lg border p-3">
               <span className="text-sm">{h.description}</span>
-              <Kbd>{h.key.replace('Mod', 'Ctrl/âŒ˜')}</Kbd>
+              <Kbd>{h.key.replace('Mod', 'Ctrl/⌘')}</Kbd>
             </div>
           ))}
         </div>
