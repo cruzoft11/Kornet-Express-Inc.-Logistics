@@ -263,12 +263,13 @@ function CommandPalette({ open, onOpenChange, routes }: { open: boolean; onOpenC
   }, [query])
 
   const resolveTarget = (item: GlobalSearchItem) => {
+    if (item.route) return item.route
     if (item.type === 'shipment') return `/logistics/files/${item.id}`
     if (item.type === 'invoice') return '/billing/invoices'
     if (item.type === 'pdOrder') return '/logistics/pd-orders'
     if (item.type === 'vehicle') return '/logistics/vehicles'
     if (item.type === 'party') return '/directories/parties'
-    return item.route ?? '/dashboard'
+    return '/dashboard'
   }
 
   return (

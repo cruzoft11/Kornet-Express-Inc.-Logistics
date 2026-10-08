@@ -1,7 +1,7 @@
-﻿import { apiDelete, apiGet, apiPatch, apiPost } from './client'
+import { apiDelete, apiGet, apiPatch, apiPost } from './client'
 import type { PageResult, ListParams } from './pd'
-export interface Driver { id: string; companyCode?: string; name: string; licenseNo?: string | null; phone?: string | null; plateHint?: string | null; status: string; createdAt?: string; updatedAt?: string }
-export interface FleetVehicle { id: string; companyCode?: string; plateNo: string; type?: string | null; make?: string | null; capacity?: string | null; status: string; createdAt?: string; updatedAt?: string }
+export interface Driver { id: string; companyCode?: string; name: string; licenseNo?: string | null; licenseExpiry?: string | null; phone?: string | null; plateHint?: string | null; status: string; createdAt?: string; updatedAt?: string }
+export interface FleetVehicle { id: string; companyCode?: string; plateNo: string; type?: string | null; make?: string | null; capacity?: string | null; registrationExpiry?: string | null; insuranceExpiry?: string | null; status: string; createdAt?: string; updatedAt?: string }
 export interface DispatchRoute { id: string; companyCode?: string; routeNo: string; stage: string; origin?: string | null; destination?: string | null; driverName?: string | null; vehiclePlate?: string | null; cargoRef?: string | null; scheduledAt?: string | null; podSignature?: string | null; podSignedBy?: string | null; podSignedAt?: string | null; stops?: string; remarks?: string | null; createdAt?: string; updatedAt?: string }
 export type DriverInput = Partial<Omit<Driver, 'id' | 'companyCode' | 'createdAt' | 'updatedAt'>>
 export type FleetVehicleInput = Partial<Omit<FleetVehicle, 'id' | 'companyCode' | 'createdAt' | 'updatedAt'>>
