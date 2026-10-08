@@ -18,7 +18,6 @@ import type {
   Attachment,
   Integration,
   AuditLog,
-  Company,
 } from './types'
 
 export interface ListParams {
@@ -85,13 +84,6 @@ export const auditService = {
   async list(params?: ListParams) {
     const res = await api.get<Paginated<AuditLog>>('/audit-logs', { params })
     return res.data
-  },
-}
-
-export const companiesService = {
-  async list() {
-    const res = await api.get<{ data: Company[] }>('/companies')
-    return res.data.data
   },
 }
 

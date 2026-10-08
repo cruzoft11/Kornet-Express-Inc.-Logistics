@@ -51,14 +51,7 @@ function publicUser(u: {
   role: string;
   active: boolean;
   canAccessFs: boolean;
-  companies: string;
 }) {
-  let companies: string[] = [];
-  try {
-    companies = JSON.parse(u.companies);
-  } catch {
-    companies = [];
-  }
   return {
     id: u.id,
     username: u.username,
@@ -67,7 +60,6 @@ function publicUser(u: {
     role: u.role,
     active: u.active,
     canAccessFs: u.canAccessFs,
-    companies,
   };
 }
 

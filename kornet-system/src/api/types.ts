@@ -69,7 +69,6 @@ export interface CargoItem {
 
 export interface Shipment {
   id: string;
-  companyCode: string;
   fileNo: string;
   mode: 'ocean' | 'air';
   status: string;
@@ -107,7 +106,6 @@ export interface Shipment {
 
 export interface Vehicle {
   id: string;
-  companyCode: string;
   vin: string;
   year?: number | null;
   make?: string | null;
@@ -134,7 +132,6 @@ export interface Vehicle {
 
 export interface PdOrder {
   id: string;
-  companyCode: string;
   orderNo: string;
   barcode?: string | null;
   status: string;
@@ -159,7 +156,6 @@ export interface PdOrder {
 
 export interface Quote {
   id: string;
-  companyCode: string;
   quoteNo: string;
   status: string;
   mode: string;
@@ -178,7 +174,6 @@ export interface Quote {
 
 export interface Driver {
   id: string;
-  companyCode: string;
   name: string;
   licenseNo?: string | null;
   phone?: string | null;
@@ -190,7 +185,6 @@ export interface Driver {
 
 export interface FleetVehicle {
   id: string;
-  companyCode: string;
   plateNo: string;
   type?: string | null;
   make?: string | null;
@@ -202,7 +196,6 @@ export interface FleetVehicle {
 
 export interface DispatchRoute {
   id: string;
-  companyCode: string;
   routeNo: string;
   stage: string;
   origin?: string | null;
@@ -222,7 +215,6 @@ export interface DispatchRoute {
 
 export interface CheckDisbursement {
   id: string;
-  companyCode: string;
   checkNo: string;
   status: string;
   payee?: string | null;
@@ -239,7 +231,6 @@ export interface CheckDisbursement {
 
 export interface BridgeItem {
   id: string;
-  companyCode: string;
   refNo: string;
   type: string;
   status: string;
@@ -257,7 +248,6 @@ export interface BridgeItem {
 
 export interface TrackingItem {
   id: string;
-  companyCode: string;
   trackingNo: string;
   refType: string;
   refFileNo?: string | null;
@@ -273,7 +263,6 @@ export interface TrackingItem {
 
 export interface WebAccount {
   id: string;
-  companyCode: string;
   customerName: string;
   username: string;
   email?: string | null;
@@ -288,7 +277,6 @@ export interface WebAccount {
 
 export interface Carrier {
   id: string;
-  companyCode: string;
   name: string;
   scac?: string | null;
   mode: string;
@@ -297,7 +285,6 @@ export interface Carrier {
 
 export interface Port {
   id: string;
-  companyCode: string;
   code: string;
   name: string;
   country: string;
@@ -306,7 +293,6 @@ export interface Port {
 
 export interface BillingCode {
   id: string;
-  companyCode: string;
   code: string;
   description: string;
   glAccount?: string | null;
@@ -316,7 +302,6 @@ export interface BillingCode {
 
 export interface Attachment {
   id: string;
-  companyCode: string;
   entityType: string;
   entityId: string;
   fileName: string;
@@ -329,7 +314,6 @@ export interface Attachment {
 
 export interface Integration {
   id: string;
-  companyCode: string;
   key: string;
   name: string;
   category: string;
@@ -342,7 +326,6 @@ export interface Integration {
 
 export interface AuditLog {
   id: string;
-  companyCode: string;
   userId?: string | null;
   username?: string | null;
   action: string;

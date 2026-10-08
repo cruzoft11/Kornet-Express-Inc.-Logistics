@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import authRoutes from './auth.js';
 import usersRoutes from './users.js';
-import companiesRoutes from './companies.js';
+import companyRoutes from './company.js';
 import auditRoutes from './audit.js';
 import supportRoutes from './support.js';
 import fsRoutes from './fs.js';
@@ -11,7 +11,7 @@ const router = Router();
 
 router.use('/auth', authRoutes);
 router.use('/users', usersRoutes);
-router.use('/companies', companiesRoutes);
+router.use('/company', companyRoutes);
 router.use('/audit-logs', auditRoutes);
 router.use('/support', supportRoutes);
 router.use('/fs', fsRoutes);

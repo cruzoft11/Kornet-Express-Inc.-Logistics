@@ -1,15 +1,12 @@
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
-import { useCompanyStore } from '../stores/companyStore'
 import { useSettingsStore } from '../stores/settingsStore'
-import { getCompanyNameByCode } from '../config/companies'
+import { COMPANY_NAME } from '../config/company'
 import Breadcrumbs from '../components/Breadcrumbs'
 
 export default function Dashboard() {
   const navigate = useNavigate()
   const { user, logout } = useAuthStore()
-  const selectedCompanyCode = useCompanyStore((state) => state.selectedCompanyCode)
-  const selectedCompanyName = getCompanyNameByCode(selectedCompanyCode)
   const darkMode = useSettingsStore((state) => state.darkMode)
 
   const handleLogout = () => {
@@ -42,7 +39,7 @@ export default function Dashboard() {
         <div className="flex items-center gap-4 text-xs font-semibold">
           <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border ${darkMode ? 'bg-[#1e293b] border-gray-700 text-blue-400 font-bold' : 'bg-blue-50 border-blue-200 text-blue-700 font-bold'}`}>
             <span className="material-symbols-outlined text-[16px]">verified</span>
-            {selectedCompanyName || 'Kornet Express Inc.'}
+            Kornet Express Inc.
           </div>
           <button onClick={handleLogout} className="text-slate-500 hover:text-red-600 transition-colors flex items-center gap-1 font-medium">
             <span className="material-symbols-outlined text-[16px]">logout</span> Logout
@@ -54,7 +51,7 @@ export default function Dashboard() {
       <main className="flex-grow flex flex-col items-center justify-center p-6 sm:p-12 z-10">
         <div className="w-full max-w-5xl">
           <Breadcrumbs segments={[
-            { label: selectedCompanyName || 'Kornet Express Inc.', icon: 'domain' },
+            { label: COMPANY_NAME, icon: 'domain' },
             { label: 'System Selection' }
           ]} className="mb-6" />
 

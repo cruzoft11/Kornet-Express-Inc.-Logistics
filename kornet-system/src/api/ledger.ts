@@ -2,7 +2,7 @@ import { apiDelete, apiGet, apiPatch, apiPost } from './client'
 
 export interface FsEnvelope<T> { data: T; count?: number }
 export interface FsListEnvelope<T> { data: T[]; count?: number }
-export interface FsSystemInfo { currentMonth?: number; currentYear?: number; begDate?: string; endDate?: string; totalUnposted?: number; companyCode?: string; [key: string]: unknown }
+export interface FsSystemInfo { currentMonth?: number; currentYear?: number; begDate?: string; endDate?: string; totalUnposted?: number; [key: string]: unknown }
 export interface FsAccount { id?: number | string; acctCode: string; acctDesc: string; acctType?: string; groupCode?: string; subGroup?: string; formula: 'DC' | 'CD' | string; openBal?: number; curDebit?: number; curCredit?: number; endBal?: number; glReport?: string; glEffect?: string; schedule?: string; initialize?: string; isActive?: boolean; openingBalance?: number; debitMovement?: number; creditMovement?: number; endingBalance?: number }
 export interface FsBank { id: number | string; bankNo: number; bankName: string; bankAddr?: string; bankAcct?: string }
 export interface FsSupplier { id: number | string; supNo: number; supName: string; supAddr?: string; supPhone?: string; supFax?: string; supContak?: string }

@@ -11,7 +11,7 @@
 import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import { readSelectedCompanyName } from './companyContext'
+import { COMPANY_NAME } from '../config/company'
 
 
 // ─── Column descriptor ────────────────────────────────────────
@@ -56,7 +56,7 @@ function triggerDownload(content: BlobPart, mime: string, filename: string) {
 }
 
 function drawPdfHeader(doc: jsPDF, title: string, subtitle: string) {
-  const companyName = readSelectedCompanyName()
+  const companyName = COMPANY_NAME
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(12)
   doc.setTextColor(0, 0, 0)
@@ -140,7 +140,7 @@ export function exportFinancialCSV(
   sections: FinSection[],
   filename?: string
 ) {
-  const companyName = readSelectedCompanyName()
+  const companyName = COMPANY_NAME
   const escape = (v: unknown) => {
     const s = v == null ? '' : String(v)
     return s.includes(',') || s.includes('"') || s.includes('\n')
@@ -173,7 +173,7 @@ export function exportTableXLSX(
   rows: Record<string, unknown>[],
   filename?: string
 ) {
-  const companyName = readSelectedCompanyName()
+  const companyName = COMPANY_NAME
   const aoa: unknown[][] = [
     [companyName],
     [title],
@@ -203,7 +203,7 @@ export function exportFinancialXLSX(
   sections: FinSection[],
   filename?: string
 ) {
-  const companyName = readSelectedCompanyName()
+  const companyName = COMPANY_NAME
   const aoa: unknown[][] = [
     [companyName],
     [title],

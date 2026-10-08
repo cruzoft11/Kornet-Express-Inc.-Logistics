@@ -4,7 +4,6 @@ import {
   useQueryClient,
   type UseQueryOptions,
 } from '@tanstack/react-query'
-import { useCompanyStore } from '../stores/companyStore'
 import {
   createService,
   type CrudService,
@@ -29,25 +28,22 @@ import {
 import type { Paginated } from './types'
 
 /**
- * Build a set of react-query hooks for a CRUD service. Query keys include the
- * active company code so switching tenants automatically refetches.
+ * Build a set of react-query hooks for a CRUD service.
  */
 export function crudHooks<T extends { id: string }>(service: CrudService<T>) {
   const base = service.resource
 
   function useList(params?: ListParams, options?: Partial<UseQueryOptions<Paginated<T>>>) {
-    const company = useCompanyStore((s) => s.selectedCompanyCode)
     return useQuery({
-      queryKey: [base, company, 'list', params ?? {}],
+      queryKey: [base, 'list', params ?? {}],
       queryFn: () => service.list(params),
       ...options,
     })
   }
 
   function useItem(id: string | undefined, options?: Partial<UseQueryOptions<T>>) {
-    const company = useCompanyStore((s) => s.selectedCompanyCode)
     return useQuery({
-      queryKey: [base, company, 'item', id],
+      queryKey: [base, 'item', id],
       queryFn: () => service.get(id as string),
       enabled: !!id,
       ...options,
@@ -56,28 +52,25 @@ export function crudHooks<T extends { id: string }>(service: CrudService<T>) {
 
   function useCreate() {
     const qc = useQueryClient()
-    const company = useCompanyStore((s) => s.selectedCompanyCode)
     return useMutation({
       mutationFn: (body: Partial<T>) => service.create(body),
-      onSuccess: () => qc.invalidateQueries({ queryKey: [base, company] }),
+      onSuccess: () => qc.invalidateQueries({ queryKey: [base] }),
     })
   }
 
   function useUpdate() {
     const qc = useQueryClient()
-    const company = useCompanyStore((s) => s.selectedCompanyCode)
     return useMutation({
       mutationFn: ({ id, body }: { id: string; body: Partial<T> }) => service.update(id, body),
-      onSuccess: () => qc.invalidateQueries({ queryKey: [base, company] }),
+      onSuccess: () => qc.invalidateQueries({ queryKey: [base] }),
     })
   }
 
   function useRemove() {
     const qc = useQueryClient()
-    const company = useCompanyStore((s) => s.selectedCompanyCode)
     return useMutation({
       mutationFn: (id: string) => service.remove(id),
-      onSuccess: () => qc.invalidateQueries({ queryKey: [base, company] }),
+      onSuccess: () => qc.invalidateQueries({ queryKey: [base] }),
     })
   }
 

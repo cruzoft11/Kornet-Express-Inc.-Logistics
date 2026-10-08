@@ -12,7 +12,8 @@ Kornet Express v2 is a unified logistics operations and financial management pla
 - **Logistics Operations Suite**: Quotes, Ocean Export/Import, Air Export/Import, Domestic Trucking, P/D Orders, Vehicle Inventory, Fleet & Dispatch.
 - **Billing & Accounting Bridge**: BIR EOPT-compliant Sales Invoices, Credit Memos, Official Receipts, AP Bills, Check Disbursements with voucher printing, and an automated Dr/Cr Accounting Bridge queue.
 - **FS General Ledger Engine**: Direct transactional integration with the `accounting.db` ledger for Kornet Express using Node 22 `node:sqlite` (`DatabaseSync`), ensuring idempotent postings and Dr = Cr balanced entries.
-- **Single-Tenant Database**: Dedicated strictly to Kornet Express, Inc. (`company_code='KORNET'`). Purged of foreign company ledgers, payroll, and support ticket tables from previous legacy templates.
+- **Single-Company Data Scope**: Operational access is fixed to Kornet Express, Inc. (`company_code='KORNET'`). Existing database rows and compatibility columns are preserved during safe upgrades.
+- **Single-Company Access**: All authenticated and portal data access is fixed to KORNET. There is no company selector, user company assignment, or company header. Legacy company-code columns and user-assignment storage remain mapped only to preserve existing database data during safe upgrades; the application does not use those values to select a company.
 - **Customer Tracking Portal**: Public tracking (`/track/:ref`) and authenticated customer portal (`/portal`) mounted outside the internal ERP shell.
 - **Design System & Keyboard-First UX**: Sleek desktop ERP aesthetic with dark/light mode view-transition toggles, comfortable (14px) and compact (13px) density settings, ⌘K global search across files, documents, and parties, and hotkey support (`G` go-to sequences).
 

@@ -4,10 +4,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import axios from 'axios'
 import App from './App'
 import './index.css'
-import { COMPANY_HEADER_NAME, resolveCompanyCode } from './config/companies'
 import { useSavingStore } from './stores/savingStore'
 import { useAuthStore } from './stores/authStore'
-import { useCompanyStore } from './stores/companyStore'
 // Initialize the shared axios `api` instance (services/hooks use it).
 import './api/client'
 
@@ -24,10 +22,7 @@ const isApiRequest = (url: string) => {
 const isAuthRoute = (url: string) => AUTH_ROUTES.some((r) => url.includes(r))
 
 /**
- * Global auth shim for any legacy `fetch('/api/...')` or default-`axios` calls
- * that don't go through the typed `api` client. Reads tokens/company straight
- * from the Zustand stores and refreshes once on 401 (single-flight lives in the
- * auth store).
+ * Global auth shim for legacy API requests that do not use the typed client.
  */
 function installApiAuthInterceptor() {
   const originalFetch = window.fetch.bind(window)
@@ -43,13 +38,6 @@ function installApiAuthInterceptor() {
     if (accessToken && !headers.has('Authorization')) {
       headers.set('Authorization', `Bearer ${accessToken}`)
     }
-    if (!isAuthRoute(requestUrl)) {
-      headers.set(
-        COMPANY_HEADER_NAME,
-        resolveCompanyCode(useCompanyStore.getState().selectedCompanyCode, useAuthStore.getState().user?.companies),
-      )
-    }
-
     const firstResponse = await originalFetch(input, { ...init, headers })
     if (firstResponse.status !== 401 || isAuthRoute(requestUrl)) return firstResponse
 
@@ -58,12 +46,6 @@ function installApiAuthInterceptor() {
 
     const retryHeaders = new Headers(init?.headers ?? {})
     retryHeaders.set('Authorization', `Bearer ${newAccessToken}`)
-    if (!isAuthRoute(requestUrl)) {
-      retryHeaders.set(
-        COMPANY_HEADER_NAME,
-        resolveCompanyCode(useCompanyStore.getState().selectedCompanyCode, useAuthStore.getState().user?.companies),
-      )
-    }
     return originalFetch(input, { ...init, headers: retryHeaders })
   }
 
@@ -75,13 +57,6 @@ function installApiAuthInterceptor() {
     if (accessToken) {
       config.headers = config.headers ?? {}
       ;(config.headers as Record<string, string>).Authorization = `Bearer ${accessToken}`
-    }
-    if (!isAuthRoute(requestUrl)) {
-      config.headers = config.headers ?? {}
-      ;(config.headers as Record<string, string>)[COMPANY_HEADER_NAME] = resolveCompanyCode(
-        useCompanyStore.getState().selectedCompanyCode,
-        useAuthStore.getState().user?.companies,
-      )
     }
     if (config.method === 'post' || config.method === 'put' || config.method === 'patch') {
       useSavingStore.getState().setStatus('saving')
@@ -112,6 +87,13 @@ function installApiAuthInterceptor() {
       return axios(originalRequest)
     },
   )
+}
+
+try {
+  localStorage.removeItem('kornet-company-storage')
+  localStorage.removeItem('company-storage')
+} catch {
+  // Storage may be unavailable in restricted browser contexts.
 }
 
 installApiAuthInterceptor()

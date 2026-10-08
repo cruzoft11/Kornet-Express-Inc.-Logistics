@@ -22,16 +22,9 @@ function publicUser(u: {
   role: string;
   active: boolean;
   canAccessFs: boolean;
-  companies: string;
   lastLoginAt: Date | null;
   createdAt: Date;
 }) {
-  let companies: string[] = [];
-  try {
-    companies = JSON.parse(u.companies);
-  } catch {
-    companies = [];
-  }
   return {
     id: u.id,
     username: u.username,
@@ -40,7 +33,6 @@ function publicUser(u: {
     role: u.role,
     active: u.active,
     canAccessFs: u.canAccessFs,
-    companies,
     lastLoginAt: u.lastLoginAt,
     createdAt: u.createdAt,
   };
@@ -70,7 +62,6 @@ router.post(
         role: body.role,
         active: body.active ?? true,
         canAccessFs: body.canAccessFs ?? false,
-        companies: JSON.stringify(body.companies ?? []),
       },
     });
     res.status(201).json(publicUser(user));
@@ -91,7 +82,6 @@ router.patch(
     if (body.role !== undefined) data.role = body.role;
     if (body.active !== undefined) data.active = body.active;
     if (body.canAccessFs !== undefined) data.canAccessFs = body.canAccessFs;
-    if (body.companies !== undefined) data.companies = JSON.stringify(body.companies);
     const user = await prisma.user.update({ where: { id: req.params.id }, data });
     res.json(publicUser(user));
   }),

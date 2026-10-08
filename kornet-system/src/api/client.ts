@@ -1,7 +1,5 @@
 import axios, { type AxiosRequestConfig } from 'axios';
-import { COMPANY_HEADER_NAME, resolveCompanyCode } from '../config/companies';
 import { useAuthStore } from '../stores/authStore';
-import { useCompanyStore } from '../stores/companyStore';
 
 const AUTH_ROUTES = ['/auth/login', '/auth/refresh', '/auth/logout'];
 
@@ -12,23 +10,12 @@ export const authApi = axios.create({ baseURL: '/api' });
 export const api = axios.create({ baseURL: '/api' });
 
 api.interceptors.request.use((config) => {
-  const url = config.url ?? '';
-  const isAuthRoute = AUTH_ROUTES.some((r) => url.includes(r));
-
   const token = useAuthStore.getState().accessToken;
   if (token) {
     config.headers = config.headers ?? {};
     config.headers.Authorization = `Bearer ${token}`;
   }
 
-  if (!isAuthRoute) {
-    const company = resolveCompanyCode(
-      useCompanyStore.getState().selectedCompanyCode,
-      useAuthStore.getState().user?.companies,
-    );
-    config.headers = config.headers ?? {};
-    config.headers[COMPANY_HEADER_NAME] = company;
-  }
   return config;
 });
 

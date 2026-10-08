@@ -68,7 +68,6 @@ export const userCreate = z.object({
   role: z.enum(['superadmin', 'admin', 'manager', 'operations', 'accounting', 'viewer', 'operator', 'accountant']).default('operations'),
   active: z.boolean().optional(),
   canAccessFs: z.boolean().optional(),
-  companies: z.array(z.string()).optional(),
 });
 export const userUpdate = z.object({
   password: z.string().min(6).optional(),
@@ -77,8 +76,5 @@ export const userUpdate = z.object({
   role: z.enum(['superadmin', 'admin', 'manager', 'operations', 'accounting', 'viewer', 'operator', 'accountant']).optional(),
   active: z.boolean().optional(),
   canAccessFs: z.boolean().optional(),
-  companies: z.array(z.string()).optional(),
 });
-export const companyCreate = anyObj.extend({ code: z.string().min(1), name: z.string().min(1) });
-export const companyUpdate = companyCreate.partial();
 export const supportTicketCreate = z.object({ name: z.string().min(1), email: z.string().optional().nullable(), subject: z.string().min(1), message: z.string().min(1) });

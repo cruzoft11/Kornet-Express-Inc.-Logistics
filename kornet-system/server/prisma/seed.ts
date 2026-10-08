@@ -115,7 +115,7 @@ async function main() {
   const admin = await prisma.user.upsert({
     where: { username: env.seed.adminUsername },
     update: { role: 'superadmin', canAccessFs: true, active: true },
-    create: { username: env.seed.adminUsername, passwordHash, fullName: 'System Administrator', role: 'superadmin', active: true, canAccessFs: true, companies: JSON.stringify(['KORNET']) },
+    create: { username: env.seed.adminUsername, passwordHash, fullName: 'System Administrator', role: 'superadmin', active: true, canAccessFs: true },
   });
 
   // Clean existing operational records to make seed idempotent

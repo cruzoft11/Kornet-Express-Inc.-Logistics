@@ -48,7 +48,7 @@ export default function SystemOptions() {
         {/* Module Entry */}
         <div 
           data-testid="enter-modules-card"
-          onClick={() => navigate('/select-company')}
+          onClick={() => navigate('/dashboard')}
           className={`group relative rounded-[24px] p-8 flex flex-col items-center text-center cursor-pointer transition-all duration-500 hover:-translate-y-2 border shadow-xl overflow-hidden ${
             darkMode 
               ? 'bg-gray-800/40 border-gray-700/50 hover:border-blue-500/50 hover:bg-gray-800/60 hover:shadow-[0_20px_40px_rgba(59,130,246,0.15)] backdrop-blur-xl' 
@@ -94,7 +94,7 @@ export default function SystemOptions() {
           </h2>
           <p className="text-on-surface-variant text-sm leading-relaxed mb-8">
             {user?.role === 'superadmin' 
-              ? 'Manage users, organization structures, and system-wide application preferences.'
+              ? 'Manage users and system-wide application preferences.'
               : 'Configure your profile, theme preferences, and personal formatting settings.'}
           </p>
           

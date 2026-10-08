@@ -7,7 +7,6 @@ import { appRoutes } from '../routes'
 import { searchGlobal, type GlobalSearchItem } from '../modules/dashboard/globalSearch'
 import { useAuthStore } from '../stores/authStore'
 import { useSettingsStore } from '../stores/settingsStore'
-import { useCompanyStore } from '../stores/companyStore'
 import { useLogisticsStore } from '../stores/logisticsStore'
 import { useHotkeys, type Hotkey } from '../hooks/useHotkeys'
 import { Button, Dialog, DialogContent, EmptyState, IconButton, Kbd, KornetLoader, Sheet, SheetContent, Switch, Toast } from './ui'
@@ -20,6 +19,7 @@ import NewChargeModal from './logistics/NewChargeModal'
 import FileAnalysisModal from './logistics/FileAnalysisModal'
 import { SEDFilingModal, BillingCodesModal, CarriersDirectoryModal, PortsDirectoryModal, SystemDiagnosticsModal } from './logistics/LogisticsAuxModals'
 import { cn } from '@/lib/cn'
+import { COMPANY_CODE } from '../config/company'
 
 const groupOrder = ['Dashboard', 'Operations', 'Billing', 'Ledger (FS)', 'Directories', 'Admin']
 const roleAliases: Record<string, string> = { manager: 'manager', superadmin: 'superadmin', admin: 'admin', operator: 'operations', accountant: 'accounting', viewer: 'viewer' }
@@ -73,7 +73,6 @@ export default function AppShell() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuthStore()
-  const selectedCompanyCode = useCompanyStore((s) => s.selectedCompanyCode)
   const { darkMode, compactSidebar, setCompactSidebar, density, setDensity, toggleTheme } = useSettingsStore()
   const setActiveModule = useLogisticsStore((s) => s.setActiveModule)
   const [commandOpen, setCommandOpen] = useState(false)
@@ -96,7 +95,7 @@ export default function AppShell() {
   const visibleRoutes = useMemo(() => appRoutes.filter((r) => canSee(r.roles, user?.role)), [user?.role])
   const grouped = useMemo(() => groupOrder.map((group) => ({ group, routes: visibleRoutes.filter((r) => r.group === group && !r.hidden) })).filter((g) => g.routes.length), [visibleRoutes])
   const active = visibleRoutes.find((r) => location.pathname === r.path || location.pathname.startsWith(`${r.path}/`))
-  const company = user?.companies?.[0] ?? selectedCompanyCode ?? 'KORNET'
+  const company = COMPANY_CODE
 
   const hotkeys: Hotkey[] = useMemo(() => [
     { key: 'Mod+K', description: 'Open command palette', handler: () => setCommandOpen(true) },

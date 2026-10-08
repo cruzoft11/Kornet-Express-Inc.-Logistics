@@ -17,8 +17,6 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} />
-          <Route path="/select-company" element={<Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />} />
-
           {/* Public customer portal & public tracking routes - outside AppShell & auth */}
           <Route path="/portal/login" element={<PortalLoginPage />} />
           <Route path="/portal" element={<PortalHomePage />} />

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
-import { useCompanyStore } from '../../stores/companyStore'
 
 const MONTH_NAMES = [
   '', 'January', 'February', 'March', 'April', 'May', 'June',
@@ -25,7 +24,6 @@ interface SystemInfo {
 export default function FSFiscalNarrative() {
   const navigate = useNavigate()
   const accessToken = useAuthStore(s => s.accessToken)
-  const companyCode = useCompanyStore(s => s.selectedCompanyCode)
   const [info, setInfo] = useState<SystemInfo | null>(null)
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState(false)
@@ -36,7 +34,6 @@ export default function FSFiscalNarrative() {
       fetch('/api/fs/system-info', {
         headers: {
           'Authorization': `Bearer ${accessToken ?? ''}`,
-          'X-Company-Code': companyCode ?? '',
         }
       })
         .then(r => r.ok ? r.json() : Promise.reject(r.status))
@@ -81,7 +78,7 @@ export default function FSFiscalNarrative() {
 
     window.addEventListener('fs-system-info-updated', fetchInfo)
     return () => window.removeEventListener('fs-system-info-updated', fetchInfo)
-  }, [accessToken, companyCode])
+  }, [accessToken])
 
   const periodLabel = info
     ? `${MONTH_NAMES[info.currentMonth] ?? info.currentMonth} ${info.currentYear}`

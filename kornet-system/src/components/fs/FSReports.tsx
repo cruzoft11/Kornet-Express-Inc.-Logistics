@@ -9,7 +9,7 @@ import {
   exportVouchersPDF,
   type ExportCol,    type FinSection,
 } from '../../utils/exportUtils'
-import { readSelectedCompanyName } from '../../utils/companyContext'
+import { COMPANY_NAME } from '../../config/company'
 
 const API_BASE = '/api/fs'
 
@@ -515,7 +515,7 @@ export default function FSReports() {
 
       if (format === 'csv')  exportTableCSV(reportTitle, cols, rows)
       if (format === 'xlsx') exportTableXLSX(reportTitle, cols, rows)
-      if (format === 'pdf')  exportVouchersPDF(filteredMasters, voucherLines, readSelectedCompanyName(), acctDescMap, includeCheckNo, includeSignatories)
+      if (format === 'pdf')  exportVouchersPDF(filteredMasters, voucherLines, COMPANY_NAME, acctDescMap, includeCheckNo, includeSignatories)
       return
     }
 
@@ -922,7 +922,7 @@ export default function FSReports() {
                             .map(v => typeof v === 'number' ? voucherMasters.find(m => m.id === v) : null)
                             .filter((m): m is VoucherMaster => Boolean(m))
                           if (mastersToPrint.length > 0) {
-                            exportVouchersPDF(mastersToPrint, voucherLines, readSelectedCompanyName(), acctDescMap, includeCheckNo, includeSignatories)
+                            exportVouchersPDF(mastersToPrint, voucherLines, COMPANY_NAME, acctDescMap, includeCheckNo, includeSignatories)
                           }
                         }}
                         disabled={printBuilderPages.length === 0}

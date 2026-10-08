@@ -1,7 +1,5 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { resolveCompanyCode } from '../config/companies'
-import { useCompanyStore } from './companyStore'
 
 export type Role = 'superadmin' | 'manager' | 'operator' | 'accountant' | 'viewer'
 
@@ -13,9 +11,6 @@ export interface User {
   role: Role
   active: boolean
   canAccessFs: boolean
-  companies: string[]
-  // Backward-compatible aliases used by legacy screens
-  assignedCompanies: string[] | null
   canAccessPayroll: boolean
 }
 
@@ -27,7 +22,6 @@ interface ApiUser {
   role: Role
   active: boolean
   canAccessFs: boolean
-  companies: string[]
 }
 
 interface LoginPayload {
@@ -52,21 +46,8 @@ interface AuthState {
 function toUser(u: ApiUser): User {
   return {
     ...u,
-    assignedCompanies: u.companies.length ? u.companies : null,
     canAccessPayroll: false,
   }
-}
-
-/**
- * Determine which company a signed-in user operates in. There is no separate
- * company-selection screen — the user's assignment decides it. All-access
- * users (empty companies) keep the current/default company.
- */
-function applyCompanyForUser(u: ApiUser) {
-  const companyStore = useCompanyStore.getState()
-  companyStore.fetchCompanies().catch(() => {})
-  const companyCode = resolveCompanyCode(companyStore.selectedCompanyCode, u.companies)
-  if (companyCode !== companyStore.selectedCompanyCode) companyStore.setSelectedCompany(companyCode)
 }
 
 const CLEARED = {
@@ -128,7 +109,6 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: true,
           isSessionLocked: false,
         })
-        applyCompanyForUser(data.user)
         return { success: true, message: 'Signed in.' }
       },
 
@@ -210,7 +190,6 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: true,
             isSessionLocked: false,
           })
-          applyCompanyForUser(data.user)
           return { success: true, message: 'Session unlocked.' }
         } catch {
           return { success: false, message: 'Cannot reach the server.' }
@@ -219,6 +198,23 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'kornet-auth-storage',
+      merge: (persistedState, currentState) => {
+        const persisted = persistedState as Partial<AuthState>
+        const storedUser = persisted.user
+        const user = storedUser
+          ? {
+              id: storedUser.id,
+              username: storedUser.username,
+              fullName: storedUser.fullName,
+              email: storedUser.email,
+              role: storedUser.role,
+              active: storedUser.active,
+              canAccessFs: storedUser.canAccessFs,
+              canAccessPayroll: false,
+            }
+          : null
+        return { ...currentState, ...persisted, user }
+      },
       partialize: (s) => ({
         user: s.user,
         isAuthenticated: s.isAuthenticated,

@@ -30,8 +30,8 @@ The central theme across the whole conversation was: turn the app into a functio
 The user wanted a complete logistics workspace for Kornet Express Inc. with the following characteristics:
 
 - Real backend integration with a working data layer
-- Real authentication and user/company awareness
-- No company-selection screen; company should be auto-determined from the logged-in user
+- Real authentication and role-based user access
+- Single-company operation fixed to KORNET; no company selector, user assignment, or request header controls company scope
 - A polished enterprise-style UI that feels serious and operational
 - Module-based logistics management covering:
   - Ocean freight
@@ -201,8 +201,8 @@ After shell polish and data parity tasks, a final QA pass is still needed. This 
 
 The next agent must not ignore these rules:
 
-1. No company selection screen  
-The app should determine the active company from the logged-in user context.
+1. Single-company Kornet scope
+All authenticated operations are scoped to KORNET on the server; do not add company selectors, user assignments, or request headers. Legacy database scope columns remain only for safe data-preserving compatibility.
 
 2. No code outside the Kornet Express folder  
 The work must remain inside the Kornet Express project scope.

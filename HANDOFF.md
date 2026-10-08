@@ -31,7 +31,7 @@ The full original request:
 - Work only on local git branch **`overhaul/v2`**.
 - **NEVER push.** `.github/workflows/azure-deploy.yml` auto-deploys main/master to the Azure Web App `kornet-logistics-prod`.
 - Nothing is committed yet. All work is uncommitted on `overhaul/v2`.
-- Never write test data to the real `kornet-system/server/prisma/data/accounting.db`. It holds **18 real companies**; only touch `company_code='KORNET'`. For tests, copy it and set the env var `ACCOUNTING_DB_PATH` to the copy.
+- Never write test data to a live or real accounting database without an isolated QA target and explicit cleanup plan. Kornet is a single-company system (`KORNET`); do not add company selection or user company assignments. Existing company-code database columns are compatibility data and must not be deleted or repurposed without a verified backup.
 - Original DB backups:
   - `C:\Users\hans\.copilot\session-state\ff1149ac-6bbf-49f9-948e-787f47aac07f\files\db-backup\`
   - files: `accounting.db`, `kornet.db`

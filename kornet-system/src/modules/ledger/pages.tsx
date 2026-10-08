@@ -185,7 +185,7 @@ export function LedgerOverviewPage() {
               {info.data?.currentMonth ? `${String(info.data.currentMonth).padStart(2, '0')} / ${info.data.currentYear}` : '—'}
             </span>
             <span className="rounded-md bg-secondary/10 px-2 py-0.5 text-xs font-semibold text-secondary">
-              {info.data?.companyCode || 'KORNET'}
+              KORNET
             </span>
           </div>
           <p className="mt-1 text-xs text-muted-foreground truncate">
@@ -747,7 +747,7 @@ export function PostingPage() {
               {sysInfo.data?.currentMonth ? `M${String(sysInfo.data.currentMonth).padStart(2, '0')} / ${sysInfo.data.currentYear}` : '—'}
             </span>
             <span className="rounded-md bg-secondary/10 px-2 py-0.5 text-xs font-semibold text-secondary">
-              {sysInfo.data?.companyCode || 'KORNET'}
+              KORNET
             </span>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
