@@ -9,7 +9,7 @@ import { COMPANY_CODE } from '../company.js';
 import { createCrudRouter, type PrismaDelegate, writeAudit } from '../lib/crud.js';
 import { nextNumber, sequenceKeyForShipment } from '../lib/sequence.js';
 import { airChargeableKg, airVolumetricKg, cbm, oceanWmTons, round2, vatAmount } from '../lib/calc.js';
-import { computeCharge, convertQuote, recomputeInvoice, recomputeApBill, applyTariffs, recalcShipment, shipmentAnalysis, createInvoiceFromShipment, createApBillsFromShipment, postInvoice, postApBill, trialBridge, finalBridge, closeShipment, closeCheck, createBridge, getOwned, emitStatus, bankAccount, parseJson, assertChargeMutable, assertShipmentMutable } from '../services/domain.js';
+import { computeCharge, convertQuote, recomputeInvoice, recomputeApBill, applyTariffs, recalcShipment, shipmentAnalysis, createInvoiceFromShipment, createApBillsFromShipment, createDraftFinanceForShipment, postInvoice, postApBill, trialBridge, finalBridge, closeShipment, closeCheck, createBridge, getOwned, emitStatus, bankAccount, parseJson, assertChargeMutable, assertShipmentMutable } from '../services/domain.js';
 import * as s from '../schemas.js';
 
 const logistics = Router();
@@ -109,7 +109,26 @@ logistics.post('/shipments/:id/status', writeAll, asyncHandler(async (req, res) 
 logistics.post('/shipments/:id/clone', writeAll, asyncHandler(async (req, res) => { const sh = await prisma.shipment.findFirst({ where: { id: req.params.id, companyCode: req.companyCode! }, include: { cargoLines: true, charges: true } }); if (!sh) throw notFound('Shipment not found'); const cloned = await prisma.$transaction(async (tx) => { const fileNo = await nextNumber(tx, req.companyCode!, sequenceKeyForShipment(sh.mode, sh.direction)); const n = await tx.shipment.create({ data: { companyCode: req.companyCode!, fileNo, mode: sh.mode, direction: sh.direction, fileType: sh.fileType, loadType: sh.loadType, status: 'DRAFT', freightTerm: sh.freightTerm, incoterm: sh.incoterm, carrierPartyId: sh.carrierPartyId, polCode: sh.polCode, podCode: sh.podCode, shipperPartyId: sh.shipperPartyId, consigneePartyId: sh.consigneePartyId, billToPartyId: sh.billToPartyId, commodity: sh.commodity, currency: sh.currency, exchangeRate: sh.exchangeRate, createdBy: req.user?.sub } }); for (const l of sh.cargoLines) await tx.cargoLine.create({ data: { companyCode: req.companyCode!, shipmentId: n.id, lineNo: l.lineNo, pieces: l.pieces, packageType: l.packageType, description: l.description, lengthCm: l.lengthCm, widthCm: l.widthCm, heightCm: l.heightCm, grossKg: l.grossKg, cbm: l.cbm } }); for (const c of sh.charges) await tx.charge.create({ data: { companyCode: req.companyCode!, shipmentId: n.id, billingCode: c.billingCode, description: c.description, chargeSide: c.chargeSide, billParty: c.billParty, billToPartyId: c.billToPartyId, unit: c.unit, qty: c.qty, rate: c.rate, minAmount: c.minAmount, currency: c.currency, exchangeRate: c.exchangeRate, amount: c.amount, amountPhp: c.amountPhp, vatClass: c.vatClass, vatAmountPhp: c.vatAmountPhp, costVendorPartyId: c.costVendorPartyId, costQty: c.costQty, costRate: c.costRate, costAmount: c.costAmount, costAmountPhp: c.costAmountPhp, source: 'MANUAL', billStatus: 'OPEN', costStatus: 'OPEN' } }); return n; }); res.json(cloned); }));
 logistics.get('/shipments/:id/documents/:kind', asyncHandler(async (req, res) => { const kinds = ['bl', 'hbl', 'awb', 'booking-confirmation', 'arrival-notice', 'delivery-order', 'cargo-release', 'manifest', 'file-analysis', 'invoice']; const kind = req.params.kind.toLowerCase(); if (kind === 'list') return res.json({ kinds }); if (!kinds.includes(kind)) throw badRequest('Unknown document kind'); const shipment = await prisma.shipment.findFirst({ where: { id: req.params.id, companyCode: req.companyCode! }, include: { cargoLines: true, containers: true, charges: true, transportDocs: true } }); if (!shipment) throw notFound('Shipment not found'); const [company, settings, ports] = await Promise.all([prisma.company.findUnique({ where: { code: req.companyCode! } }), prisma.companySetting.findMany({ where: { companyCode: req.companyCode! } }), prisma.port.findMany({ where: { companyCode: req.companyCode!, code: { in: [shipment.polCode ?? '', shipment.podCode ?? ''] } } })]); res.json({ kind, company, settings: Object.fromEntries(settings.map((x) => [x.key, parseJson(x.value, x.value)])), ports, shipment, cargo: shipment.cargoLines, containers: shipment.containers, charges: shipment.charges.filter((c) => c.showOnDoc), generatedAt: new Date().toISOString() }); }));
 logistics.get('/transport-docs/:id', asyncHandler(async (req, res) => { const doc = await prisma.transportDoc.findFirst({ where: { id: req.params.id, companyCode: req.companyCode! }, include: { cargoLines: true, containers: true } }); if (!doc) throw notFound('Transport document not found'); const houses = doc.docClass === 'MASTER' ? await prisma.transportDoc.findMany({ where: { companyCode: req.companyCode!, parentDocId: doc.id }, include: { cargoLines: true } }) : []; const totals = houses.flatMap((h) => h.cargoLines).reduce((a, l) => ({ pieces: a.pieces + l.pieces, grossKg: a.grossKg + l.grossKg, cbm: round2(a.cbm + l.cbm) }), { pieces: 0, grossKg: 0, cbm: 0 }); res.json({ ...doc, houses, masterTotals: totals }); }));
-logistics.post('/transport-docs/:id/issue', writeAll, asyncHandler(async (req, res) => { const d = await getOwned(prisma.transportDoc, req.params.id, req.companyCode!, 'Transport doc'); if (d.status === 'ISSUED') return res.json(d); if (d.status !== 'DRAFT') throw conflict('Only DRAFT documents can be issued'); const row = await prisma.transportDoc.update({ where: { id: d.id }, data: { status: 'ISSUED', issueDate: new Date(), version: { increment: 1 } } }); await emitStatus(req.companyCode!, 'SHIPMENT', d.shipmentId, 'DOC', req.user?.sub, { notes: `${d.docNo} issued`, isPublic: true }); res.json(row); }));
+logistics.post('/transport-docs/:id/issue', writeAll, asyncHandler(async (req, res) => {
+  const d = await getOwned(prisma.transportDoc, req.params.id, req.companyCode!, 'Transport doc');
+  if (d.status === 'ISSUED') return res.json(d);
+  if (d.status !== 'DRAFT') throw conflict('Only DRAFT documents can be issued');
+
+  const isHouseFreightDocument =
+    d.docClass.toUpperCase() === 'HOUSE' && ['BL', 'HBL', 'AWB', 'HAWB'].includes(d.docType.toUpperCase());
+  const financeDrafts = isHouseFreightDocument
+    ? await createDraftFinanceForShipment(d.shipmentId, req.companyCode!, req.user?.sub)
+    : { invoiceNumbers: [], apBillNumbers: [] };
+  const row = await prisma.transportDoc.update({
+    where: { id: d.id },
+    data: { status: 'ISSUED', issueDate: new Date(), version: { increment: 1 } },
+  });
+  await emitStatus(req.companyCode!, 'SHIPMENT', d.shipmentId, 'DOC', req.user?.sub, {
+    notes: `${d.docNo} issued`,
+    isPublic: true,
+  });
+  res.json({ ...row, financeDrafts });
+}));
 logistics.post('/charges', writeAll, asyncHandler(async (req, res) => {
   const companyCode = req.companyCode!;
   const data = s.chargeCreate.parse(req.body) as Record<string, unknown>;

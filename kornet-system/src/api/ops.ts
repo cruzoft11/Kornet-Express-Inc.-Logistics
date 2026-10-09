@@ -303,7 +303,9 @@ export const opsApi = {
   createTransportDoc: (body: Partial<TransportDoc>) => apiPost<TransportDoc>('/transport-docs', body),
   updateTransportDoc: (id: string, body: Partial<TransportDoc>) => apiPatch<TransportDoc>(`/transport-docs/${id}`, body),
   deleteTransportDoc: (id: string) => apiDelete(`/transport-docs/${id}`),
-  issueTransportDoc: (id: string) => apiPost<TransportDoc>(`/transport-docs/${id}/issue`),
+  issueTransportDoc: (id: string) => apiPost<TransportDoc & {
+    financeDrafts?: { invoiceNumbers: string[]; apBillNumbers: string[] }
+  }>(`/transport-docs/${id}/issue`),
   listStatusEvents: (entityType: string, entityId: string) => apiGet<ApiList<StatusEvent>>(`/status-events${qs({ entityType, entityId, q: entityId, pageSize: 100, sort: '-eventAt' })}`),
   createStatusEvent: (body: Partial<StatusEvent>) => apiPost<StatusEvent>('/status-events', body),
 

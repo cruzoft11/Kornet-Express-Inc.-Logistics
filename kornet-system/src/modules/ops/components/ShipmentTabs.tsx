@@ -1358,8 +1358,15 @@ export function DocsTab({
       }
     }
     try {
-      const updated = await opsApi.issueTransportDoc(doc.id)
-      toast.success(`${updated.docNo || 'Transport document'} issued successfully`)
+      const { financeDrafts, ...updated } = await opsApi.issueTransportDoc(doc.id)
+      const invoiceCount = financeDrafts?.invoiceNumbers.length ?? 0
+      const apBillCount = financeDrafts?.apBillNumbers.length ?? 0
+      const financeSummary = financeDrafts
+        ? invoiceCount + apBillCount > 0
+          ? ` Created ${invoiceCount} invoice draft${invoiceCount === 1 ? '' : 's'} and ${apBillCount} AP bill draft${apBillCount === 1 ? '' : 's'}.`
+          : ' No eligible open charges; no finance drafts were created.'
+        : ''
+      toast.success(`${updated.docNo || 'Transport document'} issued successfully.${financeSummary}`)
       setDocs(docs.map((d, i) => (i === index ? updated : d)))
     } catch (e) {
       toast.error(apiErrorMessage(e))

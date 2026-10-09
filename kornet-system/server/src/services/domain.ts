@@ -44,6 +44,29 @@ export async function recomputeInvoice(id: string, companyCode: string) { const 
 
 export async function createApBillsFromShipment(id: string, companyCode: string, userId?: string) { const shipment = await prisma.shipment.findFirst({ where: { id, companyCode }, include: { charges: true } }); if (!shipment) throw notFound('Shipment not found'); const costs = shipment.charges.filter((c) => c.costStatus === 'OPEN' && c.costAmountPhp > 0 && ['BOTH', 'COST_ONLY'].includes(c.chargeSide)); if (!costs.length) throw badRequest('No unbilled costs'); const missing = costs.filter((c) => !c.costVendorPartyId); if (missing.length) throw badRequest(`Vendor missing for cost charges: ${missing.map((c) => c.billingCode).join(', ')}`); const withhold = await setting(companyCode, 'withholdOnVendors', true); const groups = new Map<string, typeof costs>(); for (const ch of costs) groups.set(ch.costVendorPartyId!, [...(groups.get(ch.costVendorPartyId!) ?? []), ch]); const bills = []; for (const [vendorId, rows] of groups) { const billId = await prisma.$transaction(async (tx) => { const billNo = await nextNumber(tx, companyCode, 'AP_BILL'); const vendor = await tx.party.findUnique({ where: { id: vendorId } }); if (!vendor) throw badRequest(`Vendor ${vendorId} not found`); const ap = await tx.apBill.create({ data: { companyCode, billNo, vendorPartyId: vendorId, vendorName: vendor.name, vendorAddress: vendor.address, vendorTin: vendor.tin, shipmentId: id, date: new Date(), dueDate: new Date(), glPeriod: period(new Date()), currency: shipment.currency, exchangeRate: shipment.exchangeRate, createdBy: userId } }); let subtotal = 0, inputVat = 0, ewt = 0; for (const ch of rows) { const bc = await tx.billingCode.findUnique({ where: { companyCode_code: { companyCode, code: ch.billingCode } } }); const lineVat = vendor.vatRegistered && ch.vatClass === 'VATABLE' ? vatAmount(ch.costAmountPhp, 'VATABLE') : 0; const lineEwt = withhold && !vendor.ewtExemptVendor && ch.vatClass !== 'NON_VAT_REIMBURSABLE' ? round2(ch.costAmountPhp * 0.02) : 0; subtotal += round2(ch.costAmountPhp); inputVat += lineVat; ewt += lineEwt; await tx.apBillLine.create({ data: { companyCode, apBillId: ap.id, chargeId: ch.id, billingCode: ch.billingCode, description: ch.description, amount: round2(ch.costAmount), amountPhp: round2(ch.costAmountPhp), inputVat: lineVat, expenseAccount: bc?.costAccount } }); await tx.charge.update({ where: { id: ch.id }, data: { apBillId: ap.id, costStatus: 'BILLED', status: ch.billStatus === 'INVOICED' ? 'INVOICED' : 'OPEN' } }); } const total = round2(subtotal + inputVat - ewt); await tx.apBill.update({ where: { id: ap.id }, data: { subtotal: round2(subtotal), inputVat: round2(inputVat), ewtWithheld: round2(ewt), total, balance: total } }); return ap.id; }); bills.push(await prisma.apBill.findUnique({ where: { id: billId }, include: { lines: true } })); } return bills.length === 1 ? bills[0] : bills; }
 
+export async function createDraftFinanceForShipment(id: string, companyCode: string, userId?: string) {
+  const shipment = await prisma.shipment.findFirst({ where: { id, companyCode }, include: { charges: true } });
+  if (!shipment) throw notFound('Shipment not found');
+  const hasOpenBillableCharges = shipment.charges.some((charge) =>
+    charge.billStatus === 'OPEN' && ['BOTH', 'BILL_ONLY'].includes(charge.chargeSide),
+  );
+  const hasOpenCosts = shipment.charges.some((charge) =>
+    charge.costStatus === 'OPEN' && charge.costAmountPhp > 0 && ['BOTH', 'COST_ONLY'].includes(charge.chargeSide),
+  );
+  const invoiceResult = hasOpenBillableCharges
+    ? await createInvoiceFromShipment(id, companyCode, userId)
+    : [];
+  const apBillResult = hasOpenCosts
+    ? await createApBillsFromShipment(id, companyCode, userId)
+    : [];
+  const invoices = invoiceResult == null ? [] : Array.isArray(invoiceResult) ? invoiceResult : [invoiceResult];
+  const apBills = Array.isArray(apBillResult) ? apBillResult : apBillResult ? [apBillResult] : [];
+  return {
+    invoiceNumbers: invoices.map((invoice) => invoice.invoiceNo),
+    apBillNumbers: apBills.flatMap((bill) => bill ? [bill.billNo] : []),
+  };
+}
+
 function balanceBridge(lines: LedgerLine[]): LedgerLine[] { const dr = round2(lines.filter((l) => l.dc === 'D').reduce((s, l) => s + l.amount, 0)); const cr = round2(lines.filter((l) => l.dc === 'C').reduce((s, l) => s + l.amount, 0)); const diff = round2(dr - cr); if (Math.abs(diff) <= 0.01 && diff !== 0) { const target = lines.find((l) => l.dc === (diff > 0 ? 'C' : 'D')) ?? lines[0]; target.amount = round2(target.amount + Math.abs(diff)); } const ndr = round2(lines.filter((l) => l.dc === 'D').reduce((s, l) => s + l.amount, 0)); const ncr = round2(lines.filter((l) => l.dc === 'C').reduce((s, l) => s + l.amount, 0)); if (Math.abs(ndr - ncr) > EPS) throw conflict(`Unbalanced bridge item Dr ${ndr} Cr ${ncr}`); return lines; }
 
 export async function createBridge(companyCode: string, sourceType: string, sourceId: string, journal: LedgerEntry['journal'], refNo: string, date: Date, party: string | null | undefined, memo: string, inputLines: LedgerLine[], userId?: string) { const lines = balanceBridge(inputLines.map((l) => ({ ...l, amount: round2(l.amount) })).filter((l) => l.amount > 0)); const totalDebit = round2(lines.filter((l) => l.dc === 'D').reduce((s, l) => s + l.amount, 0)); const totalCredit = round2(lines.filter((l) => l.dc === 'C').reduce((s, l) => s + l.amount, 0)); return prisma.bridgeItem.upsert({ where: { companyCode_sourceType_sourceId: { companyCode, sourceType, sourceId } }, update: { linesJson: JSON.stringify(lines), totalDebit, totalCredit, status: 'STAGED', errorsJson: '[]' }, create: { companyCode, sourceType, sourceId, journal, refNo, date, glPeriod: period(date), party, memo, linesJson: JSON.stringify(lines), totalDebit, totalCredit, createdBy: userId } }); }
