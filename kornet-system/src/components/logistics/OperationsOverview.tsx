@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+﻿import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
@@ -143,7 +143,7 @@ export default function OperationsOverview() {
             </span>
           </div>
           <h1 className="text-xl font-black text-slate-900 dark:text-white mt-1">
-            Enterprise Logistics &amp; Freight Operations
+            Enterprise Logistics & Freight Operations
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
             Active Terminal Scope:{' '}
@@ -162,7 +162,7 @@ export default function OperationsOverview() {
             className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs flex items-center gap-1.5 transition-colors"
           >
             <TrendingUp className="w-4 h-4 text-blue-600" />
-            <span>Rates &amp; Tariffs</span>
+            <span>Rates & Tariffs</span>
           </button>
           <button
             type="button"
@@ -221,7 +221,7 @@ export default function OperationsOverview() {
           </div>
           <div className="mt-3">
             <strong className="text-2xl font-black text-slate-900 dark:text-white font-mono">{airExportCount + airImportCount}</strong>
-            <span className="block text-[10px] text-slate-400 font-medium">Outbound &amp; Inbound</span>
+            <span className="block text-[10px] text-slate-400 font-medium">Outbound & Inbound</span>
           </div>
         </motion.button>
 
@@ -293,9 +293,9 @@ export default function OperationsOverview() {
               <BarChart data={modeData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
                 <XAxis dataKey="mode" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} tickFormatter={(val) => `₱${(val / 1000).toFixed(0)}k`} />
+                <YAxis tick={{ fontSize: 11 }} tickFormatter={(val) => `â‚±${(val / 1000).toFixed(0)}k`} />
                 <Tooltip
-                  formatter={(val: any) => [`₱ ${Number(val).toLocaleString()}`, '']}
+                  formatter={(val: any) => [`â‚± ${Number(val).toLocaleString()}`, '']}
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.15)' }}
                 />
                 <Bar dataKey="Revenue" fill="#07558f" radius={[6, 6, 0, 0]} name="Billed Revenue" />
@@ -352,7 +352,7 @@ export default function OperationsOverview() {
         {/* Priority Operational Exceptions */}
         <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
           <div className="pb-3 border-b border-slate-100 dark:border-slate-800">
-            <h2 className="font-bold text-sm text-slate-900 dark:text-white">Operational Exceptions &amp; Holds</h2>
+            <h2 className="font-bold text-sm text-slate-900 dark:text-white">Operational Exceptions & Holds</h2>
             <p className="text-[11px] text-slate-500">Items requiring operations supervisor attention</p>
           </div>
 

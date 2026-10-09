@@ -1,4 +1,4 @@
-import { useSettingsStore } from '../../stores/settingsStore'
+﻿import { useSettingsStore } from '../../stores/settingsStore'
 
 export default function FSCompanyProperties() {
   const darkMode = useSettingsStore((state) => state.darkMode)
@@ -15,9 +15,9 @@ export default function FSCompanyProperties() {
         </div>
       </div>
       <div className={`rounded-xl border p-5 ${darkMode ? 'border-gray-700 bg-gray-900/50' : 'border-slate-200 bg-white'}`}>
-        <p className="font-semibold">Kornet Express Freight &amp; Logistics</p>
+        <p className="font-semibold">Kornet Express Freight & Logistics</p>
         <p className="mt-1 text-sm text-muted-foreground">Company code: KORNET</p>
-        <p className="mt-3 text-sm text-muted-foreground">Update tax, registration, and document identity details in Admin → Settings.</p>
+        <p className="mt-3 text-sm text-muted-foreground">Update tax, registration, and document identity details in Admin â†’ Settings.</p>
       </div>
     </div>
   )

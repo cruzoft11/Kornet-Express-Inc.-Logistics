@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+﻿import { useState, useEffect, useCallback } from 'react'
 import axios from 'axios'
 import PageHeader from '../PageHeader'
 
@@ -107,7 +107,7 @@ export default function FSMonthEnd() {
   }, [advanceReminderOn])
 
 
-  const currentPeriodLabel = sysInfo ? `${MONTH_NAMES[sysInfo.currentMonth]} ${sysInfo.currentYear}` : '—'
+  const currentPeriodLabel = sysInfo ? `${MONTH_NAMES[sysInfo.currentMonth]} ${sysInfo.currentYear}` : 'â€”'
 
   const preflightErrors: string[] = []
   if (sysInfo) {
@@ -182,16 +182,16 @@ export default function FSMonthEnd() {
       const errMsg = err.response?.data?.error
         || err.response?.data?.Error
         || err.response?.data?.message
-        || (err.code === 'ECONNABORTED' ? 'Request timed out. The server may still be processing — please check system info.' : null)
+        || (err.code === 'ECONNABORTED' ? 'Request timed out. The server may still be processing â€” please check system info.' : null)
         || err.message
         || 'Month-end processing failed.'
 
       addLog(`ERROR: ${errMsg}`)
 
-      if (err.response?.status === 400) addLog('Bad request — check that all prerequisites are met.')
-      else if (err.response?.status === 409) addLog('Conflict — another process may already be running.')
-      else if (err.response?.status === 500) addLog('Internal server error — check server logs for details.')
-      else if (!err.response) addLog('No response from server — connection may have been lost.')
+      if (err.response?.status === 400) addLog('Bad request â€” check that all prerequisites are met.')
+      else if (err.response?.status === 409) addLog('Conflict â€” another process may already be running.')
+      else if (err.response?.status === 500) addLog('Internal server error â€” check server logs for details.')
+      else if (!err.response) addLog('No response from server â€” connection may have been lost.')
 
       setResultSuccess(false)
       setResultMessage(errMsg)
@@ -230,13 +230,13 @@ export default function FSMonthEnd() {
 
         {loadingInfo ? (
           <div className="flex items-center gap-2 px-6 py-6 text-on-surface-variant/60 text-sm animate-pulse">
-            <span className="material-symbols-outlined text-[18px] animate-spin">sync</span> Loading system info…
+            <span className="material-symbols-outlined text-[18px] animate-spin">sync</span> Loading system infoâ€¦
           </div>
         ) : sysInfo ? (
           <div className="divide-y divide-outline-variant/10">
             {[
               { label: 'Period to Close', val: currentPeriodLabel, highlight: true },
-              { label: 'Period Range', val: sysInfo.begDate ? `${new Date(sysInfo.begDate).toLocaleDateString()} – ${sysInfo.endDate ? new Date(sysInfo.endDate).toLocaleDateString() : '?'}` : '—' },
+              { label: 'Period Range', val: sysInfo.begDate ? `${new Date(sysInfo.begDate).toLocaleDateString()} â€“ ${sysInfo.endDate ? new Date(sysInfo.endDate).toLocaleDateString() : '?'}` : 'â€”' },
               {
                 label: 'Unposted Transactions',
                 val: String(sysInfo.totalUnposted),
@@ -258,7 +258,7 @@ export default function FSMonthEnd() {
             {isYearEnd && (
               <div className="flex items-start gap-3 mx-5 my-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm">
                 <span className="material-symbols-outlined text-[18px] shrink-0 mt-0.5">warning</span>
-                <span><strong>YEAR-END CLOSE:</strong> This is December. Expense &amp; income accounts marked for initialization will be reset to zero.</span>
+                <span><strong>YEAR-END CLOSE:</strong> This is December. Expense & income accounts marked for initialization will be reset to zero.</span>
               </div>
             )}
 
@@ -356,11 +356,11 @@ export default function FSMonthEnd() {
                     <button onClick={handleConfirmAndClose} disabled={processing}
                       className="px-5 py-2 bg-error text-white rounded-lg text-sm font-bold hover:bg-error/90 disabled:opacity-60 transition-colors flex items-center gap-2">
                       <span className={`material-symbols-outlined text-[16px] ${processing ? 'animate-spin' : ''}`}>{processing ? 'sync' : 'lock_clock'}</span>
-                      {processing ? 'Processing…' : 'Close Period Now'}
+                      {processing ? 'Processingâ€¦' : 'Close Period Now'}
                     </button>
                     <button onClick={() => { setStep(1); showToast('Stepped back. Verify details before proceeding.', 'info') }} disabled={processing}
                       className="px-4 py-2 border border-outline-variant/20 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container transition-colors">
-                      ← Back
+                      â† Back
                     </button>
                   </div>
                 )}
@@ -385,7 +385,7 @@ export default function FSMonthEnd() {
             ))}
             {processing && (
               <div className="text-primary animate-pulse flex items-center gap-1">
-                <span className="material-symbols-outlined text-[14px] animate-spin">sync</span> Working…
+                <span className="material-symbols-outlined text-[14px] animate-spin">sync</span> Workingâ€¦
               </div>
             )}
           </div>
@@ -430,7 +430,7 @@ export default function FSMonthEnd() {
         </div>
       )}
 
-      {/* ── Final Confirmation Modal ─────────────────────────────────────────── */}
+      {/* â”€â”€ Final Confirmation Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {showFinalConfirm && sysInfo && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
           {/* Scrim */}

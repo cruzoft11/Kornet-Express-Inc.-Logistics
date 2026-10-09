@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useLogisticsStore } from '../../stores/logisticsStore'
 import { RefreshCw, Check, DollarSign, Tag, ShieldCheck } from 'lucide-react'
 
@@ -52,7 +52,7 @@ export default function RatesMaintenanceManager() {
       <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-black text-slate-900 dark:text-white">System Rates &amp; Tariffs Maintenance</h1>
+            <h1 className="text-xl font-black text-slate-900 dark:text-white">System Rates & Tariffs Maintenance</h1>
             <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300">
               Live FX &bull; Statutory VAT &bull; Tariffs
             </span>
@@ -110,9 +110,9 @@ export default function RatesMaintenanceManager() {
             {(
               [
                 { code: 'USD', name: 'US Dollar', symbol: '$' },
-                { code: 'EUR', name: 'Euro', symbol: '€' },
-                { code: 'JPY', name: 'Japanese Yen', symbol: '¥' },
-                { code: 'CNY', name: 'Chinese Yuan', symbol: '¥' },
+                { code: 'EUR', name: 'Euro', symbol: 'â‚¬' },
+                { code: 'JPY', name: 'Japanese Yen', symbol: 'Â¥' },
+                { code: 'CNY', name: 'Chinese Yuan', symbol: 'Â¥' },
                 { code: 'SGD', name: 'Singapore Dollar', symbol: 'S$' },
                 { code: 'HKD', name: 'Hong Kong Dollar', symbol: 'HK$' },
               ] as const
@@ -124,7 +124,7 @@ export default function RatesMaintenanceManager() {
                 </div>
                 <div className="text-[10px] text-slate-500 truncate mb-2">{curr.name}</div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-bold text-slate-400">₱</span>
+                  <span className="text-xs font-bold text-slate-400">â‚±</span>
                   <input
                     type="number"
                     step="0.001"
@@ -215,9 +215,9 @@ export default function RatesMaintenanceManager() {
                 <Tag className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="font-bold text-sm text-slate-900 dark:text-white">Master Billing Codes &amp; General Ledger Mapping</h2>
+                <h2 className="font-bold text-sm text-slate-900 dark:text-white">Master Billing Codes & General Ledger Mapping</h2>
                 <p className="text-[11px] text-slate-500">
-                  Standard tariff rates and corresponding Chart of Accounts GL account codes used in Accounting Bridge &amp; CDV generation.
+                  Standard tariff rates and corresponding Chart of Accounts GL account codes used in Accounting Bridge & CDV generation.
                 </p>
               </div>
             </div>
@@ -273,7 +273,7 @@ export default function RatesMaintenanceManager() {
                           className="px-2 py-0.5 rounded border border-blue-500 font-mono text-xs w-28 text-right bg-white dark:bg-slate-800"
                         />
                       ) : (
-                        `₱ ${item.defaultRate.toLocaleString()}`
+                        `â‚± ${item.defaultRate.toLocaleString()}`
                       )}
                     </td>
                     <td className="py-2.5 px-3 text-center">

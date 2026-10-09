@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -82,13 +82,13 @@ export const DOMESTIC_VEHICLE_TYPES = [
 
 export const DOMESTIC_CORRIDORS = [
   { value: 'NCR_METRO', label: 'Metro Manila (NCR) Inter-Branch Direct' },
-  { value: 'NCR_LAGUNA', label: 'NCR ↔ Laguna (Technopark / Calamba / Sta. Rosa)' },
-  { value: 'NCR_CAVITE', label: 'NCR ↔ Cavite (EPZA / Rosario / Dasmariñas)' },
-  { value: 'NCR_BATANGAS', label: 'NCR ↔ Batangas Port / FPIP / Sto. Tomas' },
-  { value: 'NCR_CLARK', label: 'NCR ↔ Bulacan / Pampanga (Clark Freeport)' },
-  { value: 'NCR_SUBIC', label: 'NCR ↔ Subic Bay Freeport Zone (SBFZ)' },
-  { value: 'LUZON_VISAYAS_RORO', label: 'Luzon ↔ Visayas (RORO Inter-Island: Iloilo/Bacolod/Cebu)' },
-  { value: 'LUZON_MIN_RORO', label: 'Luzon ↔ Mindanao (RORO Inter-Island: CDO/Davao/GenSan)' },
+  { value: 'NCR_LAGUNA', label: 'NCR â†” Laguna (Technopark / Calamba / Sta. Rosa)' },
+  { value: 'NCR_CAVITE', label: 'NCR â†” Cavite (EPZA / Rosario / DasmariÃ±as)' },
+  { value: 'NCR_BATANGAS', label: 'NCR â†” Batangas Port / FPIP / Sto. Tomas' },
+  { value: 'NCR_CLARK', label: 'NCR â†” Bulacan / Pampanga (Clark Freeport)' },
+  { value: 'NCR_SUBIC', label: 'NCR â†” Subic Bay Freeport Zone (SBFZ)' },
+  { value: 'LUZON_VISAYAS_RORO', label: 'Luzon â†” Visayas (RORO Inter-Island: Iloilo/Bacolod/Cebu)' },
+  { value: 'LUZON_MIN_RORO', label: 'Luzon â†” Mindanao (RORO Inter-Island: CDO/Davao/GenSan)' },
 ]
 
 export const AIR_HANDLING_CODES = [
@@ -182,7 +182,7 @@ export function GeneralTab({
         <>
           <div className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-4 py-2.5 text-xs text-primary">
             <Truck className="size-4 shrink-0" />
-            <span className="font-semibold">Domestic Logistics &amp; Inland Trucking:</span>
+            <span className="font-semibold">Domestic Logistics & Inland Trucking:</span>
             <span className="text-muted-foreground">Standardized for Philippine logistics corridor dispatch, fleet plate tracking, driver assignment and Delivery Receipts (DR).</span>
           </div>
 
@@ -237,7 +237,7 @@ export function GeneralTab({
           </FormSection>
 
           <FormSection
-            title="Fleet Dispatch &amp; Driver Assignment"
+            title="Fleet Dispatch & Driver Assignment"
             description="Truck asset plate number, body type, driver credentials, and dispatch gate passes."
           >
             <FormField label="Truck Plate #" required hint="e.g. NBD 1234 or ABC 5678">
@@ -271,7 +271,7 @@ export function GeneralTab({
               />
             </FormField>
 
-            <FormField label="Driver Full Name &amp; Mobile" hint="Driver contact for dispatch tracking">
+            <FormField label="Driver Full Name & Mobile" hint="Driver contact for dispatch tracking">
               <Input
                 value={draft.flightNo || ''}
                 onChange={(e) => update({ flightNo: e.target.value })}
@@ -324,7 +324,7 @@ export function GeneralTab({
           </FormSection>
 
           <FormSection
-            title="Route Corridor &amp; Schedule Windows"
+            title="Route Corridor & Schedule Windows"
             description="Highway corridor, origin facility address, destination drop-off and delivery windows."
           >
             <div className="sm:col-span-2 lg:col-span-3">
@@ -339,7 +339,7 @@ export function GeneralTab({
                     const match = DOMESTIC_CORRIDORS.find((c) => c.value === val)
                     update({
                       polCode: val,
-                      podCode: match?.label.split('↔')[1]?.trim() || 'DEST',
+                      podCode: match?.label.split('â†”')[1]?.trim() || 'DEST',
                     })
                   }}
                   options={DOMESTIC_CORRIDORS}
@@ -401,14 +401,14 @@ export function GeneralTab({
           </FormSection>
 
           <FormSection
-            title="Cargo Manifest Summary &amp; Special Handling"
+            title="Cargo Manifest Summary & Special Handling"
             description="Goods description, security requirements and site gate notes."
           >
             <FormField label="Commodity / Cargo Title">
               <Input
                 value={draft.commodity || ''}
                 onChange={(e) => update({ commodity: e.target.value })}
-                placeholder="e.g. Automotive Electronic Components &amp; Harnesses"
+                placeholder="e.g. Automotive Electronic Components & Harnesses"
               />
             </FormField>
 
@@ -422,11 +422,11 @@ export function GeneralTab({
             </FormField>
 
             <div className="sm:col-span-2 lg:col-span-3">
-              <FormField label="Special Gate &amp; Delivery Instructions">
+              <FormField label="Special Gate & Delivery Instructions">
                 <Textarea
                   value={draft.remarks || ''}
                   onChange={(e) => update({ remarks: e.target.value })}
-                  placeholder="e.g. Safety PPE (Hardhat &amp; Steel Toe) mandatory; Tail-lift required; Unloading dock 4."
+                  placeholder="e.g. Safety PPE (Hardhat & Steel Toe) mandatory; Tail-lift required; Unloading dock 4."
                   rows={2}
                 />
               </FormField>
@@ -514,7 +514,7 @@ export function GeneralTab({
           </FormSection>
 
           <FormSection
-            title="Flight Schedule &amp; AWB Booking"
+            title="Flight Schedule & AWB Booking"
             description="Airline carrier, Master AWB #, flight number, airport codes and flight cutoffs."
           >
             <LookupField
@@ -629,7 +629,7 @@ export function GeneralTab({
           </FormSection>
 
           <FormSection
-            title="Air Cargo Trade Terms &amp; Special Handling"
+            title="Air Cargo Trade Terms & Special Handling"
             description="IATA box 27 nature of goods, air incoterms, freight terms and handling codes."
           >
             <FormField label="Air Incoterm">
@@ -774,7 +774,7 @@ export function GeneralTab({
           </FormSection>
 
           <FormSection
-            title="Vessel &amp; Ocean Routing"
+            title="Vessel & Ocean Routing"
             description="Shipping line carrier, vessel, voyage, seaport UN/LOCODEs and terminal cutoffs."
           >
             <LookupField
@@ -884,7 +884,7 @@ export function GeneralTab({
           </FormSection>
 
           <FormSection
-            title="Ocean Trade Terms &amp; Cargo Particulars"
+            title="Ocean Trade Terms & Cargo Particulars"
             description="Incoterms, freight terms, load type (FCL/LCL) and cargo details."
           >
             <FormField label="Service / Load Type">
@@ -920,7 +920,7 @@ export function GeneralTab({
             </FormField>
 
             <div className="sm:col-span-2 lg:col-span-3">
-              <FormField label="Goods Description &amp; Marks">
+              <FormField label="Goods Description & Marks">
                 <Textarea
                   value={draft.goodsDescription || ''}
                   onChange={(e) => update({ goodsDescription: e.target.value })}
@@ -968,7 +968,7 @@ export function ImportTab({
   return (
     <div className="space-y-4">
       <FormSection
-        title="Import Filing &amp; Bureau of Customs (BOC)"
+        title="Import Filing & Bureau of Customs (BOC)"
         description="Entry number, registry number, IT/GO references and cargo terminal release status."
       >
         <FormField label="Customs Entry #" hint="BOC official import entry number">
@@ -1119,7 +1119,7 @@ export function CargoTab({
             {isDomestic
               ? 'Domestic Cargo Manifest'
               : isAir
-              ? 'IATA Volumetric Specs (L×W×H cm ÷ 6000)'
+              ? 'IATA Volumetric Specs (LÃ—WÃ—H cm Ã· 6000)'
               : 'Ocean Freight Weight & Measurement (W/M)'}
             :
           </span>
@@ -1192,7 +1192,7 @@ export function CargoTab({
           <Textarea
             value={pasteText}
             onChange={(event) => setPasteText(event.target.value)}
-            placeholder="Paste tab-delimited cells from Excel here…"
+            placeholder="Paste tab-delimited cells from Excel hereâ€¦"
             rows={3}
           />
           <Button variant="outline" size="sm" onClick={paste}>
@@ -1246,7 +1246,7 @@ export function ContainersTab({
           { id: 'sealNo', header: 'Seal #' },
           { id: 'tareKg', header: 'Tare kg', type: 'number' },
           { id: 'vgmKg', header: 'VGM kg', type: 'number' },
-          { id: 'temperatureC', header: 'Temp °C', type: 'number' },
+          { id: 'temperatureC', header: 'Temp Â°C', type: 'number' },
           { id: 'unNumbers', header: 'UN / Hazmat' },
         ]}
         footer={<span className="text-sm text-muted-foreground">Standard ISO Types: {EQUIPMENT_TYPES.join(', ')}</span>}
@@ -1556,23 +1556,23 @@ export function DocsTab({
                         <span className="font-semibold text-foreground/80">
                           {isDocDomestic ? 'Origin Plant: ' : 'Shipper: '}
                         </span>
-                        <span className="truncate">{doc.shipperName || draft.shipperName || '—'}</span>
+                        <span className="truncate">{doc.shipperName || draft.shipperName || 'â€”'}</span>
                       </div>
                       <div>
                         <span className="font-semibold text-foreground/80">
                           {isDocDomestic ? 'Drop-off Site: ' : 'Consignee: '}
                         </span>
-                        <span className="truncate">{doc.consigneeName || draft.consigneeName || '—'}</span>
+                        <span className="truncate">{doc.consigneeName || draft.consigneeName || 'â€”'}</span>
                       </div>
                       {isDocDomestic ? (
                         <>
                           <div>
                             <span className="font-semibold text-foreground/80">Truck Plate: </span>
-                            <span className="font-mono font-bold text-foreground">{draft.vessel || '—'}</span>
+                            <span className="font-mono font-bold text-foreground">{draft.vessel || 'â€”'}</span>
                           </div>
                           <div>
                             <span className="font-semibold text-foreground/80">Driver: </span>
-                            <span>{draft.flightNo || '—'}</span>
+                            <span>{draft.flightNo || 'â€”'}</span>
                           </div>
                         </>
                       ) : (
@@ -1584,7 +1584,7 @@ export function DocsTab({
                           <div>
                             <span className="font-semibold text-foreground/80">Route: </span>
                             <span>
-                              {doc.pol || draft.polCode || '—'} → {doc.pod || draft.podCode || '—'}
+                              {doc.pol || draft.polCode || 'â€”'} â†’ {doc.pod || draft.podCode || 'â€”'}
                             </span>
                           </div>
                         </>
@@ -1826,7 +1826,7 @@ export function DocsTab({
               </FormSection>
 
               <FormSection
-                title={isDomestic ? 'Origin Plant &amp; Destination Site' : 'Shipper &amp; Consignee'}
+                title={isDomestic ? 'Origin Plant & Destination Site' : 'Shipper & Consignee'}
                 description="Registered names and facility addresses as shown on physical document."
               >
                 <FormField label={isDomestic ? 'Shipper / Origin Plant' : 'Shipper Name'} required>
@@ -1859,7 +1859,7 @@ export function DocsTab({
               </FormSection>
 
               <FormSection
-                title={isDomestic ? 'Corridor &amp; Fleet Particulars' : 'Routing &amp; Carrier Details'}
+                title={isDomestic ? 'Corridor & Fleet Particulars' : 'Routing & Carrier Details'}
                 defaultOpen={false}
               >
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -1947,7 +1947,7 @@ export function DocsTab({
       {onNext && (
         <div className="flex justify-end pt-3 border-t">
           <Button onClick={onNext} className="gap-2 shadow-xs">
-            Next: Charges &amp; Margin
+            Next: Charges & Margin
             <ArrowRight className="size-4" />
           </Button>
         </div>
@@ -1963,7 +1963,7 @@ export function ChargesTab({ draft, air, cargo, containers, charges, setCharges,
 }
 
 export function TimelineTab({ events, milestone, setMilestone, add, status }: { events: { id: string; code: string; eventAt?: string; createdAt?: string; location?: string; notes?: string }[]; milestone: { code: string; location: string; notes: string; isPublic: boolean }; setMilestone: (next: { code: string; location: string; notes: string; isPublic: boolean }) => void; add: () => void; status: (value: string) => void }) {
-  return <div className="grid gap-4 xl:grid-cols-[1fr_22rem]"><Timeline items={events.map((event) => ({ id: event.id, title: `${event.code}${event.location ? ` · ${event.location}` : ''}`, time: formatDate(event.eventAt || event.createdAt), description: event.notes, tone: event.code === 'EXC' ? 'danger' : 'info' }))} /><div className="space-y-3"><FormField label="Next status"><Select placeholder="Set status" options={STATUS_STEPS.map((s) => ({ value: s, label: s }))} onValueChange={status} /></FormField><FormField label="Milestone code"><Input value={milestone.code} onChange={(event) => setMilestone({ ...milestone, code: event.target.value.toUpperCase() })} /></FormField><FormField label="Location"><Input value={milestone.location} onChange={(event) => setMilestone({ ...milestone, location: event.target.value })} /></FormField><FormField label="Notes"><Textarea value={milestone.notes} onChange={(event) => setMilestone({ ...milestone, notes: event.target.value })} /></FormField><Button onClick={add}>Add milestone</Button></div></div>
+  return <div className="grid gap-4 xl:grid-cols-[1fr_22rem]"><Timeline items={events.map((event) => ({ id: event.id, title: `${event.code}${event.location ? ` Â· ${event.location}` : ''}`, time: formatDate(event.eventAt || event.createdAt), description: event.notes, tone: event.code === 'EXC' ? 'danger' : 'info' }))} /><div className="space-y-3"><FormField label="Next status"><Select placeholder="Set status" options={STATUS_STEPS.map((s) => ({ value: s, label: s }))} onValueChange={status} /></FormField><FormField label="Milestone code"><Input value={milestone.code} onChange={(event) => setMilestone({ ...milestone, code: event.target.value.toUpperCase() })} /></FormField><FormField label="Location"><Input value={milestone.location} onChange={(event) => setMilestone({ ...milestone, location: event.target.value })} /></FormField><FormField label="Notes"><Textarea value={milestone.notes} onChange={(event) => setMilestone({ ...milestone, notes: event.target.value })} /></FormField><Button onClick={add}>Add milestone</Button></div></div>
 }
 
 export function DocumentsTab({ air, print }: { air: boolean; print: (kind: string) => void }) {
@@ -1981,5 +1981,5 @@ export function CloseTab({ status, openClose, reopenReason, setReopenReason, reo
 }
 
 export function AuditTab({ draft }: { draft: Partial<Shipment> }) {
-  return <div className="grid gap-3 text-sm md:grid-cols-2"><div><span className="text-muted-foreground">Created</span><p>{formatDate(draft.createdAt)}</p></div><div><span className="text-muted-foreground">Updated</span><p>{formatDate(draft.updatedAt)}</p></div><div><span className="text-muted-foreground">Version</span><p className="font-mono">{draft.version ?? '—'}</p></div><div><span className="text-muted-foreground">Closed</span><p>{formatDate(draft.closedAt)}</p></div><div className="md:col-span-2"><span className="text-muted-foreground">Remarks</span><p>{draft.remarks || '—'}</p></div></div>
+  return <div className="grid gap-3 text-sm md:grid-cols-2"><div><span className="text-muted-foreground">Created</span><p>{formatDate(draft.createdAt)}</p></div><div><span className="text-muted-foreground">Updated</span><p>{formatDate(draft.updatedAt)}</p></div><div><span className="text-muted-foreground">Version</span><p className="font-mono">{draft.version ?? 'â€”'}</p></div><div><span className="text-muted-foreground">Closed</span><p>{formatDate(draft.closedAt)}</p></div><div className="md:col-span-2"><span className="text-muted-foreground">Remarks</span><p>{draft.remarks || 'â€”'}</p></div></div>
 }

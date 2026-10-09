@@ -118,7 +118,7 @@ export function FormSection({
 }) {
   const [open, setOpen] = useState(defaultOpen)
   return (
-    <section className={cn('w-full min-w-0 overflow-hidden rounded-xl border bg-card/90 shadow-2xs transition-shadow duration-200 hover:shadow-xs', className)}>
+    <section className={cn('w-full min-w-0 rounded-xl border bg-card/90 shadow-2xs transition-shadow duration-200 hover:shadow-xs', className)}>
       <button
         type="button"
         onClick={() => setOpen(!open)}
@@ -131,7 +131,7 @@ export function FormSection({
         <ChevronDown className={cn('size-4 text-muted-foreground transition-transform duration-200', open && 'rotate-180')} />
       </button>
       {open && (
-        <div className="grid w-full min-w-0 gap-3 border-t p-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 sm:p-4">
+        <div className="grid w-full min-w-0 gap-3 border-t p-3 sm:grid-cols-2 lg:grid-cols-3 sm:p-4">
           {children}
         </div>
       )}

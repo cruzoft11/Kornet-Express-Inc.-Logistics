@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, Fragment } from 'react'
+﻿import { useEffect, useState, useCallback, Fragment } from 'react'
 import { useParams } from 'react-router-dom'
 import axios from 'axios'
 import PageHeader from '../PageHeader'
@@ -333,7 +333,7 @@ export default function FSReports() {
       const err = e as { response?: { data?: { message?: string }; status?: number }; message?: string }
       const status = err.response?.status ?? 0
       if (status === 401 || status === 404) {
-        setError('') // 401/404 = unauthenticated or not yet bridged — silently show empty table
+        setError('') // 401/404 = unauthenticated or not yet bridged â€” silently show empty table
       } else {
         setError(`Failed to load report data: ${err.response?.data?.message ?? err.message ?? 'Unknown error'}`)
       }
@@ -869,13 +869,13 @@ export default function FSReports() {
 
                     <datalist id="cdv-options">
                       {voucherMasters.map(m => (
-                        <option key={m.id} value={`${m.jJvNo} — ${m.jPayTo} (Check: ${m.jCkNo})`} />
+                        <option key={m.id} value={`${m.jJvNo} â€” ${m.jPayTo} (Check: ${m.jCkNo})`} />
                       ))}
                     </datalist>
 
                     {printBuilderPages.map((pageMasterId, idx) => {
                       const mMatch = typeof pageMasterId === 'number' ? voucherMasters.find(m => m.id === pageMasterId) : null
-                      const displayVal = mMatch ? `${mMatch.jJvNo} — ${mMatch.jPayTo} (Check: ${mMatch.jCkNo})` : String(pageMasterId)
+                      const displayVal = mMatch ? `${mMatch.jJvNo} â€” ${mMatch.jPayTo} (Check: ${mMatch.jCkNo})` : String(pageMasterId)
                       return (
                         <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--background)', padding: '8px', borderRadius: '6px', border: '1px solid var(--border)' }}>
                           <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', width: '60px' }}>Page {idx + 1}</span>
@@ -887,7 +887,7 @@ export default function FSReports() {
                             value={displayVal}
                             onChange={e => {
                               const newPages = [...printBuilderPages]
-                              const match = voucherMasters.find(m => `${m.jJvNo} — ${m.jPayTo} (Check: ${m.jCkNo})` === e.target.value)
+                              const match = voucherMasters.find(m => `${m.jJvNo} â€” ${m.jPayTo} (Check: ${m.jCkNo})` === e.target.value)
                               newPages[idx] = match ? match.id : e.target.value
                               setPrintBuilderPages(newPages)
                             }}
@@ -1072,7 +1072,7 @@ export default function FSReports() {
         </div>
       )}
 
-      {/* CDV REGISTER — tabular view matching A_REPVSM.PRG */}
+      {/* CDV REGISTER â€” tabular view matching A_REPVSM.PRG */}
       {!loading && type === 'cdv' && (
         <div style={{ overflowX: 'auto' }}>
           <p className="subtitle" style={{ marginBottom: '12px' }}>
@@ -1611,7 +1611,7 @@ function FinancialStmtView({ data }: { data: Record<string, unknown> }) {
           TOTAL ASSETS: {fmt(mkn('totalAssets'))}
         </div>
 
-        <h4 style={{ fontWeight: 700, marginBottom: '6px', textTransform: 'uppercase' }}>*** LIABILITIES &amp; EQUITY ***</h4>
+        <h4 style={{ fontWeight: 700, marginBottom: '6px', textTransform: 'uppercase' }}>*** LIABILITIES & EQUITY ***</h4>
         <p style={{ fontWeight: 700, margin: '0 0 4px', fontSize: '12px' }}>LIABILITIES:</p>
         <SubSection label="Current Liabilities"  lines={curLiab}  total={mkn('totalCurrentLiabilities')} />
         <SubSection label="Deferred Liabilities" lines={defLiab}  total={mkn('totalDeferredLiabilities')} />
@@ -1630,7 +1630,7 @@ function FinancialStmtView({ data }: { data: Record<string, unknown> }) {
 
         <div style={{ fontWeight: 700, textAlign: 'right', fontFamily: "'Consolas', monospace",
           borderTop: '2px solid var(--border)', padding: '6px 12px', marginTop: '8px', fontSize: '14px' }}>
-          TOTAL LIABILITY &amp; EQUITY: {fmt(mkn('totalLiabilitiesAndEquity'))}
+          TOTAL LIABILITY & EQUITY: {fmt(mkn('totalLiabilitiesAndEquity'))}
         </div>
 
         {Array.isArray((data as any).subsidiarySchedules) && ((data as any).subsidiarySchedules as any[]).length > 0 && (

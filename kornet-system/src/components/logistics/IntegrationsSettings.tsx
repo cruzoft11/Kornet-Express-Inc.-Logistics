@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+﻿import { useEffect } from 'react'
 import { useIntegrationsStore, IntegrationStatus } from '../../stores/integrationsStore'
 
 const CATEGORY_ICON: Record<string, string> = {
@@ -51,7 +51,7 @@ export default function IntegrationsSettings() {
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-blue-500">hub</span>
             <div>
-              <h2 className="font-bold text-slate-900 dark:text-white text-sm">Integrations &amp; Hardware</h2>
+              <h2 className="font-bold text-slate-900 dark:text-white text-sm">Integrations & Hardware</h2>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
                 Connect devices and services before using dependent features.
               </p>
@@ -67,7 +67,7 @@ export default function IntegrationsSettings() {
 
         <div className="max-h-[60vh] overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
           {loading && items.length === 0 && (
-            <div className="px-5 py-8 text-center text-sm text-slate-500">Loading integrations…</div>
+            <div className="px-5 py-8 text-center text-sm text-slate-500">Loading integrationsâ€¦</div>
           )}
           {items.map((it) => {
             const meta = STATUS_META[it.status]
@@ -83,7 +83,7 @@ export default function IntegrationsSettings() {
                     <p className={`flex items-center gap-1.5 text-[11px] font-medium ${meta.text}`}>
                       <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
                       {meta.label}
-                      <span className="text-slate-400 dark:text-slate-500 font-normal">· {it.category}</span>
+                      <span className="text-slate-400 dark:text-slate-500 font-normal">Â· {it.category}</span>
                     </p>
                   </div>
                 </div>

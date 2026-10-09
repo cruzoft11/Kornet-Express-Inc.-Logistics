@@ -1,4 +1,4 @@
-name: Build and Deploy Kornet Express Logistics to Azure Web App
+﻿name: Build and Deploy Kornet Express Logistics to Azure Web App
 
 on:
   push:
@@ -30,6 +30,11 @@ jobs:
 
       - name: Install Backend Dependencies & Generate Prisma
         working-directory: kornet-system/server
+        # DATABASE_URL must be set for prisma generate/validate to work in CI.
+        # Use a dummy SQLite path — the real path is set in Azure App Settings.
+        env:
+          DATABASE_URL: file:./prisma/data/kornet.db
+          ACCOUNTING_DB_PATH: ./prisma/data/accounting.db
         run: |
           npm ci
           npx prisma generate
@@ -38,22 +43,32 @@ jobs:
       - name: Prepare Deployment Bundle
         run: |
           mkdir -p deploy-bundle
-          # Copy compiled frontend
           cp -r kornet-system/dist deploy-bundle/dist
-          # Copy backend
           cp -r kornet-system/server deploy-bundle/server
-          # Ensure .db files are never packaged into production deployment
-          rm -f deploy-bundle/server/prisma/data/*.db
-          rm -f deploy-bundle/server/*.db
-          # Copy package.json & lockfile
+          # Never ship .db files — production DB lives on persistent Azure storage
+          find deploy-bundle -name "*.db" -delete
+          find deploy-bundle -name "*.db-journal" -delete
           cp kornet-system/package.json deploy-bundle/package.json
           cp kornet-system/package-lock.json deploy-bundle/package-lock.json
 
       - name: Install Production Node Modules for Bundle
         working-directory: deploy-bundle
+        env:
+          DATABASE_URL: file:./server/prisma/data/kornet.db
         run: |
           npm ci --omit=dev
           cd server && npm ci --omit=dev && npx prisma generate
+
+      - name: Add startup script
+        run: |
+          cat > deploy-bundle/startup.sh << 'EOF'
+          #!/bin/bash
+          set -e
+          cd /home/site/wwwroot
+          # The server performs a backed-up, non-destructive schema sync before listening.
+          node server/dist/src/index.js
+          EOF
+          chmod +x deploy-bundle/startup.sh
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
