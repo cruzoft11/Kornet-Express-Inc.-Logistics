@@ -8,7 +8,7 @@ import { requireAuth, requireCompany, requireRole } from '../middleware/auth.js'
 import { COMPANY_CODE } from '../company.js';
 import { createCrudRouter, type PrismaDelegate, writeAudit } from '../lib/crud.js';
 import { nextNumber, sequenceKeyForShipment } from '../lib/sequence.js';
-import { airChargeableKg, airVolumetricKg, cbm, oceanWmTons, round2, vatAmount } from '../lib/calc.js';
+import { airChargeableKg, airVolumetricKg, cbm, fileMarginPct, oceanWmTons, round2, vatAmount } from '../lib/calc.js';
 import { computeCharge, convertQuote, recomputeInvoice, recomputeApBill, applyTariffs, recalcShipment, shipmentAnalysis, createInvoiceFromShipment, createApBillsFromShipment, createDraftFinanceForShipment, postInvoice, postApBill, trialBridge, finalBridge, closeShipment, closeCheck, createBridge, getOwned, emitStatus, bankAccount, parseJson, assertChargeMutable, assertShipmentMutable } from '../services/domain.js';
 import * as s from '../schemas.js';
 
@@ -191,7 +191,194 @@ logistics.get('/lookups/search', asyncHandler(async (req, res) => { const type =
 logistics.get('/lookups/ports', asyncHandler(async (req, res) => res.json({ data: await prisma.port.findMany({ where: { companyCode: req.companyCode!, kind: req.query.kind ? String(req.query.kind) : undefined, OR: [{ code: { contains: String(req.query.q ?? '') } }, { unlocode: { contains: String(req.query.q ?? '') } }, { name: { contains: String(req.query.q ?? '') } }] }, take: 20, orderBy: { name: 'asc' } }) })));
 logistics.get('/lookups/billing-codes', asyncHandler(async (req, res) => res.json({ data: await prisma.billingCode.findMany({ where: { companyCode: req.companyCode!, active: true, modes: req.query.mode ? { contains: String(req.query.mode).toUpperCase() } : undefined }, take: 50, orderBy: { code: 'asc' } }) })));
 logistics.get('/lookups/global', asyncHandler(async (req, res) => { const c = req.companyCode!, q = String(req.query.q ?? ''); const [shipments, docs, containers, vehicles, invoices, aps, pds, parties] = await Promise.all([prisma.shipment.findMany({ where: { companyCode: c, OR: [{ fileNo: { contains: q } }, { bookingNo: { contains: q } }, { customerRef: { contains: q } }] }, take: 5 }), prisma.transportDoc.findMany({ where: { companyCode: c, docNo: { contains: q } }, take: 5 }), prisma.container.findMany({ where: { companyCode: c, containerNo: { contains: q } }, take: 5 }), prisma.vehicle.findMany({ where: { companyCode: c, OR: [{ vin: { contains: q } }, { wrNo: { contains: q } }] }, take: 5 }), prisma.invoice.findMany({ where: { companyCode: c, invoiceNo: { contains: q } }, take: 5 }), prisma.apBill.findMany({ where: { companyCode: c, billNo: { contains: q } }, take: 5 }), prisma.pdOrder.findMany({ where: { companyCode: c, orderNo: { contains: q } }, take: 5 }), prisma.party.findMany({ where: { companyCode: c, OR: [{ code: { contains: q } }, { name: { contains: q } }] }, take: 5 })]); const out = [...shipments.map((x) => ({ type: 'shipment', id: x.id, label: x.fileNo, sublabel: x.status, route: `/logistics/files/${x.id}` })), ...docs.map((x) => ({ type: 'transportDoc', id: x.id, label: x.docNo, sublabel: x.status, route: x.shipmentId ? `/logistics/files/${x.shipmentId}` : `/logistics/ocean-export` })), ...containers.map((x) => ({ type: 'container', id: x.id, label: x.containerNo, sublabel: x.status, route: x.shipmentId ? `/logistics/files/${x.shipmentId}` : `/logistics/ocean-export` })), ...vehicles.map((x) => ({ type: 'vehicle', id: x.id, label: x.vin, sublabel: x.wrNo, route: `/logistics/vehicles` })), ...invoices.map((x) => ({ type: 'invoice', id: x.id, label: x.invoiceNo, sublabel: x.status, route: `/billing/invoices` })), ...aps.map((x) => ({ type: 'apBill', id: x.id, label: x.billNo, sublabel: x.status, route: `/billing/payables` })), ...pds.map((x) => ({ type: 'pdOrder', id: x.id, label: x.orderNo, sublabel: x.status, route: `/logistics/pd-orders` })), ...parties.map((x) => ({ type: 'party', id: x.id, label: x.name, sublabel: x.code, route: `/directories/parties` }))].slice(0, 20); res.json({ data: out }); }));
-logistics.get('/dashboard/summary', asyncHandler(async (req, res) => { const c = req.companyCode!, now = new Date(), in7 = new Date(now.getTime() + 7 * 86400000), in72 = new Date(now.getTime() + 72 * 3600000); const monthStart = new Date(now.getFullYear(), now.getMonth(), 1); const [filesByStatus, upcomingEtas, upcomingCutoffs, unbilled, bridgeQueue, hold, pdToday, invoices, apBills, postedInv, postedAp] = await Promise.all([prisma.shipment.groupBy({ by: ['mode', 'status'], where: { companyCode: c }, _count: true }), prisma.shipment.findMany({ where: { companyCode: c, eta: { gte: now, lte: in7 } }, select: { fileNo: true, eta: true, podCode: true }, take: 10, orderBy: { eta: 'asc' } }), prisma.shipment.findMany({ where: { companyCode: c, OR: [{ docCutoff: { gte: now, lte: in72 } }, { cargoCutoff: { gte: now, lte: in72 } }] }, select: { fileNo: true, docCutoff: true, cargoCutoff: true, podCode: true }, take: 10 }), prisma.charge.count({ where: { companyCode: c, OR: [{ billStatus: 'OPEN' }, { costStatus: 'OPEN' }] } }), prisma.bridgeItem.groupBy({ by: ['status'], where: { companyCode: c }, _count: true }), prisma.vehicle.count({ where: { companyCode: c, hold: true } }), prisma.pdOrder.count({ where: { companyCode: c, date: { gte: new Date(now.toDateString()) } } }), prisma.invoice.findMany({ where: { companyCode: c, balance: { gt: 0 } } }), prisma.apBill.findMany({ where: { companyCode: c, balance: { gt: 0 } } }), prisma.invoice.findMany({ where: { companyCode: c, status: { in: ['POSTED', 'PARTIAL', 'PAID'] }, date: { gte: monthStart } } }), prisma.apBill.findMany({ where: { companyCode: c, status: { in: ['POSTED', 'PARTIAL', 'PAID'] }, date: { gte: monthStart } } })]); const aging: Record<string, number> = { current: 0, '1-30': 0, '31-60': 0, '61-90': 0, '90+': 0 }; for (const i of invoices) { const days = Math.floor((now.getTime() - (i.dueDate ?? now).getTime()) / 86400000); const k = days <= 0 ? 'current' : days <= 30 ? '1-30' : days <= 60 ? '31-60' : days <= 90 ? '61-90' : '90+'; aging[k] = round2(aging[k] + i.balance); } const revenueMtd = round2(postedInv.reduce((sum, i) => sum + i.totalAmount, 0)); const costMtd = round2(postedAp.reduce((sum, a) => sum + a.subtotal, 0)); const topCustomers = Object.entries(postedInv.reduce<Record<string, number>>((m, i) => { m[i.billToName ?? 'Unknown'] = round2((m[i.billToName ?? 'Unknown'] ?? 0) + i.totalAmount); return m; }, {})).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([customer, amount]) => ({ customer, amount })); res.json({ filesByStatus, upcomingEtas, upcomingCutoffs, unbilledCharges: unbilled, invoicesOverdue: invoices.filter((i) => (i.dueDate ?? now) < now).length, arAging: aging, apDueAmount: round2(apBills.reduce((sum, a) => sum + a.balance, 0)), bridgeQueue, vehiclesOnHold: hold, pdToday, mtd: { revenue: revenueMtd, cost: costMtd, profit: round2(revenueMtd - costMtd) }, topCustomers }); }));
+logistics.get('/dashboard/summary', asyncHandler(async (req, res) => {
+  const companyCode = req.companyCode!;
+  const now = new Date();
+  const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const tomorrow = new Date(today.getTime() + 86400000);
+  const in7 = new Date(now.getTime() + 7 * 86400000);
+  const in72 = new Date(now.getTime() + 72 * 3600000);
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const nextMonthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+  const postedStatuses = ['POSTED', 'PARTIAL', 'PAID'];
+  const openFinancialStatuses = ['POSTED', 'PARTIAL'];
+
+  const [
+    filesByStatus,
+    upcomingEtas,
+    upcomingCutoffs,
+    unbilled,
+    bridgeQueue,
+    hold,
+    pdToday,
+    invoices,
+    apBills,
+    overdueInvoices,
+    postedInv,
+    postedAp,
+    lowMarginShipments,
+    marginSetting,
+  ] = await Promise.all([
+    prisma.shipment.groupBy({
+      by: ['mode', 'status'],
+      where: { companyCode, deletedAt: null },
+      _count: true,
+    }),
+    prisma.shipment.findMany({
+      where: { companyCode, deletedAt: null, eta: { gte: now, lte: in7 } },
+      select: { id: true, fileNo: true, eta: true, podCode: true, status: true },
+      take: 10,
+      orderBy: { eta: 'asc' },
+    }),
+    prisma.shipment.findMany({
+      where: {
+        companyCode,
+        deletedAt: null,
+        OR: [{ docCutoff: { gte: now, lte: in72 } }, { cargoCutoff: { gte: now, lte: in72 } }],
+      },
+      select: { id: true, fileNo: true, docCutoff: true, cargoCutoff: true, podCode: true, status: true },
+      take: 10,
+      orderBy: { docCutoff: 'asc' },
+    }),
+    prisma.charge.count({
+      where: { companyCode, deletedAt: null, OR: [{ billStatus: 'OPEN' }, { costStatus: 'OPEN' }] },
+    }),
+    prisma.bridgeItem.groupBy({ by: ['status'], where: { companyCode }, _count: true }),
+    prisma.vehicle.count({ where: { companyCode, deletedAt: null, hold: true } }),
+    prisma.pdOrder.count({
+      where: { companyCode, deletedAt: null, deliverBy: { gte: today, lt: tomorrow } },
+    }),
+    prisma.invoice.findMany({
+      where: { companyCode, deletedAt: null, status: { in: openFinancialStatuses }, balance: { gt: 0 } },
+      select: { id: true, invoiceNo: true, billToName: true, dueDate: true, balance: true, status: true },
+    }),
+    prisma.apBill.findMany({
+      where: { companyCode, deletedAt: null, status: { in: openFinancialStatuses }, balance: { gt: 0 } },
+      select: { id: true, billNo: true, vendorName: true, dueDate: true, balance: true, status: true },
+    }),
+    prisma.invoice.findMany({
+      where: {
+        companyCode,
+        deletedAt: null,
+        status: { in: openFinancialStatuses },
+        balance: { gt: 0 },
+        dueDate: { lt: now },
+      },
+      select: { id: true, invoiceNo: true, billToName: true, dueDate: true, balance: true, status: true },
+      take: 10,
+      orderBy: { dueDate: 'asc' },
+    }),
+    prisma.invoice.findMany({
+      where: { companyCode, deletedAt: null, status: { in: postedStatuses }, date: { gte: monthStart, lt: nextMonthStart } },
+      include: { shipment: { select: { mode: true } } },
+    }),
+    prisma.apBill.findMany({
+      where: { companyCode, deletedAt: null, status: { in: postedStatuses }, date: { gte: monthStart, lt: nextMonthStart } },
+      include: { shipment: { select: { mode: true } } },
+    }),
+    prisma.shipment.findMany({
+      where: { companyCode, deletedAt: null, status: { notIn: ['CLOSED', 'CANCELLED'] } },
+      select: {
+        id: true,
+        fileNo: true,
+        mode: true,
+        status: true,
+        updatedAt: true,
+        charges: {
+          where: { deletedAt: null },
+          select: { amountPhp: true, costAmountPhp: true, vatClass: true },
+        },
+      },
+      take: 200,
+      orderBy: { updatedAt: 'desc' },
+    }),
+    prisma.companySetting.findUnique({
+      where: { companyCode_key: { companyCode, key: 'marginThresholdPct' } },
+      select: { value: true },
+    }),
+  ]);
+
+  const aging: Record<string, number> = { current: 0, '1-30': 0, '31-60': 0, '61-90': 0, '90+': 0 };
+  for (const invoice of invoices) {
+    const daysPastDue = Math.floor((now.getTime() - (invoice.dueDate ?? now).getTime()) / 86400000);
+    const bucket = daysPastDue <= 0 ? 'current' : daysPastDue <= 30 ? '1-30' : daysPastDue <= 60 ? '31-60' : daysPastDue <= 90 ? '61-90' : '90+';
+    aging[bucket] = round2(aging[bucket] + invoice.balance);
+  }
+
+  const revenueOf = (invoice: { totalAmount: number; vatAmount: number }) => round2(invoice.totalAmount - invoice.vatAmount);
+  const revenueMtd = round2(postedInv.reduce((sum, invoice) => sum + revenueOf(invoice), 0));
+  const costMtd = round2(postedAp.reduce((sum, bill) => sum + bill.subtotal, 0));
+  const customerTotals = postedInv.reduce<Record<string, number>>((totals, invoice) => {
+    const customer = invoice.billToName ?? 'Unknown';
+    totals[customer] = round2((totals[customer] ?? 0) + revenueOf(invoice));
+    return totals;
+  }, {});
+  const topCustomers = Object.entries(customerTotals)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([customer, amount]) => ({ customer, amount }));
+
+  const modeTotals = new Map<string, { revenue: number; cost: number }>();
+  for (const invoice of postedInv) {
+    const mode = invoice.shipment?.mode ?? 'MISC';
+    const totals = modeTotals.get(mode) ?? { revenue: 0, cost: 0 };
+    totals.revenue = round2(totals.revenue + revenueOf(invoice));
+    modeTotals.set(mode, totals);
+  }
+  for (const bill of postedAp) {
+    const mode = bill.shipment?.mode ?? 'MISC';
+    const totals = modeTotals.get(mode) ?? { revenue: 0, cost: 0 };
+    totals.cost = round2(totals.cost + bill.subtotal);
+    modeTotals.set(mode, totals);
+  }
+  const mtdByMode = [...modeTotals].map(([mode, totals]) => ({ mode, ...totals }));
+
+  const marginThreshold = Number(parseJson(marginSetting?.value, 15));
+  const lowMarginFiles = lowMarginShipments
+    .map((shipment) => {
+      const charges = shipment.charges.filter((charge) => charge.vatClass !== 'NON_VAT_REIMBURSABLE');
+      const revenue = round2(charges.reduce((sum, charge) => sum + charge.amountPhp, 0));
+      const cost = round2(charges.reduce((sum, charge) => sum + charge.costAmountPhp, 0));
+      return {
+        id: shipment.id,
+        fileNo: shipment.fileNo,
+        mode: shipment.mode,
+        status: shipment.status,
+        updatedAt: shipment.updatedAt,
+        revenue,
+        cost,
+        marginPct: fileMarginPct(revenue, cost),
+      };
+    })
+    .filter((shipment) => (shipment.revenue > 0 || shipment.cost > 0) && shipment.marginPct < marginThreshold)
+    .sort((a, b) => a.marginPct - b.marginPct)
+    .slice(0, 10);
+
+  const apDueThisWeek = round2(apBills
+    .filter((bill) => bill.dueDate && bill.dueDate >= now && bill.dueDate <= in7)
+    .reduce((sum, bill) => sum + bill.balance, 0));
+
+  res.json({
+    filesByStatus,
+    upcomingEtas,
+    upcomingCutoffs,
+    overdueInvoices,
+    lowMarginFiles,
+    unbilledCharges: unbilled,
+    invoicesOverdue: invoices.filter((invoice) => invoice.dueDate && invoice.dueDate < now).length,
+    arOutstanding: round2(invoices.reduce((sum, invoice) => sum + invoice.balance, 0)),
+    arOverdue: round2(invoices.filter((invoice) => invoice.dueDate && invoice.dueDate < now).reduce((sum, invoice) => sum + invoice.balance, 0)),
+    arAging: aging,
+    apDueAmount: round2(apBills.reduce((sum, bill) => sum + bill.balance, 0)),
+    apDueThisWeek,
+    bridgeQueue,
+    vehiclesOnHold: hold,
+    pdToday,
+    mtd: { revenue: revenueMtd, cost: costMtd, profit: round2(revenueMtd - costMtd) },
+    mtdByMode,
+    topCustomers,
+  });
+}));
 
 export const portal = Router();
 const portalAttempts = new Map<string, { failures: number; first: number; blockedUntil: number }>();
