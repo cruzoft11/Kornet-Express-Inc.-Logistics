@@ -1,7 +1,7 @@
-﻿import { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CheckCircle2, Columns2, FileDown, Maximize2, Plus, Printer, Send, Table2, Trash2 } from 'lucide-react'
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Combobox, DataGrid, DateInput, Dialog, DialogContent, EmptyState, FormField, FormSection, Input, MoneyInput, PageHeader, Select, StatCard, StatusPill, Toolbar, exportRowsToExcel } from '@/components/ui'
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, ComboSelect, Combobox, DataGrid, DateInput, Dialog, DialogContent, EmptyState, FormField, FormSection, Input, MoneyInput, PageHeader, Select, StatCard, StatusPill, Toolbar, exportRowsToExcel } from '@/components/ui'
 import { KornetLoader } from '@/components/ui/KornetLoader'
 import { useHotkeys } from '@/hooks/useHotkeys'
 import { formatDate, formatMoney } from '@/lib/format'
@@ -70,7 +70,7 @@ function LineGrid({ lines, setLines, editable }: { lines: DraftLine[]; setLines:
               <td className="p-1.5"><Input disabled={!editable} className="text-right font-mono" value={String(l.qty ?? 1)} onChange={(e) => patch(i, { qty: Number(e.target.value), amount: Number(e.target.value) * Number(l.rate || 0), amountPhp: Number(e.target.value) * Number(l.rate || 0) })} /></td>
               <td className="p-1.5"><Input disabled={!editable} value={l.unit ?? 'PER_SHPT'} onChange={(e) => patch(i, { unit: e.target.value })} /></td>
               <td className="p-1.5"><MoneyInput disabled={!editable} value={l.rate ?? 0} onValueChange={(v) => patch(i, { rate: v, amount: Number(l.qty || 1) * v, amountPhp: Number(l.qty || 1) * v })} /></td>
-              <td className="p-1.5"><Select value={l.vatClass ?? 'VATABLE'} onValueChange={(v) => patch(i, { vatClass: v as BillingLine['vatClass'] })} options={['VATABLE','ZERO_RATED','EXEMPT','NON_VAT_REIMBURSABLE'].map((v) => ({ value: v, label: v }))} /></td>
+              <td className="p-1.5"><ComboSelect value={l.vatClass ?? 'VATABLE'} onValueChange={(v) => patch(i, { vatClass: v as BillingLine['vatClass'] })} options={['VATABLE','ZERO_RATED','EXEMPT','NON_VAT_REIMBURSABLE'].map((v) => ({ value: v, label: v }))} /></td>
               <td className="p-2 text-right font-mono font-medium">{money(l.amountPhp ?? l.amount)}</td>
               {editable && (
                 <td className="p-1.5 text-center">

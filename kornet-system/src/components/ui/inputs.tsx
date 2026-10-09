@@ -1,4 +1,4 @@
-import { forwardRef, useMemo, useState } from 'react'
+import { forwardRef, useEffect, useMemo, useRef, useState } from 'react'
 import { CalendarDays, ChevronDown, Search, X } from 'lucide-react'
 import * as SelectPrimitive from '@radix-ui/react-select'
 import * as CheckboxPrimitive from '@radix-ui/react-checkbox'
@@ -149,6 +149,131 @@ export function Select({ value, onValueChange, options, placeholder = 'Select…
         </SelectPrimitive.Content>
       </SelectPrimitive.Portal>
     </SelectPrimitive.Root>
+  )
+}
+
+/**
+ * ComboSelect – searchable dropdown that also accepts free-text input.
+ * The user can type anything; the typed value is accepted as-is even if it
+ * doesn't match any preset option.  Preset options are filtered as you type.
+ */
+export interface ComboSelectProps {
+  value?: string
+  onValueChange?: (v: string) => void
+  options: SelectOption[]
+  placeholder?: string
+  className?: string
+  'aria-label'?: string
+}
+export function ComboSelect({ value = '', onValueChange, options, placeholder = 'Select or type…', className, 'aria-label': ariaLabel }: ComboSelectProps) {
+  const [open, setOpen] = useState(false)
+  const [inputVal, setInputVal] = useState(value)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  // Keep input in sync with external value changes
+  useEffect(() => { setInputVal(value) }, [value])
+
+  const filtered = useMemo(() =>
+    options.filter((o) => o.label.toLowerCase().includes(inputVal.toLowerCase()) || o.value.toLowerCase().includes(inputVal.toLowerCase())).slice(0, 20),
+    [options, inputVal]
+  )
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false)
+        onValueChange?.(inputVal)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open, inputVal, onValueChange])
+
+  const selectOption = (opt: SelectOption) => {
+    setInputVal(opt.label)
+    onValueChange?.(opt.value)
+    setOpen(false)
+  }
+
+  const displayLabel = useMemo(() => {
+    const match = options.find((o) => o.value === value)
+    return match ? match.label : value
+  }, [value, options])
+
+  // Sync display label into input when closed
+  useEffect(() => {
+    if (!open) setInputVal(displayLabel)
+  }, [open, displayLabel])
+
+  return (
+    <div ref={containerRef} className={cn('relative w-full', className)} aria-label={ariaLabel}>
+      <div className="relative">
+        <input
+          ref={inputRef}
+          type="text"
+          value={inputVal}
+          placeholder={placeholder}
+          className={cn(control, 'pr-9 cursor-text')}
+          onFocus={() => { setInputVal(''); setOpen(true) }}
+          onChange={(e) => { setInputVal(e.target.value); setOpen(true) }}
+          onBlur={() => {
+            // If the user typed something not in options, keep it as custom free text
+            setTimeout(() => {
+              if (!containerRef.current?.contains(document.activeElement)) {
+                const match = options.find((o) => o.label.toLowerCase() === inputVal.toLowerCase())
+                if (match) { onValueChange?.(match.value); setInputVal(match.label) }
+                else { onValueChange?.(inputVal) }
+                setOpen(false)
+              }
+            }, 150)
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              if (filtered.length > 0) selectOption(filtered[0])
+              else { onValueChange?.(inputVal); setOpen(false) }
+            }
+            if (e.key === 'Escape') { setOpen(false); inputRef.current?.blur() }
+          }}
+        />
+        <button
+          type="button"
+          tabIndex={-1}
+          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          onClick={() => { setOpen((o) => !o); inputRef.current?.focus() }}
+        >
+          <ChevronDown className="size-4" />
+        </button>
+      </div>
+      {open && filtered.length > 0 && (
+        <div className="absolute z-[200] mt-1 w-full rounded-lg border border-border bg-popover text-popover-foreground shadow-xl">
+          <div className="max-h-60 overflow-auto p-1 custom-scrollbar">
+            {filtered.map((o) => (
+              <button
+                key={o.value}
+                type="button"
+                onMouseDown={(e) => { e.preventDefault(); selectOption(o) }}
+                className={cn(
+                  'w-full rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 dark:hover:text-white',
+                  value === o.value && 'bg-primary/10 font-medium text-primary dark:bg-primary/20 dark:text-white'
+                )}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {open && filtered.length === 0 && inputVal && (
+        <div className="absolute z-[200] mt-1 w-full rounded-lg border border-border bg-popover text-popover-foreground shadow-xl">
+          <div className="p-2">
+            <p className="px-2 py-1 text-xs text-muted-foreground">No preset match — press Enter to use "<span className="font-medium text-foreground">{inputVal}</span>"</p>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 

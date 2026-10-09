@@ -21,6 +21,7 @@ import {
 import {
   Badge,
   Button,
+  ComboSelect,
   ConfirmDialog,
   DateInput,
   EditableGrid,
@@ -542,12 +543,12 @@ export function GeneralTab({
               />
             </FormField>
 
-            <FormField label="Designated Cargo Warehouse" hint="Official NAIA Bonded Terminal">
-              <Select
+            <FormField label="Designated Cargo Warehouse" hint="Official NAIA Bonded Terminal or type custom">
+              <ComboSelect
                 value={draft.warehouse || ''}
                 onValueChange={(warehouse) => update({ warehouse })}
                 options={WAREHOUSE_DROPDOWN_OPTIONS.map((w) => ({ value: w.value, label: w.label }))}
-                placeholder="Choose cargo warehouse…"
+                placeholder="Choose or type warehouse…"
               />
             </FormField>
 
@@ -1050,11 +1051,11 @@ export function ImportTab({
           />
         </FormField>
         <FormField label="Cargo Terminal Warehouse (NAIA May 2026 Directory)">
-          <Select
+          <ComboSelect
             value={draft.warehouse || ''}
             onValueChange={(warehouse) => update({ warehouse })}
             options={WAREHOUSE_DROPDOWN_OPTIONS.map((w) => ({ value: w.value, label: w.label }))}
-            placeholder="Choose terminal warehouse…"
+            placeholder="Choose or type terminal warehouse…"
           />
         </FormField>
         <LookupField
@@ -1065,11 +1066,19 @@ export function ImportTab({
           role="isWarehouse"
         />
         <FormField label="BOC Customs Status">
-          <Input
+          <ComboSelect
             value={draft.customsStatus || ''}
-            onChange={(e) => update({ customsStatus: e.target.value.toUpperCase() })}
-            placeholder="CLEARED / PAID / HOLD"
-            className="font-mono uppercase"
+            onValueChange={(customsStatus) => update({ customsStatus })}
+            options={[
+              { value: 'CLEARED', label: 'CLEARED' },
+              { value: 'FOR PAYMENT', label: 'FOR PAYMENT' },
+              { value: 'HOLD', label: 'HOLD' },
+              { value: 'RELEASED', label: 'RELEASED' },
+              { value: 'UNDER ALERT', label: 'UNDER ALERT' },
+              { value: 'PENDING DOCS', label: 'PENDING DOCS' },
+              { value: 'SEIZURE', label: 'SEIZURE' },
+            ]}
+            placeholder="Select or type customs status…"
           />
         </FormField>
       </FormSection>

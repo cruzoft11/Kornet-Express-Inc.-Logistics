@@ -1,12 +1,12 @@
-﻿import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AlertTriangle, Search } from 'lucide-react'
-import { Combobox, FormField, Input, Select, StatusPill } from '@/components/ui'
+import { ComboSelect, Combobox, FormField, Input, StatusPill } from '@/components/ui'
 import type { LookupOption } from '@/api/ops'
 import { cn } from '@/lib/cn'
 import { formatMoney, formatNumber } from '@/lib/format'
 
 export function OptionsSelect({ value, options, onChange, placeholder }: { value?: string; options: string[]; onChange: (v: string) => void; placeholder?: string }) {
-  return <Select value={value || undefined} onValueChange={onChange} options={options.map((item) => ({ value: item, label: item.replace(/_/g, ' ') }))} placeholder={placeholder} />
+  return <ComboSelect value={value || ''} onValueChange={onChange} options={options.map((item) => ({ value: item, label: item.replace(/_/g, ' ') }))} placeholder={placeholder ?? 'Select or type…'} />
 }
 
 export function LookupField({ label, value, display, onChange, loader, role, required, hint }: { label: string; value?: string | null; display?: string; onChange: (id: string, item?: LookupOption) => void; loader: (q: string, role?: string) => Promise<LookupOption[]>; role?: string; required?: boolean; hint?: string }) {
