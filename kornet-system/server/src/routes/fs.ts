@@ -10,6 +10,9 @@ router.use(requireAuth, requireCompany, requireRole('accounting', 'manager', 'ad
 const JOURNAL_TABLES: Record<string, { table: string; journal: LedgerEntry['journal'] }> = {
   receipts: { table: 'fs_cashrcpt', journal: 'CRB' }, sales: { table: 'fs_salebook', journal: 'SALEBOOK' }, general: { table: 'fs_journals', journal: 'JV' }, purchase: { table: 'fs_purcbook', journal: 'PURCBOOK' }, adjustments: { table: 'fs_adjstmnt', journal: 'JV' },
 };
+const POST_LOG_JOURNALS: Record<string, LedgerEntry['journal']> = {
+  fs_checkmas: 'CDB', fs_cashrcpt: 'CRB', fs_salebook: 'SALEBOOK', fs_journals: 'JV', fs_purcbook: 'PURCBOOK', fs_adjstmnt: 'JV',
+};
 const QUERY_TABLES: Record<string, string> = { accounts:'fs_accounts', cdv:'fs_checkmas', receipt:'fs_cashrcpt', sales:'fs_salebook', general:'fs_journals', purchase:'fs_purcbook', adjustment:'fs_adjstmnt', journals:'fs_journals', vouchers:'fs_checkmas' };
 const db = () => getLedgerDb();
 const toMoney = (n: unknown) => Math.round((Number(n) || 0) * 100) / 100;
@@ -28,7 +31,14 @@ async function audit(req: Request, action: string, entity: string, entityId: str
 function requireAdmin(req: Request) { if (!['admin','superadmin'].includes(req.user?.role || '')) throw forbidden('Admin role required'); }
 function getUnpostedRows(table: string, comp: string, ref: string) { return db().prepare(`SELECT * FROM ${table} WHERE company_code=? AND j_jv_no=? AND ${activeClause()} ORDER BY Id`).all(comp, ref) as any[]; }
 function toLedgerLines(rows: any[]): LedgerLine[] { return rows.map((r) => ({ acctCode:r.acct_code, amount:toMoney(r.j_ck_amt), dc:dc(r.j_d_or_c) })); }
-function unpostedCount(table: string, comp: string) { return (db().prepare(`SELECT COUNT(*) c FROM ${table} WHERE company_code=? AND ${activeClause()}`).get(comp) as any)?.c ?? 0; }
+function unpostedCount(table: string, comp: string) {
+  const journal = POST_LOG_JOURNALS[table];
+  const sql = journal
+    ? `SELECT COUNT(*) c FROM ${table} t WHERE t.company_code=? AND ${activeClause('t')} AND NOT EXISTS (SELECT 1 FROM fs_post_log p WHERE p.company_code=t.company_code AND p.journal=? AND p.jv_no=t.j_jv_no)`
+    : `SELECT COUNT(*) c FROM ${table} WHERE company_code=? AND ${activeClause()}`;
+  const row = journal ? db().prepare(sql).get(comp, journal) : db().prepare(sql).get(comp);
+  return (row as { c?: number } | undefined)?.c ?? 0;
+}
 function computedAccounts(comp: string, from?: string, to?: string) { const params: any[] = [comp]; let dateWhere=''; if (from) { dateWhere+=' AND date(j_date)>=date(?)'; params.push(from); } if (to) { dateWhere+=' AND date(j_date)<=date(?)'; params.push(to); } return (db().prepare(`SELECT a.*, COALESCE(p.debit,0) computed_debit, COALESCE(p.credit,0) computed_credit FROM fs_accounts a LEFT JOIN (SELECT acct_code, SUM(CASE WHEN j_d_or_c='D' THEN ROUND(j_ck_amt,2) ELSE 0 END) debit, SUM(CASE WHEN j_d_or_c='C' THEN ROUND(j_ck_amt,2) ELSE 0 END) credit FROM fs_pournals WHERE company_code=? ${dateWhere} GROUP BY acct_code) p ON p.acct_code=a.acct_code WHERE a.company_code=? ORDER BY a.acct_code`).all(...params, comp) as any[]).map((a) => { const open=toMoney(a.open_bal), debit=toMoney(a.computed_debit), credit=toMoney(a.computed_credit); const ending=String(a.formula||'').toUpperCase()==='CD'?toMoney(open+credit-debit):toMoney(open+debit-credit); return { ...mapAccount(a), openingBalance:open, debitMovement:debit, creditMovement:credit, endingBalance:ending }; }); }
 function buildTrialBalance(req: Request) { const rows=computedAccounts(company(req), String(req.query.from||''), String(req.query.to||req.query.asOf||'')); const postable=rows.filter((a)=>['DC','CD'].includes(a.formula)); const totalDebit=toMoney(postable.reduce((s,a)=>s+(a.formula==='DC'?Math.max(a.endingBalance,0):Math.max(-a.endingBalance,0)),0)); const totalCredit=toMoney(postable.reduce((s,a)=>s+(a.formula==='CD'?Math.max(a.endingBalance,0):Math.max(-a.endingBalance,0)),0)); return { rows,totalDebit,totalCredit,inBalance:Math.abs(totalDebit-totalCredit)<0.01 }; }
 
@@ -106,5 +116,4 @@ router.get('/query/:queryType', asyncHandler(async (req,res)=>{ const qt=req.par
 router.post('/bridge/create-check', asyncHandler(async (req,res)=>{ const b=req.body??{}, amount=toMoney(b.amount); if(amount<=0) throw badRequest('amount is required'); const refNo=String(b.sourceRef||b.checkNo||`BRIDGE-${Date.now()}`); const entry:LedgerEntry={ companyCode:company(req), journal:'CDB', refNo, date:iso(b.date||new Date().toISOString()), payee:b.payee||'CARRIER / VENDOR', description:b.description||`Logistics settlement ${refNo}`, bankNo:Number(b.bankNo||1), supNo:Number(b.supNo||0), checkNo:b.checkNo, userId:req.user?.sub, lines:[{acctCode:String(b.expenseAccount||'4510').trim().toUpperCase(),dc:'D',amount},{acctCode:String(b.assetAccount||'1110').trim().toUpperCase(),dc:'C',amount}] }; const trial=trialPost(entry); if(!trial.ok) throw badRequest('Invalid bridge check', trial.errors); const posted=finalPost(entry); await audit(req,'BRIDGE_CREATE_CHECK','FsCheckMaster',refNo,posted); res.status(201).json({ success:true, message:`Automated check posted to FS journal ${posted.jvNo}`, data:{...posted, balanced:true} }); }));
 
 export default router;
-
 
