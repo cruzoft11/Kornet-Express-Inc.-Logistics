@@ -1,14 +1,14 @@
-﻿import { airChargeableKg, airVolumetricKg, cbm, chargeAmount, deriveChargeQty, fileMarginPct, oceanWmTons, round2 } from '@/lib/calc'
+import { airChargeableKg, airVolumetricKg, cbm, chargeAmount, deriveChargeQty, fileMarginPct, oceanWmTons, round2 } from '@/lib/calc'
 import type { CargoLine, ChargeLine, ContainerLine, Shipment, WorkspaceMode } from '@/api/ops'
 
-export const STATUS_STEPS = ['BOOKED', 'LOADED', 'IN_TRANSIT', 'ARRIVED', 'CLEARED', 'DELIVERED', 'CLOSED']
-export const QUOTE_STATUSES = ['DRAFT', 'SENT', 'ACCEPTED', 'REJECTED', 'EXPIRED', 'CONVERTED']
-export const FREIGHT_TERMS = ['PREPAID', 'COLLECT']
-export const INCOTERMS = ['EXW', 'FCA', 'FOB', 'CFR', 'CIF', 'DAP', 'DDP']
-export const LOAD_TYPES = ['FCL', 'LCL', 'BREAKBULK', 'RORO', 'AIR', 'LTL', 'FTL']
+export const STATUS_STEPS = ['BOOKED', 'DOCS_PENDING', 'READY_TO_LOAD', 'LOADED', 'DEPARTED', 'IN_TRANSIT', 'ARRIVED_AT_ORIGIN', 'ARRIVED', 'CUSTOMS_HOLD', 'CLEARED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CLOSED', 'CANCELLED']
+export const QUOTE_STATUSES = ['DRAFT', 'FOR_REVIEW', 'SENT', 'FOLLOW_UP', 'ACCEPTED', 'REJECTED', 'EXPIRED', 'CONVERTED', 'CANCELLED']
+export const FREIGHT_TERMS = ['PREPAID', 'COLLECT', 'THIRD_PARTY', 'CHARGE_TO_CLIENT', 'PP_AND_ADD', 'CC_AND_ADD']
+export const INCOTERMS = ['EXW', 'FCA', 'FAS', 'FOB', 'CFR', 'CIF', 'CPT', 'CIP', 'DAP', 'DPU', 'DDP']
+export const LOAD_TYPES = ['FCL', 'LCL', 'BREAKBULK', 'RORO', 'AIR_GENERAL', 'AIR_CHARTER', 'AIR_COURIER', 'LTL', 'FTL', 'MIXED']
 export const EQUIPMENT_TYPES = ['20GP', '40GP', '40HC', '45HC', '20RF', '40RF', '20OT', '40OT', '20FR', '40FR', '20TK']
-export const CHARGE_UNITS = ['PER_SHPT', 'PER_BL', 'PER_AWB', 'PER_FILE', 'PER_CNTR', 'PER_KG', 'PER_CBM', 'PER_WM', 'PER_PC', 'PER_UNIT', 'PCT', 'MANUAL']
-export const VAT_CLASSES = ['VATABLE', 'ZERO_RATED', 'EXEMPT', 'NON_VAT_REIMBURSABLE']
+export const CHARGE_UNITS = ['PER_SHPT', 'PER_BL', 'PER_AWB', 'PER_FILE', 'PER_CNTR', 'PER_KG', 'PER_CBM', 'PER_WM', 'PER_PC', 'PER_UNIT', 'PER_TON', 'PER_RUN', 'PER_DAY', 'PCT', 'MANUAL']
+export const VAT_CLASSES = ['VATABLE', 'ZERO_RATED', 'EXEMPT', 'NON_VAT_REIMBURSABLE', 'GOV_EXEMPT']
 
 export function isAirMode(mode: WorkspaceMode | string) {
   return String(mode).includes('AIR')

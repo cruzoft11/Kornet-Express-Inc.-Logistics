@@ -665,10 +665,10 @@ export function GeneralTab({
             title="Air Cargo Trade Terms & Special Handling"
             description="IATA box 27 nature of goods, air incoterms, freight terms and handling codes."
           >
-            <FormField label="Air Incoterm">
+            <FormField label="Air Incoterm" hint="IATA/ICC Incoterms 2020">
               <OptionsSelect
                 value={draft.incoterm || 'FCA'}
-                options={['FCA', 'CPT', 'CIP', 'DAP', 'EXW', 'DDP']}
+                options={['EXW', 'FCA', 'FAS', 'FOB', 'CPT', 'CIP', 'CFR', 'CIF', 'DAP', 'DPU', 'DDP']}
                 onChange={(incoterm) => update({ incoterm })}
               />
             </FormField>
@@ -1855,7 +1855,7 @@ export function DocsTab({
             >
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <FormField label="Document Class" required>
-                  <Select
+                  <ComboSelect
                     value={editingDoc.docClass || 'HOUSE'}
                     onValueChange={(val) => setEditingDoc({ ...editingDoc, docClass: val })}
                     options={
@@ -1867,13 +1867,15 @@ export function DocsTab({
                         : [
                             { value: 'HOUSE', label: 'HOUSE (Direct client)' },
                             { value: 'MASTER', label: 'MASTER (Carrier direct)' },
+                            { value: 'COLOAD', label: 'COLOAD (Co-load consolidation)' },
+                            { value: 'BACK_TO_BACK', label: 'BACK TO BACK (B2B)' },
                           ]
                     }
                   />
                 </FormField>
 
                 <FormField label="Document Type" required>
-                  <Select
+                  <ComboSelect
                     value={editingDoc.docType || (isDomestic ? 'DR' : isAir ? 'AWB' : 'BL')}
                     onValueChange={(val) => setEditingDoc({ ...editingDoc, docType: val })}
                     options={
@@ -1881,10 +1883,22 @@ export function DocsTab({
                         ? [
                             { value: 'DR', label: 'DR (Delivery Receipt)' },
                             { value: 'WAYBILL', label: 'Waybill (Trip Waybill)' },
+                            { value: 'GATE_PASS', label: 'Gate Pass' },
+                            { value: 'PRF', label: 'PRF (Proof of Receipt)' },
+                          ]
+                        : isAir
+                        ? [
+                            { value: 'AWB', label: 'AWB (Air Waybill)' },
+                            { value: 'HAWB', label: 'HAWB (House Air Waybill)' },
+                            { value: 'MAWB', label: 'MAWB (Master Air Waybill)' },
+                            { value: 'AIR_RELEASE', label: 'Air Cargo Release Order' },
                           ]
                         : [
-                            { value: 'AWB', label: 'AWB (Air Waybill)' },
                             { value: 'BL', label: 'B/L (Bill of Lading)' },
+                            { value: 'HBL', label: 'HBL (House Bill of Lading)' },
+                            { value: 'MBL', label: 'MBL (Master Bill of Lading)' },
+                            { value: 'SEA_WAYBILL', label: 'Sea Waybill (Non-negotiable)' },
+                            { value: 'ARRIVAL_NOTICE', label: 'Arrival Notice' },
                           ]
                     }
                   />
@@ -1932,10 +1946,10 @@ export function DocsTab({
                 </FormField>
 
                 <FormField label="Freight Payment Term" required>
-                  <Select
+                  <ComboSelect
                     value={editingDoc.freightTerm || 'PREPAID'}
                     onValueChange={(val) => setEditingDoc({ ...editingDoc, freightTerm: val })}
-                    options={FREIGHT_TERMS.map((t) => ({ value: t, label: t }))}
+                    options={FREIGHT_TERMS.map((t) => ({ value: t, label: t.replace(/_/g, ' ') }))}
                   />
                 </FormField>
               </div>
@@ -1957,13 +1971,16 @@ export function DocsTab({
                 </FormField>
 
                 <FormField label="Release Format">
-                  <Select
+                  <ComboSelect
                     value={editingDoc.releaseType || 'ORIGINAL'}
                     onValueChange={(val) => setEditingDoc({ ...editingDoc, releaseType: val })}
                     options={[
-                      { value: 'ORIGINAL', label: 'Original Paper' },
+                      { value: 'ORIGINAL', label: 'Original Paper (3 OBL)' },
                       { value: 'TELEX', label: 'Telex / Express Release' },
-                      { value: 'SEA_WAYBILL', label: 'Sea Waybill' },
+                      { value: 'ELECTRONIC', label: 'Electronic B/L (eBL)' },
+                      { value: 'SEA_WAYBILL', label: 'Sea Waybill (Non-negotiable)' },
+                      { value: 'SURRENDERED', label: 'Surrendered OBL' },
+                      { value: 'AIRWAY', label: 'Air Waybill (Non-negotiable)' },
                     ]}
                   />
                 </FormField>
@@ -2195,7 +2212,7 @@ export function ChargesTab({ draft, air, cargo, containers, charges, setCharges,
 }
 
 export function TimelineTab({ events, milestone, setMilestone, add, status }: { events: { id: string; code: string; eventAt?: string; createdAt?: string; location?: string; notes?: string }[]; milestone: { code: string; location: string; notes: string; isPublic: boolean }; setMilestone: (next: { code: string; location: string; notes: string; isPublic: boolean }) => void; add: () => void; status: (value: string) => void }) {
-  return <div className="grid gap-4 xl:grid-cols-[1fr_22rem]"><Timeline items={events.map((event) => ({ id: event.id, title: `${event.code}${event.location ? ` Â· ${event.location}` : ''}`, time: formatDate(event.eventAt || event.createdAt), description: event.notes, tone: event.code === 'EXC' ? 'danger' : 'info' }))} /><div className="space-y-3"><FormField label="Next status"><Select placeholder="Set status" options={STATUS_STEPS.map((s) => ({ value: s, label: s }))} onValueChange={status} /></FormField><FormField label="Milestone code"><Input value={milestone.code} onChange={(event) => setMilestone({ ...milestone, code: event.target.value.toUpperCase() })} /></FormField><FormField label="Location"><Input value={milestone.location} onChange={(event) => setMilestone({ ...milestone, location: event.target.value })} /></FormField><FormField label="Notes"><Textarea value={milestone.notes} onChange={(event) => setMilestone({ ...milestone, notes: event.target.value })} /></FormField><Button onClick={add}>Add milestone</Button></div></div>
+  return <div className="grid gap-4 xl:grid-cols-[1fr_22rem]"><Timeline items={events.map((event) => ({ id: event.id, title: `${event.code}${event.location ? ` · ${event.location}` : ''}`, time: formatDate(event.eventAt || event.createdAt), description: event.notes, tone: event.code === 'EXC' ? 'danger' : 'info' }))} /><div className="space-y-3"><FormField label="Next status"><ComboSelect placeholder="Set status…" value="" onValueChange={status} options={STATUS_STEPS.map((s) => ({ value: s, label: s.replace(/_/g, ' ') }))} /></FormField><FormField label="Milestone code"><Input value={milestone.code} onChange={(event) => setMilestone({ ...milestone, code: event.target.value.toUpperCase() })} /></FormField><FormField label="Location"><Input value={milestone.location} onChange={(event) => setMilestone({ ...milestone, location: event.target.value })} /></FormField><FormField label="Notes"><Textarea value={milestone.notes} onChange={(event) => setMilestone({ ...milestone, notes: event.target.value })} /></FormField><Button onClick={add}>Add milestone</Button></div></div>
 }
 
 export function DocumentsTab({ air, print }: { air: boolean; print: (kind: string) => void }) {
