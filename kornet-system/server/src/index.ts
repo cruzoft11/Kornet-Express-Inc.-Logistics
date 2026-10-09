@@ -1,4 +1,4 @@
-﻿import express from 'express';
+import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -10,6 +10,7 @@ import { env } from './env.js';
 import apiRoutes from './routes/index.js';
 import { errorHandler, notFoundHandler } from './middleware/error.js';
 import { initializeTrackingProviders } from './services/trackingProviders.js';
+import { prisma } from './db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -76,6 +77,31 @@ if (clientDist) {
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-app.listen(env.port, () => {
+async function autoSeedIfEmpty() {
+  try {
+    const userCount = await prisma.user.count();
+    if (userCount === 0) {
+      console.log('[startup] Empty database — running auto-seed...');
+      const bcrypt = await import('bcryptjs');
+      await prisma.company.upsert({
+        where: { code: 'KORNET' },
+        update: {},
+        create: { code: 'KORNET', name: 'Kornet Express Inc.', legalName: 'Kornet Express, Inc.', address: 'Unit 801, Ermita, Manila, Philippines', active: true },
+      });
+      const passwordHash = await bcrypt.hash(env.seed.adminPassword, 10);
+      await prisma.user.upsert({
+        where: { username: env.seed.adminUsername },
+        update: {},
+        create: { username: env.seed.adminUsername, passwordHash, fullName: 'System Administrator', role: 'superadmin', active: true, canAccessFs: true },
+      });
+      console.log(`[startup] Admin user created — login: ${env.seed.adminUsername} / ${env.seed.adminPassword}`);
+    }
+  } catch (e) {
+    console.error('[startup] Auto-seed failed (non-fatal):', e);
+  }
+}
+
+app.listen(env.port, async () => {
+  await autoSeedIfEmpty();
   console.log(`\n  Kornet Express API & Web  →  http://localhost:${env.port}\n`);
 });
