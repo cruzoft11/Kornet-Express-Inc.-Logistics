@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -30,8 +30,7 @@ import {
   NumberInput,
   MoneyInput,
   Select,
-  Sheet,
-  SheetContent,
+  FullscreenDialog,
   Textarea,
   Timeline,
   Toolbar,
@@ -1693,211 +1692,378 @@ export function DocsTab({
         </div>
       )}
 
-      {/* Edit Transport Document Full Sheet */}
-      <Sheet
+      {/* Edit Transport Document — Fullscreen Modal */}
+      <FullscreenDialog
         open={Boolean(editingDoc)}
-        onOpenChange={(open) => {
-          if (!open) setEditingDoc(null)
-        }}
+        onOpenChange={(open) => { if (!open) setEditingDoc(null) }}
+        title={
+          isDomestic
+            ? editingDoc?.docClass === 'MASTER'
+              ? 'Edit Carrier Trip Waybill'
+              : 'Edit Delivery Receipt (DR) Particulars'
+            : isAir
+            ? editingDoc?.docClass === 'MASTER'
+              ? 'Edit Master Air Waybill (MAWB) Particulars'
+              : 'Edit House Air Waybill (HAWB) Particulars'
+            : editingDoc?.docClass === 'MASTER'
+            ? 'Edit Master Bill of Lading (MBL) Particulars'
+            : 'Edit House Bill of Lading (HBL) Particulars'
+        }
+        description={
+          isDomestic
+            ? 'Philippine commercial logistics delivery receipt with asset plate and driver authorization.'
+            : isAir
+            ? 'Complete IATA Resolution 600a compliant document particulars with Mod-7 check verification.'
+            : 'FIATA and carrier standard ocean bill of lading particulars.'
+        }
+        badge={
+          editingDoc ? (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <Badge
+                status={isDomestic ? (editingDoc.docClass === 'MASTER' ? 'TRIP WAYBILL' : 'DELIVERY RECEIPT') : editingDoc.docClass || 'HOUSE'}
+                tone={editingDoc.docClass === 'MASTER' ? 'accent' : 'info'}
+              />
+              <Badge
+                status={editingDoc.docType || (isDomestic ? 'DR' : isAir ? 'AWB' : 'BL')}
+                tone="neutral"
+              />
+              <Badge
+                status={editingDoc.status || 'DRAFT'}
+                tone={editingDoc.status === 'ISSUED' ? 'success' : editingDoc.status === 'VOID' ? 'danger' : 'neutral'}
+              />
+            </div>
+          ) : undefined
+        }
+        actions={editingDoc ? (
+          <div className="flex w-full items-center justify-between gap-3">
+            <Button variant="outline" size="sm" onClick={() => syncFromShipment(editingIndex)} className="gap-2">
+              <Wand2 className="size-4 text-primary" />
+              Autofill from shipment file
+            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => setEditingDoc(null)}>
+                Cancel
+              </Button>
+              <Button onClick={saveEditedDoc} className="gap-1.5 shadow-xs">
+                <CheckCircle2 className="size-4" />
+                Apply Changes
+              </Button>
+            </div>
+          </div>
+        ) : undefined}
       >
-        <SheetContent
-          title={
-            isDomestic
-              ? 'Edit Delivery Receipt & Waybill Particulars'
-              : isAir
-              ? 'Edit IATA Air Waybill Particulars'
-              : 'Edit Ocean Bill of Lading Particulars'
-          }
-          description={
-            isDomestic
-              ? 'Philippine commercial logistics delivery receipt with asset plate and driver authorization.'
-              : isAir
-              ? 'Complete IATA Resolution 600a compliant document particulars.'
-              : 'FIATA/Carrier standard ocean bill of lading particulars.'
-          }
-          className="overflow-y-auto sm:max-w-2xl"
-        >
-          {editingDoc && (
-            <div className="space-y-4 pt-2">
-              <div className="flex justify-end">
-                <Button variant="outline" size="sm" onClick={() => syncFromShipment(editingIndex)}>
-                  Autofill from shipment file
-                </Button>
+        {editingDoc && (
+          <div className="space-y-6">
+            {/* Quick Context & Autofill Banner */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3.5 rounded-xl border border-primary/25 bg-primary/5 p-4 sm:p-5 shadow-xs">
+              <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm">
+                <div className="flex items-center gap-2 font-bold text-foreground">
+                  {isAir ? (
+                    <Plane className="size-4 text-sky-500" />
+                  ) : isDomestic ? (
+                    <Truck className="size-4 text-emerald-500" />
+                  ) : (
+                    <Ship className="size-4 text-indigo-500" />
+                  )}
+                  <span className="font-mono text-base">{editingDoc.docNo || <span className="italic font-normal text-muted-foreground">Unnumbered Draft</span>}</span>
+                </div>
+                <span className="text-muted-foreground/40">•</span>
+                <span className="text-muted-foreground">
+                  Lane: <strong className="text-foreground">{editingDoc.pol || draft.polCode || '—'} → {editingDoc.pod || draft.podCode || '—'}</strong>
+                </span>
+                <span className="text-muted-foreground/40">•</span>
+                <span className="text-muted-foreground">
+                  Term: <strong className="text-foreground">{editingDoc.freightTerm || draft.freightTerm || 'PREPAID'}</strong>
+                </span>
+                {isAir && editingDoc.docNo && (
+                  <>
+                    <span className="text-muted-foreground/40">•</span>
+                    {validateMawb(editingDoc.docNo) ? (
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-400">
+                        <AlertTriangle className="size-3.5" />
+                        {validateMawb(editingDoc.docNo)}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                        <CheckCircle2 className="size-3.5" />
+                        Valid IATA MAWB Mod-7 check
+                      </span>
+                    )}
+                  </>
+                )}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => syncFromShipment(editingIndex)}
+                className="gap-1.5 shrink-0 self-start sm:self-center font-medium shadow-2xs hover:border-primary hover:text-primary"
+              >
+                <Wand2 className="size-3.5 text-primary" />
+                Autofill from shipment file
+              </Button>
+            </div>
+
+            {/* Form Section 1: Identification */}
+            <FormSection
+              title="Document Identification & Classification"
+              description="Class, document type, tracking serial number, and payment terms."
+              contentClassName="space-y-4"
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <FormField label="Document Class" required>
+                  <Select
+                    value={editingDoc.docClass || 'HOUSE'}
+                    onValueChange={(val) => setEditingDoc({ ...editingDoc, docClass: val })}
+                    options={
+                      isDomestic
+                        ? [
+                            { value: 'HOUSE', label: 'Direct Delivery Receipt (DR)' },
+                            { value: 'MASTER', label: 'Carrier Trip Waybill' },
+                          ]
+                        : [
+                            { value: 'HOUSE', label: 'HOUSE (Direct client)' },
+                            { value: 'MASTER', label: 'MASTER (Carrier direct)' },
+                          ]
+                    }
+                  />
+                </FormField>
+
+                <FormField label="Document Type" required>
+                  <Select
+                    value={editingDoc.docType || (isDomestic ? 'DR' : isAir ? 'AWB' : 'BL')}
+                    onValueChange={(val) => setEditingDoc({ ...editingDoc, docType: val })}
+                    options={
+                      isDomestic
+                        ? [
+                            { value: 'DR', label: 'DR (Delivery Receipt)' },
+                            { value: 'WAYBILL', label: 'Waybill (Trip Waybill)' },
+                          ]
+                        : [
+                            { value: 'AWB', label: 'AWB (Air Waybill)' },
+                            { value: 'BL', label: 'B/L (Bill of Lading)' },
+                          ]
+                    }
+                  />
+                </FormField>
+
+                <FormField
+                  label="Document Number"
+                  required
+                  hint={
+                    isAir
+                      ? 'Format: 079-12345675 (3 prefix + 7 serial + mod-7)'
+                      : isDomestic
+                      ? 'e.g. DR-2026-0042'
+                      : 'e.g. HBL-2026-00001'
+                  }
+                >
+                  <Input
+                    value={editingDoc.docNo || ''}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, docNo: e.target.value.toUpperCase() })}
+                    placeholder={isAir ? '079-12345675' : isDomestic ? 'DR-2026-0042' : 'HBL-2026-00001'}
+                    className="font-mono font-semibold"
+                  />
+                </FormField>
+
+                <FormField label="Freight Payment Term" required>
+                  <Select
+                    value={editingDoc.freightTerm || 'PREPAID'}
+                    onValueChange={(val) => setEditingDoc({ ...editingDoc, freightTerm: val })}
+                    options={FREIGHT_TERMS.map((t) => ({ value: t, label: t }))}
+                  />
+                </FormField>
               </div>
 
-              <FormSection
-                title="Document Identification"
-                description="Class, number, terms, and release format."
-              >
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <FormField label="Document Class" required>
-                    <Select
-                      value={editingDoc.docClass || 'HOUSE'}
-                      onValueChange={(val) => setEditingDoc({ ...editingDoc, docClass: val })}
-                      options={
-                        isDomestic
-                          ? [
-                              { value: 'HOUSE', label: 'Direct Delivery Receipt (DR)' },
-                              { value: 'MASTER', label: 'Carrier Trip Waybill' },
-                            ]
-                          : [
-                              { value: 'HOUSE', label: 'HOUSE (Direct client)' },
-                              { value: 'MASTER', label: 'MASTER (Carrier direct)' },
-                            ]
-                      }
-                    />
-                  </FormField>
-
-                  <FormField label="Document Type" required>
-                    <Select
-                      value={editingDoc.docType || (isDomestic ? 'DR' : isAir ? 'AWB' : 'BL')}
-                      onValueChange={(val) => setEditingDoc({ ...editingDoc, docType: val })}
-                      options={
-                        isDomestic
-                          ? [
-                              { value: 'DR', label: 'DR (Delivery Receipt)' },
-                              { value: 'WAYBILL', label: 'Waybill (Trip Waybill)' },
-                            ]
-                          : [
-                              { value: 'AWB', label: 'AWB (Air Waybill)' },
-                              { value: 'BL', label: 'B/L (Bill of Lading)' },
-                            ]
-                      }
-                    />
-                  </FormField>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <FormField
-                    label="Document Number"
-                    required
-                    hint={
-                      isAir
-                        ? 'Format: 079-12345675 (3 airline prefix + 7 serial + mod-7)'
-                        : isDomestic
-                        ? 'e.g. DR-2026-0042'
-                        : undefined
-                    }
-                  >
-                    <Input
-                      value={editingDoc.docNo || ''}
-                      onChange={(e) => setEditingDoc({ ...editingDoc, docNo: e.target.value.toUpperCase() })}
-                      placeholder={isAir ? '079-12345675' : isDomestic ? 'DR-2026-0042' : 'HBL-2026-00001'}
-                    />
-                  </FormField>
-
-                  <FormField label="Freight Payment Term">
-                    <Select
-                      value={editingDoc.freightTerm || 'PREPAID'}
-                      onValueChange={(val) => setEditingDoc({ ...editingDoc, freightTerm: val })}
-                      options={FREIGHT_TERMS.map((t) => ({ value: t, label: t }))}
-                    />
-                  </FormField>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <FormField label="Issue Place">
-                    <Input
-                      value={editingDoc.issuePlace || ''}
-                      onChange={(e) => setEditingDoc({ ...editingDoc, issuePlace: e.target.value })}
-                      placeholder="MANILA, PH"
-                    />
-                  </FormField>
-
-                  <FormField label="Release Type">
-                    <Select
-                      value={editingDoc.releaseType || 'ORIGINAL'}
-                      onValueChange={(val) => setEditingDoc({ ...editingDoc, releaseType: val })}
-                      options={[
-                        { value: 'ORIGINAL', label: 'Original Paper' },
-                        { value: 'TELEX', label: 'Telex / Express' },
-                        { value: 'SEA_WAYBILL', label: 'Sea Waybill' },
-                      ]}
-                    />
-                  </FormField>
-
-                  <FormField label="Originals Count">
-                    <NumberInput
-                      value={editingDoc.numberOfOriginals ?? (isDomestic ? 2 : 3)}
-                      onValueChange={(val) => setEditingDoc({ ...editingDoc, numberOfOriginals: val })}
-                    />
-                  </FormField>
-                </div>
-              </FormSection>
-
-              <FormSection
-                title={isDomestic ? 'Origin Plant & Destination Site' : 'Shipper & Consignee'}
-                description="Registered names and facility addresses as shown on physical document."
-              >
-                <FormField label={isDomestic ? 'Shipper / Origin Plant' : 'Shipper Name'} required>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+                <FormField label="Issue Place">
                   <Input
-                    value={editingDoc.shipperName || ''}
-                    onChange={(e) => setEditingDoc({ ...editingDoc, shipperName: e.target.value })}
-                  />
-                </FormField>
-                <FormField label={isDomestic ? 'Pick-up Facility Address' : 'Shipper Address'}>
-                  <Textarea
-                    value={editingDoc.shipperAddress || ''}
-                    onChange={(e) => setEditingDoc({ ...editingDoc, shipperAddress: e.target.value })}
-                    rows={2}
+                    value={editingDoc.issuePlace || ''}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, issuePlace: e.target.value })}
+                    placeholder="MANILA, PH"
                   />
                 </FormField>
 
-                <FormField label={isDomestic ? 'Consignee / Recipient Facility' : 'Consignee Name'} required>
+                <FormField label="Release Format">
+                  <Select
+                    value={editingDoc.releaseType || 'ORIGINAL'}
+                    onValueChange={(val) => setEditingDoc({ ...editingDoc, releaseType: val })}
+                    options={[
+                      { value: 'ORIGINAL', label: 'Original Paper' },
+                      { value: 'TELEX', label: 'Telex / Express Release' },
+                      { value: 'SEA_WAYBILL', label: 'Sea Waybill' },
+                    ]}
+                  />
+                </FormField>
+
+                <FormField label="Original Copies Count">
+                  <NumberInput
+                    value={editingDoc.numberOfOriginals ?? (isDomestic ? 2 : 3)}
+                    onValueChange={(val) => setEditingDoc({ ...editingDoc, numberOfOriginals: val })}
+                  />
+                </FormField>
+              </div>
+            </FormSection>
+
+            {/* Form Section 2: Parties */}
+            <FormSection
+              title={isDomestic ? 'Origin Plant & Delivery Facility Parties' : 'Shipper & Consignee Entities'}
+              description="Official registered names and premises addresses as printed on physical bill."
+              contentClassName="space-y-4"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {/* Shipper Card */}
+                <div className="rounded-xl border border-blue-500/25 bg-blue-500/5 p-4 sm:p-5 space-y-3.5">
+                  <div className="flex items-center justify-between pb-2 border-b border-border/50">
+                    <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                      {isDomestic ? 'Shipper / Origin Facility' : 'Shipper (Consignor)'}
+                    </span>
+                    <Badge status="SHIPPER" tone="info" />
+                  </div>
+                  <FormField label={isDomestic ? 'Origin Facility / Company Name' : 'Shipper Registered Name'} required>
+                    <Input
+                      value={editingDoc.shipperName || ''}
+                      onChange={(e) => setEditingDoc({ ...editingDoc, shipperName: e.target.value })}
+                      placeholder="e.g. Acme Philippines Logistics Corp."
+                    />
+                  </FormField>
+                  <FormField label={isDomestic ? 'Origin Street Address / Gate #' : 'Shipper Physical Address'}>
+                    <Textarea
+                      value={editingDoc.shipperAddress || ''}
+                      onChange={(e) => setEditingDoc({ ...editingDoc, shipperAddress: e.target.value })}
+                      placeholder="Building, street, city, province, postal code"
+                      rows={3}
+                    />
+                  </FormField>
+                </div>
+
+                {/* Consignee Card */}
+                <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/5 p-4 sm:p-5 space-y-3.5">
+                  <div className="flex items-center justify-between pb-2 border-b border-border/50">
+                    <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                      {isDomestic ? 'Consignee / Destination Facility' : 'Consignee (Receiver / Importer)'}
+                    </span>
+                    <Badge status="CONSIGNEE" tone="success" />
+                  </div>
+                  <FormField label={isDomestic ? 'Delivery Facility / Recipient Name' : 'Consignee Registered Name'} required>
+                    <Input
+                      value={editingDoc.consigneeName || ''}
+                      onChange={(e) => setEditingDoc({ ...editingDoc, consigneeName: e.target.value })}
+                      placeholder="e.g. Pacific Imports LLC"
+                    />
+                  </FormField>
+                  <FormField label={isDomestic ? 'Destination Facility Address / Site' : 'Consignee Physical Address'}>
+                    <Textarea
+                      value={editingDoc.consigneeAddress || ''}
+                      onChange={(e) => setEditingDoc({ ...editingDoc, consigneeAddress: e.target.value })}
+                      placeholder="Destination facility address, contact person, phone"
+                      rows={3}
+                    />
+                  </FormField>
+                </div>
+              </div>
+
+              {!isDomestic && (
+                <div className="rounded-xl border border-border/60 bg-muted/20 p-4 sm:p-5 space-y-3">
+                  <div className="flex items-center justify-between pb-2 border-b border-border/40">
+                    <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      Notify Party (Arrival Notice Contact)
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">Optional party notified upon cargo arrival at destination</span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField label="Notify Party Name">
+                      <Input
+                        value={editingDoc.notifyName || ''}
+                        onChange={(e) => setEditingDoc({ ...editingDoc, notifyName: e.target.value })}
+                        placeholder="Same as Consignee or customs broker"
+                      />
+                    </FormField>
+                    <FormField label="Notify Party Address / Tel">
+                      <Input
+                        value={editingDoc.notifyAddress || ''}
+                        onChange={(e) => setEditingDoc({ ...editingDoc, notifyAddress: e.target.value })}
+                        placeholder="Address, phone number, or email"
+                      />
+                    </FormField>
+                  </div>
+                </div>
+              )}
+            </FormSection>
+
+            {/* Form Section 3: Routing & Carriage */}
+            <FormSection
+              title={isDomestic ? 'Corridor & Fleet Particulars' : isAir ? 'Flight Routing & Carrier Details' : 'Ocean Routing & Vessel Details'}
+              description={isDomestic ? 'Highway corridor, asset plate, and driver authorization.' : isAir ? 'Departure airport, destination airport, and IATA carriage routing.' : 'Port of loading, port of discharge, vessel, and voyage.'}
+              defaultOpen={true}
+              contentClassName="space-y-4"
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <FormField label={isAir ? 'Airport of Departure (POL)' : isDomestic ? 'Pick-up Corridor / Origin' : 'Port of Loading (POL)'} required>
                   <Input
-                    value={editingDoc.consigneeName || ''}
-                    onChange={(e) => setEditingDoc({ ...editingDoc, consigneeName: e.target.value })}
+                    value={editingDoc.pol || ''}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, pol: e.target.value.toUpperCase() })}
+                    placeholder={isAir ? 'MNL' : isDomestic ? 'NCR_METRO' : 'PHMNL'}
                   />
                 </FormField>
-                <FormField label={isDomestic ? 'Delivery Site Address' : 'Consignee Address'}>
-                  <Textarea
-                    value={editingDoc.consigneeAddress || ''}
-                    onChange={(e) => setEditingDoc({ ...editingDoc, consigneeAddress: e.target.value })}
-                    rows={2}
+                <FormField label={isAir ? 'Airport of Destination (POD)' : isDomestic ? 'Delivery Corridor / Dest.' : 'Port of Discharge (POD)'} required>
+                  <Input
+                    value={editingDoc.pod || ''}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, pod: e.target.value.toUpperCase() })}
+                    placeholder={isAir ? 'LAX' : isDomestic ? 'NCR_LAGUNA' : 'USLAX'}
                   />
                 </FormField>
-              </FormSection>
+                <FormField label={isAir ? 'Flight / Carrier Code' : isDomestic ? 'Assigned Truck Plate' : 'Vessel Name'} hint="Inherited from shipment header">
+                  <Input
+                    value={draft.flightNo || draft.vessel || ''}
+                    disabled
+                  />
+                </FormField>
+                <FormField label={isAir ? 'Scheduled Departure' : isDomestic ? 'Trip Schedule' : 'Voyage #'} hint="Inherited from shipment header">
+                  <Input
+                    value={draft.eta ? formatDate(draft.eta) : draft.voyage || '—'}
+                    disabled
+                  />
+                </FormField>
+              </div>
+            </FormSection>
 
-              <FormSection
-                title={isDomestic ? 'Corridor & Fleet Particulars' : 'Routing & Carrier Details'}
-                defaultOpen={false}
-              >
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <FormField label={isAir ? 'Airport of Departure' : isDomestic ? 'Pick-up Corridor' : 'Port of Loading (POL)'}>
-                    <Input
-                      value={editingDoc.pol || ''}
-                      onChange={(e) => setEditingDoc({ ...editingDoc, pol: e.target.value.toUpperCase() })}
-                    />
-                  </FormField>
-                  <FormField label={isAir ? 'Airport of Destination' : isDomestic ? 'Delivery Corridor' : 'Port of Discharge (POD)'}>
-                    <Input
-                      value={editingDoc.pod || ''}
-                      onChange={(e) => setEditingDoc({ ...editingDoc, pod: e.target.value.toUpperCase() })}
-                    />
-                  </FormField>
-                </div>
+            {/* Form Section 4: Valuation & Declarations */}
+            <FormSection
+              title="Valuation & Declarations"
+              description="Declared value for carriage, customs valuation, and insurance coverage."
+              defaultOpen={true}
+              contentClassName="space-y-4"
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <FormField label="Declared Value for Carriage" hint="Leave 0 for NVD (No Value Declared)">
+                  <MoneyInput
+                    value={editingDoc.declaredValueCarriage || 0}
+                    onValueChange={(val) => setEditingDoc({ ...editingDoc, declaredValueCarriage: val })}
+                  />
+                </FormField>
+                <FormField label="Declared Value for Customs" hint="Leave 0 for NCV (No Customs Value)">
+                  <MoneyInput
+                    value={editingDoc.declaredValueCustoms || 0}
+                    onValueChange={(val) => setEditingDoc({ ...editingDoc, declaredValueCustoms: val })}
+                  />
+                </FormField>
+                <FormField label="Insurance Coverage Amount" hint="Optional cargo policy sum insured">
+                  <MoneyInput
+                    value={editingDoc.amountInsurance || 0}
+                    onValueChange={(val) => setEditingDoc({ ...editingDoc, amountInsurance: val })}
+                  />
+                </FormField>
+              </div>
+            </FormSection>
 
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <FormField label="Declared Value Carriage">
-                    <MoneyInput
-                      value={editingDoc.declaredValueCarriage || 0}
-                      onValueChange={(val) => setEditingDoc({ ...editingDoc, declaredValueCarriage: val })}
-                    />
-                  </FormField>
-                  <FormField label="Declared Value Customs">
-                    <MoneyInput
-                      value={editingDoc.declaredValueCustoms || 0}
-                      onValueChange={(val) => setEditingDoc({ ...editingDoc, declaredValueCustoms: val })}
-                    />
-                  </FormField>
-                  <FormField label="Insurance Amount">
-                    <MoneyInput
-                      value={editingDoc.amountInsurance || 0}
-                      onValueChange={(val) => setEditingDoc({ ...editingDoc, amountInsurance: val })}
-                    />
-                  </FormField>
-                </div>
-
+            {/* Form Section 5: Handling & Accounting */}
+            <FormSection
+              title="Special Handling & Accounting Information"
+              description="Special gate instructions, handling tags, and carrier accounting remarks."
+              defaultOpen={true}
+              contentClassName="space-y-4"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField label="Special Handling / Gate Instructions">
                   <Textarea
                     value={editingDoc.handlingInfo || ''}
@@ -1907,29 +2073,22 @@ export function DocsTab({
                         ? 'e.g. PPE required, tail-lift needed, confirm with receiving dock.'
                         : 'e.g. KEEP DRY, DO NOT STACK, 24HR NOTIFY'
                     }
-                    rows={2}
+                    rows={3}
                   />
                 </FormField>
-                <FormField label="Accounting Information">
+                <FormField label="Accounting Information / Payment Clauses">
                   <Textarea
                     value={editingDoc.accountingInfo || ''}
                     onChange={(e) => setEditingDoc({ ...editingDoc, accountingInfo: e.target.value })}
                     placeholder="e.g. FREIGHT PREPAID VIA MANILA HEAD OFFICE"
-                    rows={2}
+                    rows={3}
                   />
                 </FormField>
-              </FormSection>
-
-              <div className="flex justify-end gap-2 pt-2 border-t">
-                <Button variant="outline" onClick={() => setEditingDoc(null)}>
-                  Cancel
-                </Button>
-                <Button onClick={saveEditedDoc}>Apply Changes</Button>
               </div>
-            </div>
-          )}
-        </SheetContent>
-      </Sheet>
+            </FormSection>
+          </div>
+        )}
+      </FullscreenDialog>
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog

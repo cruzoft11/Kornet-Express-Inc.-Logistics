@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { FileDown, Printer, Search, ShieldAlert, Wand2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { Button, Card, CardContent, CardHeader, CardTitle, DataGrid, type DataGridColumn, DateInput, Dialog, DialogContent, EmptyState, exportRowsToExcel, FormField, FormSection, Input, NumberInput, PageHeader, Select, Sheet, SheetContent, Skeleton, StatusPill, Tabs, Textarea, Timeline, Toolbar } from '@/components/ui'
+import { Button, Card, CardContent, CardHeader, CardTitle, DataGrid, type DataGridColumn, DateInput, Dialog, DialogContent, EmptyState, exportRowsToExcel, FormField, FormSection, FullscreenDialog, Input, NumberInput, PageHeader, Select, Skeleton, StatusPill, Tabs, Textarea, Timeline, Toolbar } from '@/components/ui'
 import { KornetLoader } from '@/components/ui/KornetLoader'
 import { useHotkeys } from '@/hooks/useHotkeys'
 import { formatDate, formatNumber, formatWeightKg } from '@/lib/format'
@@ -110,11 +110,30 @@ export default function VehicleInventoryPage() {
       ) : (
         <DataGrid columns={columns} data={rows} loading={false} emptyTitle="No vehicles found" density="compact" onRowSelect={setSelectedRows} />
       )}
-      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent title={draft.id ? `Edit ${draft.vin}` : 'New vehicle'} description="Ctrl+S saves; Decode fills NHTSA values." className="w-[min(76rem,100vw)] overflow-y-auto">
-          <VehicleEditor draft={draft} setDraft={setDraft} tab={tab} setTab={setTab} onSave={() => save.mutate()} onDecode={() => draft.vin && decode.mutate(draft.vin)} saving={save.isPending} decoding={decode.isPending} />
-        </SheetContent>
-      </Sheet>
+      <FullscreenDialog
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        title={draft.id ? `Edit Vehicle — ${draft.vin}` : 'New Vehicle Registration'}
+        description="Ctrl+S saves; Decode fills NHTSA values. Complete VIN, inspection, and party particulars."
+        actions={
+          <div className="flex w-full items-center justify-between">
+            <Button variant="outline" onClick={() => setSheetOpen(false)}>
+              Cancel
+            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => window.print()}>
+                <Printer className="size-4" />
+                Print
+              </Button>
+              <Button onClick={() => save.mutate()} loading={save.isPending} kbd="Ctrl+S">
+                Save Vehicle
+              </Button>
+            </div>
+          </div>
+        }
+      >
+        <VehicleEditor draft={draft} setDraft={setDraft} tab={tab} setTab={setTab} onSave={() => save.mutate()} onDecode={() => draft.vin && decode.mutate(draft.vin)} saving={save.isPending} decoding={decode.isPending} />
+      </FullscreenDialog>
       {action && <ActionDialog vehicle={action.vehicle} action={action.action} containers={containers.data?.data ?? []} onClose={() => setAction(null)} loading={runAction.isPending} onSubmit={(body) => runAction.mutate({ vehicle: action.vehicle, action: action.action, body })} />}
       {printVehicle && <PrintVehicle vehicle={printVehicle} onClose={() => setPrintVehicle(null)} />}
       {selected && (

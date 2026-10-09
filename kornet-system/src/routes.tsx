@@ -10,6 +10,7 @@ import {
   FileText,
   Gauge,
   Landmark,
+  MapPinned,
   Plane,
   Receipt,
   Route,
@@ -31,6 +32,7 @@ const PdDispatchBoard = lazy(() => import('./modules/pd/PdDispatchBoard'))
 const VehicleInventoryPage = lazy(() => import('./modules/vehicles/VehicleInventoryPage'))
 const FleetDispatchPage = lazy(() => import('./modules/fleet/FleetDispatchPage'))
 const PublicTrackingPage = lazy(() => import('./modules/portal/PortalPages').then((m) => ({ default: m.PublicTrackingPage })))
+const LogisticsMapPage = lazy(() => import('./modules/map/LogisticsMapPage').then((m) => ({ default: m.LogisticsMapPage })))
 
 // Billing
 const InvoicesPage = lazy(() => import('./modules/billing/pages').then((m) => ({ default: m.InvoicesPage })))
@@ -92,6 +94,7 @@ export const appRoutes: AppRoute[] = [
   { path: '/logistics/pd-orders/board', label: 'P/D Dispatch Board', group: 'Operations', icon: Route, element: <PdDispatchBoard />, hidden: true, keywords: ['board', 'kanban'] },
   { path: '/logistics/vehicles', label: 'Vehicle Inventory', group: 'Operations', icon: Truck, element: <VehicleInventoryPage />, shortcut: 'G V', keywords: ['vin', 'roro', 'dock receipt', 'title'] },
   { path: '/logistics/fleet', label: 'Fleet & Dispatch', group: 'Operations', icon: Route, element: <FleetDispatchPage />, shortcut: 'G F', keywords: ['trucks', 'drivers', 'plate'] },
+  { path: '/logistics/map', label: 'Live Logistics Map', group: 'Operations', icon: MapPinned, element: <LogisticsMapPage />, keywords: ['aircraft', 'vessels', 'ports', 'heatmap', 'tracking'] },
   { path: '/logistics/tracking', label: 'Customer Tracking', group: 'Operations', icon: Route, element: <PublicTrackingPage />, keywords: ['milestones', 'status'] },
   { path: '/logistics/files/:id', label: 'Shipment Detail', group: 'Operations', icon: Ship, element: <ShipmentWorkspace />, hidden: true },
 

@@ -1,8 +1,8 @@
-﻿import { useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CalendarDays, ClipboardCheck, FileDown, Printer, Search, Truck } from 'lucide-react'
 import { toast } from 'sonner'
-import { Button, Card, CardContent, CardHeader, CardTitle, DataGrid, type DataGridColumn, DateInput, Dialog, DialogContent, exportRowsToExcel, FormField, FormSection, Input, NumberInput, PageHeader, Select, Sheet, SheetContent, Skeleton, StatusPill, Tabs, Textarea, Timeline, Toolbar } from '@/components/ui'
+import { Button, Card, CardContent, CardHeader, CardTitle, DataGrid, type DataGridColumn, DateInput, Dialog, DialogContent, exportRowsToExcel, FormField, FormSection, FullscreenDialog, Input, NumberInput, PageHeader, Select, Skeleton, StatusPill, Tabs, Textarea, Timeline, Toolbar } from '@/components/ui'
 import { KornetLoader } from '@/components/ui/KornetLoader'
 import { useHotkeys } from '@/hooks/useHotkeys'
 import { formatDate, formatMoney, formatNumber, formatWeightKg } from '@/lib/format'
@@ -132,11 +132,24 @@ export default function PdOrdersPage() {
       ) : (
         <DataGrid columns={columns} data={rows} loading={false} emptyTitle="No P/D orders found" density="compact" />
       )}
-      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent title={draft.id ? `Edit ${draft.orderNo}` : 'New P/D order'} description="Ctrl+S saves; Esc closes." className="w-[min(72rem,100vw)] overflow-y-auto">
-          <OrderEditor draft={draft} setDraft={setDraft} tab={tab} setTab={setTab} onSave={() => save.mutate()} saving={save.isPending} />
-        </SheetContent>
-      </Sheet>
+      <FullscreenDialog
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        title={draft.id ? `Edit P/D Order — ${draft.orderNo}` : 'New Pick-up / Delivery Order'}
+        description="Ctrl+S saves; Esc closes. Pick-up, delivery, cargo, and billing specifications."
+        actions={
+          <div className="flex w-full items-center justify-between">
+            <Button variant="outline" onClick={() => setSheetOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => save.mutate()} loading={save.isPending} kbd="Ctrl+S">
+              Save Order
+            </Button>
+          </div>
+        }
+      >
+        <OrderEditor draft={draft} setDraft={setDraft} tab={tab} setTab={setTab} onSave={() => save.mutate()} saving={save.isPending} />
+      </FullscreenDialog>
       {dispatchOrder && <DispatchDialog order={dispatchOrder} drivers={drivers.data?.data ?? []} vehicles={fleet.data?.data ?? []} routes={routes.data?.data ?? []} onClose={() => setDispatchOrder(null)} onSubmit={(driverId, fleetVehicleId, routeId) => dispatch.mutate({ order: dispatchOrder, driverId, fleetVehicleId, routeId })} loading={dispatch.isPending} />}
       {podOrder && <PodDialog order={podOrder} onClose={() => setPodOrder(null)} onSubmit={(v) => complete.mutate({ order: podOrder, ...v })} loading={complete.isPending} />}
       {cancelOrder && <CancelDialog order={cancelOrder} onClose={() => setCancelOrder(null)} onSubmit={(reason) => cancel.mutate({ order: cancelOrder, reason })} loading={cancel.isPending} />}

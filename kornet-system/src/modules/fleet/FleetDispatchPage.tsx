@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, FileDown, Search, Truck, UserRound } from 'lucide-react'
 import { toast } from 'sonner'
-import { Button, Card, CardHeader, CardTitle, DataGrid, type DataGridColumn, exportRowsToExcel, FormField, FormSection, Input, PageHeader, Select, Sheet, SheetContent, StatusPill, Textarea, Toolbar } from '@/components/ui'
+import { Button, Card, CardHeader, CardTitle, DataGrid, type DataGridColumn, exportRowsToExcel, FormField, FormSection, FullscreenDialog, Input, PageHeader, Select, StatusPill, Textarea, Toolbar } from '@/components/ui'
 import { useHotkeys } from '@/hooks/useHotkeys'
 import { formatDate } from '@/lib/format'
 import { fleetApi, type DispatchRoute, type DispatchRouteInput, type Driver, type DriverInput, type FleetVehicle, type FleetVehicleInput } from '@/api/fleet'
@@ -37,7 +37,16 @@ export default function FleetDispatchPage() {
     {tab === 'routes' && <RoutesTable rows={routeRows} loading={routes.isLoading} onEdit={(r) => { setRoute(r); setSheet({ kind: 'route', id: r.id }) }} />}
     {tab === 'vehicles' && <VehicleTable rows={vehicleRows} loading={vehicles.isLoading} onEdit={(v) => { setVehicle(v); setSheet({ kind: 'vehicle', id: v.id }) }} />}
     {tab === 'drivers' && <DriverTable rows={driverRows} loading={drivers.isLoading} onEdit={(d) => { setDriver(d); setSheet({ kind: 'driver', id: d.id }) }} />}
-    <Sheet open={!!sheet} onOpenChange={(v) => !v && setSheet(null)}><SheetContent title={sheet?.kind === 'driver' ? 'Driver master' : sheet?.kind === 'vehicle' ? 'Fleet vehicle master' : 'Dispatch route'} description="Ctrl+S saves; Esc closes." className="w-[min(42rem,100vw)] overflow-y-auto">{sheet?.kind === 'driver' && <DriverEditor draft={driver} setDraft={setDriver} save={() => saveDriver.mutate()} saving={saveDriver.isPending} />}{sheet?.kind === 'vehicle' && <FleetVehicleEditor draft={vehicle} setDraft={setVehicle} save={() => saveVehicle.mutate()} saving={saveVehicle.isPending} />}{sheet?.kind === 'route' && <RouteEditor draft={route} setDraft={setRoute} save={() => saveRoute.mutate()} saving={saveRoute.isPending} drivers={driverRows} vehicles={vehicleRows} />}</SheetContent></Sheet>
+    <FullscreenDialog
+      open={!!sheet}
+      onOpenChange={(v) => !v && setSheet(null)}
+      title={sheet?.kind === 'driver' ? 'Driver Master Profile' : sheet?.kind === 'vehicle' ? 'Fleet Vehicle Master' : 'Dispatch Route Manifest'}
+      description="Ctrl+S saves; Esc closes. Driver credentials, asset specifications, and route details."
+    >
+      {sheet?.kind === 'driver' && <DriverEditor draft={driver} setDraft={setDriver} save={() => saveDriver.mutate()} saving={saveDriver.isPending} />}
+      {sheet?.kind === 'vehicle' && <FleetVehicleEditor draft={vehicle} setDraft={setVehicle} save={() => saveVehicle.mutate()} saving={saveVehicle.isPending} />}
+      {sheet?.kind === 'route' && <RouteEditor draft={route} setDraft={setRoute} save={() => saveRoute.mutate()} saving={saveRoute.isPending} drivers={driverRows} vehicles={vehicleRows} />}
+    </FullscreenDialog>
   </div>
 }
 function RoutesTable({ rows, loading, onEdit }: { rows: DispatchRoute[]; loading: boolean; onEdit: (r: DispatchRoute) => void }) { const cols: DataGridColumn<DispatchRoute>[] = [{ id: 'routeNo', header: 'Route #', cell: (r) => <button className="font-mono text-secondary underline-offset-4 hover:underline" onClick={() => onEdit(r)}>{r.routeNo}</button>, sortable: true }, { id: 'stage', header: 'Stage', cell: (r) => <StatusPill status={r.stage} /> }, { id: 'origin', header: 'Origin', accessor: 'origin' }, { id: 'destination', header: 'Destination', accessor: 'destination' }, { id: 'driver', header: 'Driver', accessor: 'driverName' }, { id: 'vehicle', header: 'Vehicle', accessor: 'vehiclePlate' }, { id: 'scheduled', header: 'Scheduled', cell: (r) => formatDate(r.scheduledAt) }, { id: 'pod', header: 'POD', cell: (r) => r.podSignedBy ? `Signed by ${r.podSignedBy}` : '—' }]; return <DataGrid columns={cols} data={rows} loading={loading} emptyTitle="No dispatch routes" density="compact" /> }

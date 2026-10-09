@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import * as TabsPrimitive from '@radix-ui/react-tabs'
 import { ChevronDown, PackageOpen } from 'lucide-react'
@@ -92,12 +92,12 @@ export function FormField({
 }) {
   return (
     <div className={cn('grid min-w-0 gap-1.5', className)}>
-      <label htmlFor={htmlFor} className="truncate text-xs font-medium text-foreground sm:text-sm">
+      <label htmlFor={htmlFor} className="block text-xs font-semibold tracking-tight text-foreground sm:text-sm">
         {label}
         {required && <span className="text-accent font-bold"> *</span>}
       </label>
       {children}
-      {hint && !error && <p className="truncate text-[11px] text-muted-foreground">{hint}</p>}
+      {hint && !error && <p className="text-[11px] text-muted-foreground leading-relaxed">{hint}</p>}
       {error && <p className="text-[11px] font-medium text-destructive" role="alert">{error}</p>}
     </div>
   )
@@ -106,32 +106,37 @@ export function FormField({
 export function FormSection({
   title,
   description,
+  badge,
   children,
   defaultOpen = true,
   className,
+  contentClassName,
 }: {
   title: string
   description?: string
+  badge?: React.ReactNode
   children: React.ReactNode
   defaultOpen?: boolean
   className?: string
+  contentClassName?: string
 }) {
   const [open, setOpen] = useState(defaultOpen)
   return (
-    <section className={cn('w-full min-w-0 rounded-xl border bg-card/90 shadow-2xs transition-shadow duration-200 hover:shadow-xs', className)}>
+    <section className={cn('w-full min-w-0 rounded-xl border border-border/70 bg-card/90 shadow-2xs transition-shadow duration-200 hover:shadow-xs', className)}>
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/40 sm:px-5 sm:py-3.5"
+        className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left transition-colors hover:bg-muted/40 sm:px-5 sm:py-4"
       >
-        <span className="min-w-0 flex-1">
+        <span className="min-w-0 flex-1 flex flex-wrap items-center gap-2.5">
           <span className="block text-sm font-semibold tracking-tight text-foreground sm:text-base">{title}</span>
-          {description && <span className="mt-0.5 block truncate text-xs text-muted-foreground">{description}</span>}
+          {badge}
+          {description && <span className="w-full text-xs text-muted-foreground line-clamp-1">{description}</span>}
         </span>
-        <ChevronDown className={cn('size-4 text-muted-foreground transition-transform duration-200', open && 'rotate-180')} />
+        <ChevronDown className={cn('size-4 text-muted-foreground transition-transform duration-200 shrink-0', open && 'rotate-180')} />
       </button>
       {open && (
-        <div className="grid w-full min-w-0 gap-3 border-t p-3 sm:grid-cols-2 lg:grid-cols-3 sm:p-4">
+        <div className={cn('w-full min-w-0 border-t border-border/60 p-4 sm:p-5', contentClassName || 'grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3')}>
           {children}
         </div>
       )}

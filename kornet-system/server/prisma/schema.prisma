@@ -124,6 +124,20 @@ model Party {
   @@index([companyCode, name])
 }
 
+model PartyMapLocation {
+  id                String   @id @default(cuid())
+  companyCode       String
+  partyId           String
+  latitude          Float
+  longitude         Float
+  source            String
+  updatedBy         String?
+  updatedAt         DateTime @updatedAt
+
+  @@unique([companyCode, partyId])
+  @@index([companyCode])
+}
+
 model Port {
   id          String   @id @default(cuid())
   companyCode String
@@ -134,6 +148,10 @@ model Port {
   kind        String   @default("SEA")
   type        String   @default("sea")
   iata        String?
+  latitude    Float?
+  longitude   Float?
+  locationSource String?
+  locationVerifiedAt DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
 
@@ -351,6 +369,7 @@ model Shipment {
   charges                Charge[]
   invoices               Invoice[]
   apBills                ApBill[]
+  trackingLinks          TrackingAssetLink[]
   pdOrders               PdOrder[]
   vehicles               Vehicle[]
 
@@ -1046,6 +1065,21 @@ model StatusEvent {
 
   @@index([companyCode])
   @@index([entityType, entityId])
+}
+
+model TrackingAssetLink {
+  id          String   @id @default(cuid())
+  companyCode String
+  assetType   String
+  provider    String
+  externalId  String
+  shipmentId  String
+  shipment    Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  linkedBy    String?
+  linkedAt    DateTime @default(now())
+
+  @@unique([companyCode, assetType, provider, externalId])
+  @@index([companyCode, shipmentId])
 }
 
 model TrackingItem {

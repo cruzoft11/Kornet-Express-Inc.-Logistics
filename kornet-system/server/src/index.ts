@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { env } from './env.js';
 import apiRoutes from './routes/index.js';
 import { errorHandler, notFoundHandler } from './middleware/error.js';
+import { initializeTrackingProviders } from './services/trackingProviders.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -35,6 +36,7 @@ if (process.env.NODE_ENV === 'production' || process.env.WEBSITE_SITE_NAME) {
 }
 
 const app = express();
+initializeTrackingProviders();
 
 app.disable('x-powered-by');
 app.use(helmet());

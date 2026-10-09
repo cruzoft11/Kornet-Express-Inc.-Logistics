@@ -60,7 +60,7 @@ async function chargeContext(companyCode: string, data: Record<string, unknown>)
   return {};
 }
 
-crud('/parties', 'party', 'Party', s.partyCreate, s.partyUpdate, { searchFields: ['code', 'name', 'email', 'tin'], orderBy: { name: 'asc' } });
+crud('/parties', 'party', 'Party', s.partyCreate, s.partyUpdate, { searchFields: ['code', 'name', 'email', 'tin'], orderBy: { name: 'asc' }, afterWrite: async (row, action, req) => { if (action === 'delete') await prisma.partyMapLocation.deleteMany({ where: { companyCode: req.companyCode!, partyId: String(row.id) } }); } });
 crud('/tariffs', 'tariff', 'Tariff', s.tariffCreate, s.tariffUpdate, { searchFields: ['billingCode', 'originPortCode', 'destPortCode'], orderBy: { validFrom: 'desc' } });
 crud('/quotes', 'quote', 'Quote', s.quoteCreate, s.quoteUpdate, { searchFields: ['quoteNo', 'commodity'], numbering: { field: 'quoteNo', key: 'QUOTE' }, include: { cargoLines: true, charges: true }, softDelete: true });
 crud('/shipments', 'shipment', 'Shipment', s.shipmentCreate, s.shipmentUpdate, { searchFields: ['fileNo', 'bookingNo', 'customerRef', 'shipperName', 'consigneeName'], include: { cargoLines: true, containers: true, charges: true, transportDocs: true }, softDelete: true, afterWrite: async (row, action, req) => { if (action === 'create') await applyTariffs(String(row.id), req.companyCode!, req.user?.sub); } });

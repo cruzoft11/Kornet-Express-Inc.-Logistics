@@ -1,9 +1,9 @@
-﻿import { useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import * as XLSX from 'xlsx'
 import { toast } from 'sonner'
 import { AlertTriangle, FileUp, Plus, Save, Trash2 } from 'lucide-react'
-import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Checkbox, DataGrid, DateInput, FormField, FormSection, Input, MoneyInput, NumberInput, PageHeader, Select, Sheet, SheetContent, Skeleton, Switch, Textarea, Toolbar } from '@/components/ui'
+import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Checkbox, DataGrid, DateInput, FormField, FormSection, FullscreenDialog, Input, MoneyInput, NumberInput, PageHeader, Select, Sheet, SheetContent, Skeleton, Switch, Textarea, Toolbar } from '@/components/ui'
 import { billingCodesApi, listFsAccounts, partiesApi, portsApi, tariffsApi, type BillingCode, type Party, type Port, type Tariff } from '@/api/masters'
 import { useHotkeys } from '@/hooks/useHotkeys'
 import { formatDate, formatMoney } from '@/lib/format'
@@ -30,7 +30,180 @@ export function PartiesPage() {
   useHotkeys([{ key: 'N', description: 'New party', handler: () => { setDraft(emptyParty); setOpen(true) } }, { key: 'Mod+S', description: 'Save party', when: open, handler: () => save.mutate() }])
   const onImport = async (f: File) => { const wb = XLSX.read(await f.arrayBuffer()); const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(wb.Sheets[wb.SheetNames[0]]); setPreview(json.map((r) => ({ ...emptyParty, code: String(r.code ?? r.Code ?? ''), name: String(r.name ?? r.Name ?? ''), tin: maskTin(String(r.tin ?? r.TIN ?? '')), email: String(r.email ?? r.Email ?? ''), phone: String(r.phone ?? r.Phone ?? ''), isCustomer: yn(r.isCustomer ?? r.Customer), isVendor: yn(r.isVendor ?? r.Vendor), isCarrier: yn(r.isCarrier ?? r.Carrier) })).filter((p) => p.name)); toast.info(`${json.length} rows parsed. Review preview before import.`) }
   const commitImport = async () => { for (const p of preview) await partiesApi.create(p); toast.success(`${preview.length} parties imported`); setPreview([]); qc.invalidateQueries({ queryKey: ['parties'] }) }
-  return <div><PageHeader eyebrow="Master data" title="Customers & Vendors" description="Unified party directory for customers, vendors, carriers, agents, brokers and truckers." primaryAction={<Button onClick={() => { setDraft(emptyParty); setOpen(true) }} kbd="N"><Plus className="size-4" />New party</Button>} /><Toolbar><Button variant="outline" onClick={() => fileRef.current?.click()}><FileUp className="size-4" />Import Excel</Button><input ref={fileRef} type="file" accept=".xlsx,.xls" hidden onChange={(e) => e.target.files?.[0] && onImport(e.target.files[0])} /></Toolbar>{preview.length > 0 && <Card className="mb-4"><CardHeader><CardTitle>Import preview</CardTitle><CardDescription>No records are created until you confirm.</CardDescription></CardHeader><CardContent><DataGrid data={preview.map((p, id) => ({ id, ...p }))} columns={[{ id: 'code', header: 'Code', accessor: 'code' }, { id: 'name', header: 'Name', accessor: 'name' }, { id: 'tin', header: 'TIN', accessor: 'tin' }]} /><Button className="mt-3" onClick={commitImport}>Create {preview.length} parties</Button></CardContent></Card>}<DataGrid loading={isLoading} data={rows} emptyTitle="No parties yet" columns={[{ id: 'code', header: 'Code', accessor: 'code', sortable: true }, { id: 'name', header: 'Name', cell: (p) => <button className="font-semibold text-secondary" onClick={() => { setDraft(p); setOpen(true) }}>{p.name}</button>, sortable: true }, { id: 'roles', header: 'Roles', cell: (p) => <div className="flex flex-wrap gap-1">{flags.map((f, i) => p[f] ? <Badge key={f} status={roles[i]} /> : null)}</div> }, { id: 'tin', header: 'TIN', accessor: 'tin' }, { id: 'terms', header: 'Terms', cell: (p) => `${p.creditTermsDays ?? 0} days` }, { id: 'limit', header: 'Limit', cell: (p) => formatMoney(p.creditLimit ?? 0, p.currency) }, { id: 'active', header: 'Active', cell: (p) => <Badge status={p.active === false ? 'inactive' : 'active'} tone={p.active === false ? 'neutral' : 'success'} /> }]} /><Sheet open={open} onOpenChange={setOpen}><SheetContent title={draft.id ? 'Edit party' : 'New party'} description="Ctrl+S saves. Duplicate names warn before save." className="overflow-y-auto sm:max-w-3xl"><div className="space-y-4"><FormSection title="Identity"><FormField label="Code"><Input value={draft.code ?? ''} onChange={(e) => setDraft({ ...draft, code: e.target.value.toUpperCase() })} /></FormField><FormField label="Name" required><Input value={draft.name ?? ''} onChange={(e) => setDraft({ ...draft, name: e.target.value })} /></FormField><FormField label="TIN" error={!validTin(draft.tin) ? 'Use 000-000-000-00000' : dup ? 'A party with this name already exists.' : undefined}><Input value={draft.tin ?? ''} onChange={(e) => setDraft({ ...draft, tin: maskTin(e.target.value) })} /></FormField>{flags.map((f, i) => <label key={f} className="flex items-center gap-2 text-sm"><Checkbox checked={Boolean(draft[f])} onCheckedChange={(v) => setDraft({ ...draft, [f]: v === true })} />{roles[i]}</label>)}<label className="flex items-center gap-2 text-sm"><Switch checked={draft.vatRegistered !== false} onCheckedChange={(v) => setDraft({ ...draft, vatRegistered: v })} />VAT registered</label><label className="flex items-center gap-2 text-sm"><Switch checked={Boolean(draft.withholdingAgent)} onCheckedChange={(v) => setDraft({ ...draft, withholdingAgent: v })} />Withholding agent</label><label className="flex items-center gap-2 text-sm"><Switch checked={draft.active !== false} onCheckedChange={(v) => setDraft({ ...draft, active: v })} />Active</label></FormSection><FormSection title="Credit and contacts"><FormField label="Credit terms days"><NumberInput value={draft.creditTermsDays ?? 0} onValueChange={(v) => setDraft({ ...draft, creditTermsDays: v })} /></FormField><FormField label="Credit limit"><MoneyInput currency={draft.currency ?? 'PHP'} value={draft.creditLimit ?? 0} onValueChange={(v) => setDraft({ ...draft, creditLimit: v })} /></FormField><FormField label="Email"><Input value={draft.email ?? ''} onChange={(e) => setDraft({ ...draft, email: e.target.value })} /></FormField><FormField label="Phone"><Input value={draft.phone ?? ''} onChange={(e) => setDraft({ ...draft, phone: e.target.value })} /></FormField><FormField label="Contact"><Input value={draft.contactName ?? ''} onChange={(e) => setDraft({ ...draft, contactName: e.target.value })} /></FormField><FormField label="SCAC"><Input value={draft.scac ?? ''} onChange={(e) => setDraft({ ...draft, scac: e.target.value.toUpperCase().slice(0, 4) })} /></FormField><FormField label="IATA prefix"><Input value={draft.iataCode ?? ''} onChange={(e) => setDraft({ ...draft, iataCode: e.target.value.slice(0, 3) })} /></FormField><FormField label="FS supplier link" hint="Backend exposes /fs/suppliers but Party currently stores only AP account; use notes until supplier id exists."><Input value={draft.apAccount ?? ''} onChange={(e) => setDraft({ ...draft, apAccount: e.target.value })} /></FormField></FormSection><FormSection title="Addresses"><FormField label="Billing / main address"><Textarea value={draft.address ?? ''} onChange={(e) => setDraft({ ...draft, address: e.target.value })} /></FormField><FormField label="City"><Input value={draft.city ?? ''} onChange={(e) => setDraft({ ...draft, city: e.target.value })} /></FormField><FormField label="Province"><Input value={draft.province ?? ''} onChange={(e) => setDraft({ ...draft, province: e.target.value })} /></FormField><FormField label="Shipping address / notes"><Textarea value={draft.notes ?? ''} onChange={(e) => setDraft({ ...draft, notes: e.target.value })} /></FormField></FormSection><div className="flex justify-between"><Button variant="destructive" disabled={!draft.id} onClick={() => draft.id && remove.mutate(draft.id)}><Trash2 className="size-4" />Delete</Button><Button loading={save.isPending} onClick={() => save.mutate()} kbd="Ctrl+S"><Save className="size-4" />Save</Button></div></div></SheetContent></Sheet></div>
+  return (
+    <div>
+      <PageHeader
+        eyebrow="Master data"
+        title="Customers & Vendors"
+        description="Unified party directory for customers, vendors, carriers, agents, brokers and truckers."
+        primaryAction={
+          <Button onClick={() => { setDraft(emptyParty); setOpen(true) }} kbd="N">
+            <Plus className="size-4" />New party
+          </Button>
+        }
+      />
+      <Toolbar>
+        <Button variant="outline" onClick={() => fileRef.current?.click()}>
+          <FileUp className="size-4" />Import Excel
+        </Button>
+        <input ref={fileRef} type="file" accept=".xlsx,.xls" hidden onChange={(e) => e.target.files?.[0] && onImport(e.target.files[0])} />
+      </Toolbar>
+      {preview.length > 0 && (
+        <Card className="mb-4">
+          <CardHeader>
+            <CardTitle>Import preview</CardTitle>
+            <CardDescription>No records are created until you confirm.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DataGrid data={preview.map((p, id) => ({ id, ...p }))} columns={[{ id: 'code', header: 'Code', accessor: 'code' }, { id: 'name', header: 'Name', accessor: 'name' }, { id: 'tin', header: 'TIN', accessor: 'tin' }]} />
+            <Button className="mt-3" onClick={commitImport}>Create {preview.length} parties</Button>
+          </CardContent>
+        </Card>
+      )}
+      <DataGrid
+        loading={isLoading}
+        data={rows}
+        emptyTitle="No parties yet"
+        columns={[
+          { id: 'code', header: 'Code', accessor: 'code', sortable: true },
+          { id: 'name', header: 'Name', cell: (p) => <button className="font-semibold text-secondary hover:underline" onClick={() => { setDraft(p); setOpen(true) }}>{p.name}</button>, sortable: true },
+          { id: 'roles', header: 'Roles', cell: (p) => <div className="flex flex-wrap gap-1">{flags.map((f, i) => p[f] ? <Badge key={f} status={roles[i]} /> : null)}</div> },
+          { id: 'tin', header: 'TIN', accessor: 'tin' },
+          { id: 'terms', header: 'Terms', cell: (p) => `${p.creditTermsDays ?? 0} days` },
+          { id: 'limit', header: 'Limit', cell: (p) => formatMoney(p.creditLimit ?? 0, p.currency) },
+          { id: 'active', header: 'Active', cell: (p) => <Badge status={p.active === false ? 'inactive' : 'active'} tone={p.active === false ? 'neutral' : 'success'} /> },
+        ]}
+      />
+      <FullscreenDialog
+        open={open}
+        onOpenChange={setOpen}
+        title={draft.id ? `Edit Party — ${draft.name}` : 'New Customer / Vendor Party'}
+        description="Unified directory master record for clients, vendors, forwarders, and shipping lines. Ctrl+S saves."
+        badge={
+          <Badge
+            status={draft.active === false ? 'inactive' : 'active'}
+            tone={draft.active === false ? 'neutral' : 'success'}
+          />
+        }
+        actions={
+          <div className="flex w-full items-center justify-between">
+            <Button variant="destructive" disabled={!draft.id} onClick={() => draft.id && remove.mutate(draft.id)}>
+              <Trash2 className="size-4" />Delete Party
+            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
+              <Button loading={save.isPending} onClick={() => save.mutate()} kbd="Ctrl+S">
+                <Save className="size-4" />Save Party
+              </Button>
+            </div>
+          </div>
+        }
+      >
+        <div className="space-y-6">
+          <FormSection title="Entity Identity & Roles" description="Entity classification, unique business code, and tax registration." contentClassName="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <FormField label="Party Code">
+                <Input value={draft.code ?? ''} onChange={(e) => setDraft({ ...draft, code: e.target.value.toUpperCase() })} placeholder="e.g. ACM-001" />
+              </FormField>
+              <FormField label="Registered Entity Name" required>
+                <Input value={draft.name ?? ''} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="Full registered company name" />
+              </FormField>
+              <FormField label="TIN (Tax Identification Number)" error={!validTin(draft.tin) ? 'Use 000-000-000-00000' : dup ? 'A party with this name already exists.' : undefined}>
+                <Input value={draft.tin ?? ''} onChange={(e) => setDraft({ ...draft, tin: maskTin(e.target.value) })} placeholder="000-000-000-00000" />
+              </FormField>
+            </div>
+
+            <div className="rounded-xl border border-border/70 bg-muted/20 p-4 space-y-3">
+              <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Entity Roles (Check all that apply)</div>
+              <div className="flex flex-wrap items-center gap-4">
+                {flags.map((f, i) => (
+                  <label key={f} className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                    <Checkbox checked={Boolean(draft[f])} onCheckedChange={(v) => setDraft({ ...draft, [f]: v === true })} />
+                    {roles[i]}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-6 pt-1">
+              <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                <Switch checked={draft.vatRegistered !== false} onCheckedChange={(v) => setDraft({ ...draft, vatRegistered: v })} />
+                VAT registered entity
+              </label>
+              <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                <Switch checked={Boolean(draft.withholdingAgent)} onCheckedChange={(v) => setDraft({ ...draft, withholdingAgent: v })} />
+                BIR Withholding tax agent
+              </label>
+              <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                <Switch checked={draft.active !== false} onCheckedChange={(v) => setDraft({ ...draft, active: v })} />
+                Active status
+              </label>
+            </div>
+          </FormSection>
+
+          <FormSection title="Credit Terms, Contacts & Carrier Identifiers" description="Settlement credit limits, contacts, and EDI carrier prefixes." contentClassName="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <FormField label="Credit Terms (Days)">
+                <NumberInput value={draft.creditTermsDays ?? 0} onValueChange={(v) => setDraft({ ...draft, creditTermsDays: v })} />
+              </FormField>
+              <FormField label="Credit Limit">
+                <MoneyInput currency={draft.currency ?? 'PHP'} value={draft.creditLimit ?? 0} onValueChange={(v) => setDraft({ ...draft, creditLimit: v })} />
+              </FormField>
+              <FormField label="Primary Email">
+                <Input value={draft.email ?? ''} onChange={(e) => setDraft({ ...draft, email: e.target.value })} placeholder="accounting@company.com" />
+              </FormField>
+              <FormField label="Primary Phone">
+                <Input value={draft.phone ?? ''} onChange={(e) => setDraft({ ...draft, phone: e.target.value })} placeholder="+63 2 8123 4567" />
+              </FormField>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-1">
+              <FormField label="Contact Person">
+                <Input value={draft.contactName ?? ''} onChange={(e) => setDraft({ ...draft, contactName: e.target.value })} placeholder="Full name of liaison" />
+              </FormField>
+              <FormField label="Carrier SCAC" hint="4-letter ocean/trucking SCAC code">
+                <Input value={draft.scac ?? ''} onChange={(e) => setDraft({ ...draft, scac: e.target.value.toUpperCase().slice(0, 4) })} placeholder="e.g. MAEU" />
+              </FormField>
+              <FormField label="Airline IATA Prefix" hint="3-digit airline accounting code">
+                <Input value={draft.iataCode ?? ''} onChange={(e) => setDraft({ ...draft, iataCode: e.target.value.slice(0, 3) })} placeholder="e.g. 079 (PAL)" />
+              </FormField>
+              <FormField label="FS Supplier Account Link" hint="GL Accounts Payable integration">
+                <Input value={draft.apAccount ?? ''} onChange={(e) => setDraft({ ...draft, apAccount: e.target.value })} placeholder="e.g. AP-2000" />
+              </FormField>
+            </div>
+          </FormSection>
+
+          <FormSection title="Registered Addresses & Premises" description="Physical headquarters and facility delivery locations." contentClassName="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="rounded-xl border border-border/70 bg-card p-4 space-y-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Billing / Main Office Address</span>
+                <FormField label="Street Address">
+                  <Textarea value={draft.address ?? ''} onChange={(e) => setDraft({ ...draft, address: e.target.value })} rows={2} placeholder="Building, Street, Barangay" />
+                </FormField>
+                <div className="grid grid-cols-2 gap-3">
+                  <FormField label="City / Municipality">
+                    <Input value={draft.city ?? ''} onChange={(e) => setDraft({ ...draft, city: e.target.value })} placeholder="e.g. Pasay City" />
+                  </FormField>
+                  <FormField label="Province / State">
+                    <Input value={draft.province ?? ''} onChange={(e) => setDraft({ ...draft, province: e.target.value })} placeholder="e.g. Metro Manila" />
+                  </FormField>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-border/70 bg-card p-4 space-y-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Warehouse / Delivery Sites & Notes</span>
+                <FormField label="Facility Location & Delivery Instructions">
+                  <Textarea value={draft.notes ?? ''} onChange={(e) => setDraft({ ...draft, notes: e.target.value })} rows={5} placeholder="Drop-off docks, gate clearance, special delivery requirements..." />
+                </FormField>
+              </div>
+            </div>
+          </FormSection>
+        </div>
+      </FullscreenDialog>
+    </div>
+  )
 }
 
 export function PortsPage() { const qc = useQueryClient(); const [draft, setDraft] = useState<Partial<Port>>({ kind: 'SEA', country: 'PH' }); const [open, setOpen] = useState(false); const { data, isLoading } = useQuery({ queryKey: ['ports'], queryFn: () => portsApi.list({ pageSize: 500 }) }); const save = useMutation({ mutationFn: () => draft.id ? portsApi.update(draft.id, draft) : portsApi.create(draft), onSuccess: () => { toast.success('Port saved'); setOpen(false); qc.invalidateQueries({ queryKey: ['ports'] }) }, onError: (e) => toast.error(err(e)) }); useHotkeys([{ key: 'N', description: 'New port', handler: () => { setDraft({ kind: 'SEA', country: 'PH' }); setOpen(true) } }, { key: 'Mod+S', description: 'Save port', when: open, handler: () => save.mutate() }]); return <CrudShell title="Ports" description="UN/LOCODE, airport and inland location directory." onNew={() => { setDraft({ kind: 'SEA', country: 'PH' }); setOpen(true) }}><DataGrid loading={isLoading} data={data?.data ?? []} columns={[{ id: 'code', header: 'Code', accessor: 'code' }, { id: 'unlocode', header: 'UN/LOCODE', accessor: 'unlocode' }, { id: 'name', header: 'Name', cell: (p) => <button className="font-semibold text-secondary" onClick={() => { setDraft(p); setOpen(true) }}>{p.name}</button> }, { id: 'country', header: 'Country', accessor: 'country' }, { id: 'kind', header: 'Kind', cell: (p) => <Badge status={p.kind ?? 'SEA'} /> }, { id: 'iata', header: 'IATA', accessor: 'iata' }]} /><Sheet open={open} onOpenChange={setOpen}><SheetContent title="Port"><div className="grid gap-4"><FormField label="Code" required><Input value={draft.code ?? ''} onChange={(e) => setDraft({ ...draft, code: e.target.value.toUpperCase() })} /></FormField><FormField label="UN/LOCODE"><Input value={draft.unlocode ?? ''} onChange={(e) => setDraft({ ...draft, unlocode: e.target.value.toUpperCase() })} /></FormField><FormField label="Name" required><Input value={draft.name ?? ''} onChange={(e) => setDraft({ ...draft, name: e.target.value })} /></FormField><FormField label="Country"><Input value={draft.country ?? ''} onChange={(e) => setDraft({ ...draft, country: e.target.value.toUpperCase() })} /></FormField><FormField label="Kind"><Select value={draft.kind ?? 'SEA'} onValueChange={(v) => setDraft({ ...draft, kind: v })} options={['SEA', 'AIR', 'INLAND'].map((v) => ({ value: v, label: v }))} /></FormField><FormField label="IATA"><Input value={draft.iata ?? ''} onChange={(e) => setDraft({ ...draft, iata: e.target.value.toUpperCase().slice(0, 3) })} /></FormField><Button onClick={() => save.mutate()} loading={save.isPending} kbd="Ctrl+S">Save</Button></div></SheetContent></Sheet></CrudShell> }
