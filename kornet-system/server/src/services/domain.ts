@@ -56,9 +56,33 @@ export async function postApBill(id: string, companyCode: string, userId?: strin
 
 function entryFromBridge(item: { companyCode: string; journal: string; refNo: string; date: Date; party: string | null; memo: string | null; linesJson: string }, userId?: string): LedgerEntry { return { companyCode: item.companyCode, journal: item.journal as LedgerEntry['journal'], refNo: item.refNo, date: ymd(item.date), payee: item.party ?? undefined, description: item.memo ?? undefined, lines: parseJson<LedgerLine[]>(item.linesJson, []), userId }; }
 export async function trialBridge(ids: string[], companyCode: string) { const items = await prisma.bridgeItem.findMany({ where: { companyCode, id: { in: ids } } }); const results = []; for (const item of items) { try { const result = trialPost(entryFromBridge(item)); await prisma.bridgeItem.update({ where: { id: item.id }, data: { status: result.ok ? 'TRIAL_OK' : 'TRIAL_ERROR', errorsJson: JSON.stringify(result.errors) } }); results.push({ id: item.id, ...result }); } catch (e) { const errors = [e instanceof Error ? e.message : String(e)]; await prisma.bridgeItem.update({ where: { id: item.id }, data: { status: 'TRIAL_ERROR', errorsJson: JSON.stringify(errors) } }); results.push({ id: item.id, ok: false, errors, totalDebit: item.totalDebit, totalCredit: item.totalCredit }); } } return results; }
-export async function finalBridge(ids: string[], companyCode: string, userId?: string) { const items = await prisma.bridgeItem.findMany({ where: { companyCode, id: { in: ids } } }); const results = []; for (const item of items) { try { const entry = entryFromBridge(item, userId); const trial = trialPost(entry); if (!trial.ok) throw new Error(trial.errors.join('; ')); const posted = finalPost(entry); const updated = await prisma.bridgeItem.update({ where: { id: item.id }, data: { status: 'POSTED', fsJvNo: posted.jvNo, postedAt: new Date(), postedBy: userId } }); await writeBackPostedSource(updated.sourceType, updated.sourceId, companyCode, posted.jvNo); results.push({ id: item.id, ok: true, jvNo: posted.jvNo }); } catch (e) { const errors = [e instanceof Error ? e.message : String(e)]; await prisma.bridgeItem.update({ where: { id: item.id }, data: { status: 'TRIAL_ERROR', errorsJson: JSON.stringify(errors) } }); results.push({ id: item.id, ok: false, errors }); } } return results; }
+export async function finalBridge(ids: string[], companyCode: string, userId?: string) {
+  const items = await prisma.bridgeItem.findMany({ where: { companyCode, id: { in: ids } } });
+  const results = [];
+  for (const item of items) {
+    try {
+      const entry = entryFromBridge(item, userId);
+      if (item.sourceType === 'CHECK') {
+        const check = await prisma.checkDisbursement.findFirst({ where: { id: item.sourceId, companyCode } });
+        if (!check) throw new Error(`Check ${item.sourceId} not found for bridge item ${item.id}`);
+        entry.checkNo = check.checkNo ?? check.voucherNo;
+        if (check.bankNo !== null) entry.bankNo = check.bankNo;
+      }
+      const trial = trialPost(entry);
+      if (!trial.ok) throw new Error(trial.errors.join('; '));
+      const posted = finalPost(entry);
+      const updated = await prisma.bridgeItem.update({ where: { id: item.id }, data: { status: 'POSTED', fsJvNo: posted.jvNo, postedAt: new Date(), postedBy: userId } });
+      await writeBackPostedSource(updated.sourceType, updated.sourceId, companyCode, posted.jvNo);
+      results.push({ id: item.id, ok: true, jvNo: posted.jvNo });
+    } catch (e) {
+      const errors = [e instanceof Error ? e.message : String(e)];
+      await prisma.bridgeItem.update({ where: { id: item.id }, data: { status: 'TRIAL_ERROR', errorsJson: JSON.stringify(errors) } });
+      results.push({ id: item.id, ok: false, errors });
+    }
+  }
+  return results;
+}
 async function writeBackPostedSource(sourceType: string, sourceId: string, companyCode: string, jvNo: string) { if (sourceType === 'INVOICE' || sourceType === 'CREDIT_MEMO' || sourceType === 'INVOICE_VOID') { await prisma.invoice.update({ where: { id: sourceId }, data: { jeNo: jvNo } }).catch(() => undefined); await prisma.charge.updateMany({ where: { companyCode, invoiceId: sourceId }, data: { billStatus: 'POSTED', status: 'POSTED' } }); } else if (sourceType === 'AP_BILL') { await prisma.apBill.update({ where: { id: sourceId }, data: { jeNo: jvNo } }).catch(() => undefined); await prisma.charge.updateMany({ where: { companyCode, apBillId: sourceId }, data: { costStatus: 'POSTED', status: 'POSTED' } }); } else if (sourceType === 'RECEIPT') await prisma.receipt.update({ where: { id: sourceId }, data: { jeNo: jvNo } }).catch(() => undefined); else if (sourceType === 'CHECK') await prisma.checkDisbursement.update({ where: { id: sourceId }, data: { jeNo: jvNo } }).catch(() => undefined); }
 
 export async function closeCheck(id: string, companyCode: string) { const shipment = await prisma.shipment.findFirst({ where: { id, companyCode }, include: { charges: true, invoices: true, apBills: true, transportDocs: true } }); if (!shipment) throw notFound('Shipment not found'); const blockers: string[] = [], warnings: string[] = []; if (shipment.status === 'CLOSED') blockers.push('Shipment is already CLOSED'); if (shipment.charges.some((c) => ['BOTH', 'BILL_ONLY'].includes(c.chargeSide) && c.billStatus === 'OPEN')) blockers.push('Billable charges remain uninvoiced'); if (shipment.charges.some((c) => ['BOTH', 'COST_ONLY'].includes(c.chargeSide) && c.costAmountPhp > 0 && c.costStatus === 'OPEN')) blockers.push('Cost charges remain without AP bill'); if (shipment.invoices.some((i) => i.status === 'DRAFT')) blockers.push('Draft invoices exist'); if (shipment.apBills.some((a) => a.status === 'DRAFT')) blockers.push('Draft AP bills exist'); if (!shipment.transportDocs.some((d) => d.status === 'ISSUED')) { if (shipment.mode === 'DOMESTIC') warnings.push('No issued transport document'); else blockers.push('No issued transport document'); } const analysis = await shipmentAnalysis(id, companyCode); if (analysis.marginPct < analysis.threshold) warnings.push('Margin below threshold'); return { ok: blockers.length === 0, blockers, warnings, analysis }; }
 export async function closeShipment(id: string, companyCode: string, userRole: string | undefined, overrideReason?: string) { const ck = await closeCheck(id, companyCode); if (!ck.ok) throw conflict(`Cannot close shipment: ${ck.blockers.join('; ')}`); if (ck.analysis.marginPct < ck.analysis.threshold && (!['manager', 'admin', 'superadmin'].includes(userRole ?? '') || !String(overrideReason ?? '').trim())) throw conflict('Margin below threshold requires manager/admin override with reason'); const s = await prisma.shipment.update({ where: { id }, data: { status: 'CLOSED', closedAt: new Date(), marginOverrideReason: overrideReason, version: { increment: 1 } } }); await emitStatus(companyCode, 'SHIPMENT', id, 'CLS'); return s; }
-
