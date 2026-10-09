@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import type { Prisma } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import type { ZodTypeAny } from 'zod';
@@ -183,9 +184,182 @@ logistics.post('/bridge/:id/reject', acct, asyncHandler(async (req, res) => { co
 function vinCheck(vin: string) { return /^[A-HJ-NPR-Z0-9]{17}$/.test(vin) ? { valid: true, warning: null } : { valid: false, warning: 'VIN must be 17 chars excluding I/O/Q' }; }
 for (const action of ['receive', 'inspect', 'hold', 'release-hold', 'ready', 'force-ready', 'temporal-release', 'undo-temporal-release', 'withdraw', 'link-to-container', 'title-rejected'] as const) logistics.post(`/vehicles/:id/${action}`, action === 'force-ready' ? requireRole('manager', 'admin') : writeAll, asyncHandler(async (req, res) => { const v = await getOwned(prisma.vehicle, req.params.id, req.companyCode!, 'Vehicle'); const data: Record<string, unknown> = { version: { increment: 1 } }; if (action === 'receive') { if (v.status !== 'EXPECTED') throw conflict('receive requires EXPECTED'); data.status = 'RECEIVED'; data.wrNo = v.wrNo ?? await prisma.$transaction((tx) => nextNumber(tx, req.companyCode!, 'WR')); } else if (action === 'inspect') { if (v.status !== 'RECEIVED') throw conflict('inspect requires RECEIVED'); if (!req.body?.inspectionDate || !req.body?.inspectedBy) throw badRequest('inspectionDate and inspectedBy are required'); data.inspectionDate = new Date(req.body.inspectionDate); data.inspectedBy = req.body.inspectedBy; data.inspectionNo = v.inspectionNo ?? await prisma.$transaction((tx) => nextNumber(tx, req.companyCode!, 'WR')); } else if (action === 'hold') { if (!['RECEIVED', 'READY_TO_SHIP'].includes(v.status)) throw conflict('hold requires RECEIVED or READY_TO_SHIP'); data.priorStatus = v.status; data.status = 'ON_HOLD'; data.hold = true; } else if (action === 'release-hold') { if (v.status !== 'ON_HOLD') throw conflict('release-hold requires ON_HOLD'); data.status = v.priorStatus ?? 'RECEIVED'; data.hold = false; } else if (action === 'ready') { if (v.status !== 'RECEIVED') throw conflict('ready requires RECEIVED'); if (v.shipperTentative || v.destinationTentative || (v.lienReleaseRequired && !v.lienReleaseReceived) || !v.titleReceived) throw conflict('Vehicle readiness prerequisites are incomplete'); data.status = 'READY_TO_SHIP'; } else if (action === 'force-ready') { if (!String(req.body?.reason ?? '').trim()) throw badRequest('force-ready reason is required'); data.status = 'READY_TO_SHIP'; data.remarks = `Force ready: ${req.body.reason}`; } else if (action === 'temporal-release') { data.temporalRelease = true; data.status = 'RELEASED'; } else if (action === 'undo-temporal-release') { data.temporalRelease = false; data.status = 'RECEIVED'; } else if (action === 'withdraw') { if (['LOADED', 'SHIPPED'].includes(v.status)) throw conflict('Cannot withdraw loaded/shipped vehicle'); data.status = 'WITHDRAWN'; data.withdrawnAt = new Date(); data.withdrawnBy = req.user?.sub; } else if (action === 'link-to-container') { if (!req.body?.containerId) throw badRequest('containerId required'); data.containerId = req.body.containerId; data.status = 'LOADED'; } else if (action === 'title-rejected') { data.titleRejectedSent = new Date(); if (v.containerId) await prisma.vehicle.updateMany({ where: { companyCode: req.companyCode!, containerId: v.containerId }, data: { titleRejectedSent: new Date() } }); } const updated = await prisma.vehicle.update({ where: { id: v.id }, data }); await emitStatus(req.companyCode!, 'VEHICLE', v.id, String(data.status ?? action).toUpperCase(), req.user?.sub); res.json(updated); }));
 logistics.get('/vin/decode/:vin', asyncHandler(async (req, res) => { const vin = req.params.vin.toUpperCase(); const validation = vinCheck(vin); if (!validation.valid) return res.status(400).json({ error: validation.warning }); const existing = await prisma.vehicle.findFirst({ where: { companyCode: req.companyCode!, vin } }); if (existing?.decodedJson) return res.json(JSON.parse(existing.decodedJson)); const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), 10_000); try { const r = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${encodeURIComponent(vin)}?format=json`, { signal: controller.signal }); if (!r.ok) return res.status(502).json({ error: 'NHTSA vPIC unavailable' }); const raw = await r.json() as { Results?: Array<Record<string, string>> }; const first = raw?.Results?.[0] ?? {}; if (first.ErrorCode && first.ErrorCode !== '0') return res.status(502).json({ error: first.ErrorText ?? 'NHTSA vPIC decode error', raw }); const normalized = { vin, year: Number(first.ModelYear) || null, make: first.Make || null, model: first.Model || null, trim: first.Trim || null, body: first.BodyClass || null, engine: first.EngineModel || first.DisplacementL || null, fuel: first.FuelTypePrimary || null, warning: validation.warning, raw }; if (existing) await prisma.vehicle.update({ where: { id: existing.id }, data: { decodedJson: JSON.stringify(normalized), year: normalized.year ?? undefined, make: normalized.make, model: normalized.model, trim: normalized.trim, body: normalized.body, engine: normalized.engine, fuel: normalized.fuel } }); res.json(normalized); } catch { res.status(502).json({ error: 'NHTSA vPIC request timed out or failed' }); } finally { clearTimeout(timer); } }));
-logistics.post('/pd-orders/:id/dispatch', writeAll, asyncHandler(async (req, res) => { const p = await getOwned(prisma.pdOrder, req.params.id, req.companyCode!, 'P/D order'); if (p.status !== 'OPEN') throw conflict('dispatch requires OPEN'); if (!req.body?.driverId || !req.body?.fleetVehicleId) throw badRequest('driverId and fleetVehicleId are required'); const row = await prisma.pdOrder.update({ where: { id: p.id }, data: { status: 'DISPATCHED', driverId: req.body.driverId, fleetVehicleId: req.body.fleetVehicleId, routeId: req.body?.routeId, version: { increment: 1 } } }); await emitStatus(req.companyCode!, 'PD_ORDER', p.id, 'DSP', req.user?.sub, { isPublic: true }); res.json(row); }));
-logistics.post('/pd-orders/:id/complete', writeAll, asyncHandler(async (req, res) => { const p = await getOwned(prisma.pdOrder, req.params.id, req.companyCode!, 'P/D order'); if (!['DISPATCHED', 'IN_TRANSIT'].includes(p.status)) throw conflict('complete requires DISPATCHED/IN_TRANSIT'); if (!req.body?.signedBy) throw badRequest('signedBy is required'); const row = await prisma.pdOrder.update({ where: { id: p.id }, data: { status: 'COMPLETED', deliveredAt: new Date(), podSignedBy: req.body.signedBy, podAt: req.body?.podAt ? new Date(req.body.podAt) : new Date(), podRemarks: String(req.body?.remarks ?? req.body?.podRemarks ?? '').trim() || null, podPhotoUrl: req.body?.podPhotoUrl ?? null, signatureDataUrl: req.body?.signatureDataUrl ?? null, version: { increment: 1 } } }); await emitStatus(req.companyCode!, 'PD_ORDER', p.id, 'POD', req.user?.sub, { isPublic: true }); res.json(row); }));
-logistics.post('/pd-orders/:id/cancel', writeAll, asyncHandler(async (req, res) => { const p = await getOwned(prisma.pdOrder, req.params.id, req.companyCode!, 'P/D order'); if (!['OPEN', 'DISPATCHED'].includes(p.status)) throw conflict('cancel requires OPEN/DISPATCHED'); res.json(await prisma.pdOrder.update({ where: { id: p.id }, data: { status: 'CANCELLED', cancelReason: String(req.body?.reason ?? '').trim() || null, version: { increment: 1 } } })); }));
+async function releasePdResources(tx: Prisma.TransactionClient, order: { companyCode: string; driverId: string | null; fleetVehicleId: string | null; routeId: string | null }) {
+  const activeStatuses = ['DISPATCHED', 'IN_TRANSIT'];
+  if (order.driverId) {
+    const activeDriverOrders = await tx.pdOrder.count({
+      where: { companyCode: order.companyCode, driverId: order.driverId, status: { in: activeStatuses } },
+    });
+    if (activeDriverOrders === 0) {
+      await tx.driver.updateMany({
+        where: { id: order.driverId, companyCode: order.companyCode, status: 'ON_ROUTE' },
+        data: { status: 'AVAILABLE' },
+      });
+    }
+  }
+  if (order.fleetVehicleId) {
+    const activeVehicleOrders = await tx.pdOrder.count({
+      where: { companyCode: order.companyCode, fleetVehicleId: order.fleetVehicleId, status: { in: activeStatuses } },
+    });
+    if (activeVehicleOrders === 0) {
+      await tx.fleetVehicle.updateMany({
+        where: { id: order.fleetVehicleId, companyCode: order.companyCode, status: 'ON_ROUTE' },
+        data: { status: 'AVAILABLE' },
+      });
+    }
+  }
+  if (order.routeId) {
+    const activeRouteOrders = await tx.pdOrder.count({
+      where: { companyCode: order.companyCode, routeId: order.routeId, status: { in: ['OPEN', ...activeStatuses] } },
+    });
+    if (activeRouteOrders === 0) {
+      await tx.dispatchRoute.updateMany({
+        where: { id: order.routeId, companyCode: order.companyCode },
+        data: { stage: 'COMPLETED' },
+      });
+    }
+  }
+}
+
+logistics.post('/pd-orders/:id/dispatch', writeAll, asyncHandler(async (req, res) => {
+  const companyCode = req.companyCode!;
+  const driverId = String(req.body?.driverId ?? '');
+  const fleetVehicleId = String(req.body?.fleetVehicleId ?? '');
+  const routeId = req.body?.routeId ? String(req.body.routeId) : null;
+  if (!driverId || !fleetVehicleId) throw badRequest('driverId and fleetVehicleId are required');
+
+  const row = await prisma.$transaction(async (tx) => {
+    const order = await tx.pdOrder.findFirst({ where: { id: req.params.id, companyCode } });
+    if (!order) throw notFound('P/D order not found');
+    if (order.status !== 'OPEN') throw conflict('dispatch requires OPEN');
+
+    const [driver, vehicle, route] = await Promise.all([
+      tx.driver.findFirst({ where: { id: driverId, companyCode } }),
+      tx.fleetVehicle.findFirst({ where: { id: fleetVehicleId, companyCode } }),
+      routeId ? tx.dispatchRoute.findFirst({ where: { id: routeId, companyCode } }) : Promise.resolve(null),
+    ]);
+    if (!driver) throw notFound('Driver not found');
+    if (!vehicle) throw notFound('Fleet vehicle not found');
+    if (routeId && !route) throw notFound('Dispatch route not found');
+
+    const activeStatuses = ['DISPATCHED', 'IN_TRANSIT'];
+    const routeAssignment = route
+      ? await tx.pdOrder.findFirst({
+          where: { companyCode, routeId: route.id, status: { in: activeStatuses } },
+          select: { driverId: true, fleetVehicleId: true },
+        })
+      : null;
+    const joiningRoute = Boolean(
+      routeAssignment && routeAssignment.driverId === driverId && routeAssignment.fleetVehicleId === fleetVehicleId,
+    );
+    if (routeAssignment && !joiningRoute) throw conflict('Route is already in progress with another driver or vehicle');
+    if (route?.stage === 'COMPLETED') throw conflict('Cannot dispatch an order onto a completed route');
+
+    const [driverAssignment, vehicleAssignment] = await Promise.all([
+      tx.pdOrder.findFirst({
+        where: { companyCode, driverId, status: { in: activeStatuses } },
+        select: { routeId: true },
+      }),
+      tx.pdOrder.findFirst({
+        where: { companyCode, fleetVehicleId, status: { in: activeStatuses } },
+        select: { routeId: true },
+      }),
+    ]);
+    if (driverAssignment && (!joiningRoute || driverAssignment.routeId !== routeId)) {
+      throw conflict('Driver is already assigned to an active order');
+    }
+    if (vehicleAssignment && (!joiningRoute || vehicleAssignment.routeId !== routeId)) {
+      throw conflict('Fleet vehicle is already assigned to an active order');
+    }
+
+    const driverAvailable = driver.status.toUpperCase() === 'AVAILABLE';
+    const vehicleAvailable = vehicle.status.toUpperCase() === 'AVAILABLE';
+    if (!driverAvailable && !joiningRoute) throw conflict('Driver is not available');
+    if (!vehicleAvailable && !joiningRoute) throw conflict('Fleet vehicle is not available');
+
+    if (driverAvailable) {
+      const claimed = await tx.driver.updateMany({
+        where: { id: driver.id, companyCode, status: driver.status },
+        data: { status: 'ON_ROUTE' },
+      });
+      if (claimed.count !== 1) throw conflict('Driver availability changed; refresh and retry');
+    }
+    if (vehicleAvailable) {
+      const claimed = await tx.fleetVehicle.updateMany({
+        where: { id: vehicle.id, companyCode, status: vehicle.status },
+        data: { status: 'ON_ROUTE' },
+      });
+      if (claimed.count !== 1) throw conflict('Fleet vehicle availability changed; refresh and retry');
+    }
+    if (route) {
+      await tx.dispatchRoute.update({
+        where: { id: route.id },
+        data: { stage: 'IN_PROGRESS', driverName: driver.name, vehiclePlate: vehicle.plateNo },
+      });
+    }
+    return tx.pdOrder.update({
+      where: { id: order.id },
+      data: {
+        status: 'DISPATCHED',
+        driverId,
+        fleetVehicleId,
+        routeId,
+        version: { increment: 1 },
+      },
+    });
+  });
+
+  await emitStatus(companyCode, 'PD_ORDER', row.id, 'DSP', req.user?.sub, { isPublic: true });
+  res.json(row);
+}));
+
+logistics.post('/pd-orders/:id/complete', writeAll, asyncHandler(async (req, res) => {
+  const companyCode = req.companyCode!;
+  if (!String(req.body?.signedBy ?? '').trim()) throw badRequest('signedBy is required');
+  const row = await prisma.$transaction(async (tx) => {
+    const order = await tx.pdOrder.findFirst({ where: { id: req.params.id, companyCode } });
+    if (!order) throw notFound('P/D order not found');
+    if (!['DISPATCHED', 'IN_TRANSIT'].includes(order.status)) throw conflict('complete requires DISPATCHED/IN_TRANSIT');
+    const updated = await tx.pdOrder.update({
+      where: { id: order.id },
+      data: {
+        status: 'COMPLETED',
+        deliveredAt: new Date(),
+        podSignedBy: String(req.body.signedBy).trim(),
+        podAt: req.body?.podAt ? new Date(req.body.podAt) : new Date(),
+        podRemarks: String(req.body?.remarks ?? req.body?.podRemarks ?? '').trim() || null,
+        podPhotoUrl: req.body?.podPhotoUrl ?? null,
+        signatureDataUrl: req.body?.signatureDataUrl ?? null,
+        version: { increment: 1 },
+      },
+    });
+    await releasePdResources(tx, order);
+    return updated;
+  });
+  await emitStatus(companyCode, 'PD_ORDER', row.id, 'POD', req.user?.sub, { isPublic: true });
+  res.json(row);
+}));
+
+logistics.post('/pd-orders/:id/cancel', writeAll, asyncHandler(async (req, res) => {
+  const companyCode = req.companyCode!;
+  const row = await prisma.$transaction(async (tx) => {
+    const order = await tx.pdOrder.findFirst({ where: { id: req.params.id, companyCode } });
+    if (!order) throw notFound('P/D order not found');
+    if (!['OPEN', 'DISPATCHED'].includes(order.status)) throw conflict('cancel requires OPEN/DISPATCHED');
+    const updated = await tx.pdOrder.update({
+      where: { id: order.id },
+      data: {
+        status: 'CANCELLED',
+        cancelReason: String(req.body?.reason ?? '').trim() || null,
+        version: { increment: 1 },
+      },
+    });
+    await releasePdResources(tx, order);
+    return updated;
+  });
+  await emitStatus(companyCode, 'PD_ORDER', row.id, 'CNL', req.user?.sub, { isPublic: true });
+  res.json(row);
+}));
 logistics.get('/status-events', asyncHandler(async (req, res) => res.json({ data: await prisma.statusEvent.findMany({ where: { companyCode: req.companyCode!, entityType: req.query.entityType ? String(req.query.entityType) : undefined, entityId: req.query.entityId ? String(req.query.entityId) : undefined }, orderBy: { eventAt: 'asc' } }) })));
 logistics.get('/lookups/search', asyncHandler(async (req, res) => { const type = String(req.query.type ?? 'party'); const q = String(req.query.q ?? ''); const role = String(req.query.role ?? ''); if (type === 'party') { const roleWhere = role ? { [`is${role[0]?.toUpperCase()}${role.slice(1)}`]: true } : {}; res.json({ data: await prisma.party.findMany({ where: { companyCode: req.companyCode!, active: true, OR: [{ code: { contains: q } }, { name: { contains: q } }, { tin: { contains: q } }], ...roleWhere }, take: 20, orderBy: { name: 'asc' } }) }); } else res.json({ data: [] }); }));
 logistics.get('/lookups/ports', asyncHandler(async (req, res) => res.json({ data: await prisma.port.findMany({ where: { companyCode: req.companyCode!, kind: req.query.kind ? String(req.query.kind) : undefined, OR: [{ code: { contains: String(req.query.q ?? '') } }, { unlocode: { contains: String(req.query.q ?? '') } }, { name: { contains: String(req.query.q ?? '') } }] }, take: 20, orderBy: { name: 'asc' } }) })));
