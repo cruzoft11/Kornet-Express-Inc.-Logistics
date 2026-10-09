@@ -499,6 +499,7 @@ This section supersedes older statements above wherever they conflict with the c
   - Vehicle 001 (`cmv0bsoxx0002q9m7ovimzfmf`) linked successfully to QA container `QATU1234569` (`cmv0agvyc000appuhx9keicwh`) on `OI-2026-00001`. It is now `LOADED`, with shipment linkage populated.
   - Container totals reconciled atomically: pieces 12 -> 13, gross weight 2,400 -> 3,750 kg, CBM 9 -> 20.34, version 1 -> 2. Limits are 28,000 kg and 67 CBM; resulting totals are within limits.
   - Repeating the link returned HTTP 409 with no vehicle or container mutation.
+- This validates container-state handling, not a complete vehicle-to-finance workflow. The linked OI file's shipment totals remain 12 pieces / 2,400 kg / 9 CBM because `recalcShipment` aggregates `CargoLine` records; the vehicle remains a separate record and no vehicle charge or invoice/AP update was created. The legacy `Vehicle_Inventory_Quick_Guide.txt` documents vehicle cargo data, per-vehicle billing/cost tabs, and an Ocean Export loading-guide flow (`PRE-LOADED` -> `LOADED` -> `SHIPPED`). The current editor only exposes Identity, Inspection, and Parties tabs, and the current action directly sets `LOADED`. Do not treat the vehicle billing/ledger path or export-document lifecycle as validated; confirm intended integration and implement it in the next vehicle QA pass without altering posted accounting.
 - Commit `5472fe8` enforces READY_TO_SHIP state, company-owned container lookup, duplicate-link and shipment-consistency guards, EMPTY/LOADED container state, and payload/volume limits. The vehicle and container updates are transactional. Production deployment is confirmed by GitHub Actions run `37877654783` and Azure OneDeploy `f654b18b-c95a-4b2a-b5c4-9bf17759ecd2` (status 4). `/api/health` and `/api/dashboard/summary` returned HTTP 200 afterward.
 - The approved Azure plan at `.azure/deployment-plan.md` is marked `Deployed`. It preserves the current App Service, region, database files, and tier; no infrastructure or financial data changed. No configured backend unit-test suite exists; builds and live API checks were used.
 
@@ -541,7 +542,7 @@ All listed records are synthetic and visibly QA-marked. They were not posted to 
 ### Next QA steps
 
 1. Continue quote conversion and remaining shipment document/charge recalculation paths; retain QA labels and do not post October finance entries.
-2. Still test vehicle container rejection for cross-company ownership, shipment mismatch, and capacity overflow; only readiness, valid load, and duplicate-link behavior have been production-tested.
+2. Complete the documented vehicle lifecycle and per-vehicle billing/cost-to-invoice/AP integration; current work only verifies readiness, valid container load, and duplicate-link guards. Also test cross-company ownership, shipment mismatch, and capacity-overflow rejection.
 3. Continue the outstanding finance edge cases, module/field/button coverage, and security review listed above.
 4. Keep load testing off production's single low-tier instance. Azure Load Testing resource discovery previously failed; no stress test has been run.
-5. Preserve unrelated untracked worktree files listed in `git status`; recent focused commits touch only the files named in their commit summaries.
+5. Preserve unrelated worktree changes and untracked files; do not stage or revert them.
