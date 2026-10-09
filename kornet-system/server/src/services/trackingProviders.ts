@@ -75,6 +75,10 @@ function numberValue(value: unknown): number | undefined {
   return undefined
 }
 
+function identifierValue(value: unknown): string | undefined {
+  return stringValue(value) ?? (typeof value === 'number' && Number.isFinite(value) ? String(value) : undefined)
+}
+
 function isPhilippinePosition(latitude: number, longitude: number) {
   return latitude >= PHILIPPINES.south && latitude <= PHILIPPINES.north
     && longitude >= PHILIPPINES.west && longitude <= PHILIPPINES.east
@@ -163,7 +167,9 @@ async function queryAircraft(): Promise<FlightResult> {
         status: 'live',
         message: failures.length
           ? `Partial live coverage; ${failures.length} regional request(s) failed.`
-          : 'Live aircraft observations received. Aircraft type does not establish cargo status.',
+          : assets.size
+            ? 'Live aircraft observations received. Aircraft type does not establish cargo status.'
+            : 'Live source responded; no aircraft positions were returned in the queried regional coverage.',
         updatedAt: now,
         coverage,
       }
@@ -199,7 +205,7 @@ function receiveVesselMessage(data: WebSocket.RawData) {
   const position = record(message?.PositionReport) ?? record(message?.StandardClassBPositionReport)
   if (!outer || !metadata || !position) return
 
-  const externalId = stringValue(metadata.MMSI) ?? stringValue(metadata.mmsi)
+  const externalId = identifierValue(metadata.MMSI) ?? identifierValue(metadata.mmsi)
   const latitude = numberValue(position.Latitude) ?? numberValue(position.latitude)
   const longitude = numberValue(position.Longitude) ?? numberValue(position.longitude)
   if (!externalId || latitude === undefined || longitude === undefined || !isPhilippinePosition(latitude, longitude)) return

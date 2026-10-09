@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import * as maplibregl from 'maplibre-gl'
 import type { GeoJSONSource, Map as MapLibreMap } from 'maplibre-gl'
+import mapLibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import {
   Anchor,
@@ -53,6 +54,8 @@ const STYLES: Record<Theme, string> = {
   dark: 'https://tiles.openfreemap.org/styles/dark',
 }
 const TERRAIN_TILES = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'
+
+maplibregl.setWorkerUrl(mapLibreWorkerUrl)
 
 function Switch({ active, children, onClick, disabled = false }: {
   active: boolean
@@ -423,6 +426,7 @@ export function LogisticsMapPage() {
     })
     map.on('click', (event: any) => {
       const visibleLayers = ['asset-points', 'airport-points', 'port-points', 'customer-points'].filter((layer) => map.getLayer(layer))
+      if (!visibleLayers.length) return
       const feature = map.queryRenderedFeatures(event.point, { layers: visibleLayers })[0]
       if (!feature?.properties) return
       const kind = String(feature.properties.kind)
@@ -458,7 +462,7 @@ export function LogisticsMapPage() {
 
   useEffect(() => {
     const map = mapInstance.current
-    if (!map || map.getStyle().sprite === undefined) return
+    if (!map) return
     map.setStyle(STYLES[theme])
   }, [theme])
 

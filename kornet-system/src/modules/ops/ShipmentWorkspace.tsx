@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -411,19 +411,7 @@ export function ShipmentWorkspace({ mode }: ShipmentWorkspaceProps) {
     })
   }, [mode, navigate, saveMutation])
 
-  useHotkeys([
-    { key: 'Mod+S', description: 'Save file', handler: () => saveMutation.mutate() },
-    { key: 'Mod+Enter', description: 'Save and close', handler: saveAndClose },
-    { key: 'N', description: 'New file', handler: () => createMutation.mutate(), when: Boolean(mode) },
-    { key: '/', description: 'Focus shipment search', handler: () => document.getElementById('shipment-search')?.focus(), when: Boolean(mode) },
-    ...['general', 'import', 'cargo', 'containers', 'docs', 'charges', 'timeline', 'documents', 'accounting', 'close', 'audit'].map(
-      (value, index) => ({
-        key: `Alt+${index + 1}`,
-        description: `Open ${value}`,
-        handler: () => setTab(value),
-      }),
-    ),
-  ])
+  useHotkeys([])
 
   const updateDraft = (patch: Partial<Shipment>) => setDraft((current) => ({ ...current, ...patch }))
   const rows = listQuery.data?.data ?? []
@@ -783,8 +771,11 @@ export function ShipmentWorkspace({ mode }: ShipmentWorkspaceProps) {
                 <Button variant="outline" size="sm" onClick={() => simpleAction.mutate('clone')} disabled={!draft.id}>
                   <Copy className="size-4" /> Clone
                 </Button>
-                <Button size="sm" onClick={() => saveMutation.mutate()} loading={saveMutation.isPending} kbd="Ctrl+S">
+                <Button size="sm" onClick={() => saveMutation.mutate()} loading={saveMutation.isPending}>
                   <Save className="size-4" /> Save
+                </Button>
+                <Button variant="outline" size="sm" onClick={saveAndClose} loading={saveMutation.isPending}>
+                  Save & Close
                 </Button>
               </>
             )}

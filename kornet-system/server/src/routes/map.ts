@@ -278,6 +278,9 @@ mapRouter.post('/customers/:id/geocode-preview', locationRoles, asyncHandler(asy
   }
   const previewId = randomUUID()
   const previewKey = `${req.user?.sub}:${party.id}`
+  for (const [key, value] of geocodePreviews) {
+    if (value.expiresAt < Date.now()) geocodePreviews.delete(key)
+  }
   geocodePreviews.set(previewKey, {
     previewId,
     latitude: candidate.lat,
@@ -369,18 +372,20 @@ mapRouter.get('/financial', locationRoles, asyncHandler(async (req, res) => {
     totals.set(partyId, current)
     return current
   }
+  const round2 = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100
 
   for (const invoice of invoices) {
     if (!invoice.billToPartyId) continue
-    getTotals(invoice.billToPartyId).sales += invoice.totalAmount - invoice.vatAmount
+    const customer = getTotals(invoice.billToPartyId)
+    customer.sales = round2(customer.sales + round2(invoice.totalAmount - invoice.vatAmount))
   }
   for (const receipt of receipts) {
     for (const application of receipt.applications) {
       const partyId = application.invoice.billToPartyId
       if (!partyId) continue
       const customer = getTotals(partyId)
-      customer.cashCollected += application.applied
-      customer.ewtWithheld += application.ewt
+      customer.cashCollected = round2(customer.cashCollected + application.applied)
+      customer.ewtWithheld = round2(customer.ewtWithheld + application.ewt)
     }
   }
 

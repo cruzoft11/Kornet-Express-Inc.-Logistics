@@ -166,8 +166,9 @@ export function InvoicesPage() {
   const totals = sel ?? { totalAmount: preview, netReceivable: preview, balance: preview, vatAmount: 0 }
 
   const totalInvoiced = rows.reduce((s, r) => s + Number(r.totalAmount || 0), 0)
-  const openBalance = rows.reduce((s, r) => s + Number(r.balance || 0), 0)
-  const overdueCount = rows.filter((r) => r.balance > 0 && r.dueDate && new Date(r.dueDate).getTime() < Date.now()).length
+  const postedReceivables = rows.filter((r) => ['POSTED', 'PARTIAL'].includes(r.status))
+  const openBalance = postedReceivables.reduce((s, r) => s + Number(r.balance || 0), 0)
+  const overdueCount = postedReceivables.filter((r) => r.balance > 0 && r.dueDate && new Date(r.dueDate).getTime() < Date.now()).length
 
   return (
     <div className="space-y-5 p-4 md:p-6 min-w-0 w-full overflow-hidden">

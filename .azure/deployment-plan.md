@@ -84,6 +84,25 @@ No Azure resources are planned for deployment by this review plan; the change un
 
 **Status:** No capacity change planned; no quota validation required for zero new resources.
 
+## 6.1 Current release scope — Billing usability and AR accuracy
+
+This code-only release contains two frontend changes:
+
+- Selectable data-grid rows respond to row clicks as well as the checkbox; grids without selection callbacks no longer display inactive checkboxes.
+- Invoice Outstanding AR and overdue KPIs include only `POSTED` and `PARTIAL` invoices, excluding drafts from receivables totals.
+
+No API, database schema, financial transaction, infrastructure, or Azure configuration changes are included. Unrelated local worktree changes must not be included in the release commit.
+
+## All validation checks pass
+
+- [ ] `npm run build` in `kornet-system/` passes TypeScript and Vite production build.
+- [ ] `npm run build` in `kornet-system/server/` passes.
+- [ ] Validate the Prisma schema using a local SQLite `DATABASE_URL`.
+- [ ] Review only the two release files and confirm no financial data or backend behavior changed.
+- [ ] Confirm the deployment workflow excludes database files and uses the existing production target.
+- [ ] Read-only production health and dashboard endpoints respond successfully before release.
+- [ ] Do not post, pay, issue, or otherwise mutate production finance records during validation.
+
 ## 7. Execution Checklist
 
 ### Phase 1: Planning

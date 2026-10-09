@@ -305,38 +305,7 @@ export default function FSVoucherEntry({ type }: FSVoucherEntryProps) {
     }
   }, [mode, addLineRow, editLineRow, editingLineId, setHasUnsavedChanges])
 
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      const key = event.key.toLowerCase()
-      if (event.ctrlKey && key === 's') {
-        event.preventDefault()
-        if (mode === 'addMaster') {
-          void handleSaveMaster()
-        } else if (mode === 'editMaster') {
-          void handleUpdateMaster()
-        } else if (editingLineId !== null) {
-          void handleUpdateLine()
-        } else {
-          void handleSaveAddLine()
-        }
-      }
-      if (event.ctrlKey && key === 'f') {
-        event.preventDefault()
-        setShowFind(true)
-      }
-      if (event.altKey && event.key === 'ArrowLeft') {
-        event.preventDefault()
-        void handlePrevCDV()
-      }
-      if (event.altKey && event.key === 'ArrowRight') {
-        event.preventDefault()
-        void handleNextCDV()
-      }
-    }
-
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [mode, editingLineId, currentMasterIdx, masters.length, addLineRow, editLineRow, masterForm])
+  // Keyboard shortcuts disabled per user requirement
 
   // ---- Navigation ----
   const handleNextCDV = async () => {

@@ -219,29 +219,7 @@ export default function FSJournalEntry() {
     }
   }, [addRow, editRow, editingId, setHasUnsavedChanges])
 
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      const key = event.key.toLowerCase()
-      if (event.ctrlKey && key === 's') {
-        event.preventDefault()
-        if (editingId !== null) {
-          void handleSaveEdit()
-        } else {
-          void handleSaveAdd()
-        }
-      }
-      if (event.ctrlKey && key === 'f') {
-        event.preventDefault()
-        setShowFind(true)
-      }
-      if (event.key === 'Escape' && editingId !== null) {
-        cancelEdit()
-      }
-    }
-
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [editingId, addRow, editRow])
+  // Keyboard shortcuts disabled per user requirement
 
   const loadDeletedRows = async () => {
     try {

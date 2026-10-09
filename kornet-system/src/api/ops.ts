@@ -224,6 +224,7 @@ export type Shipment = {
   availableDate?: string | null
   freeTimeExpires?: string | null
   cargoLocationPartyId?: string | null
+  warehouse?: string
   customsStatus?: string
   remarks?: string
   closedAt?: string | null

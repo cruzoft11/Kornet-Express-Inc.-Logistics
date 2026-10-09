@@ -161,16 +161,13 @@ export function Tabs({
           className="flex items-center gap-1 overflow-x-auto no-scrollbar scroll-smooth whitespace-nowrap p-1 text-sm"
           aria-label="Tabs"
         >
-          {tabs.map((t, i) => (
+          {tabs.map((t) => (
             <TabsPrimitive.Trigger
               key={t.value}
               value={t.value}
               className="relative shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all duration-150 hover:bg-muted hover:text-foreground data-[state=active]:bg-primary/10 data-[state=active]:font-semibold data-[state=active]:text-primary sm:text-sm"
             >
               {t.label}
-              <span className="ml-1.5 hidden font-mono text-[10px] opacity-50 xl:inline">
-                Alt+{i + 1}
-              </span>
             </TabsPrimitive.Trigger>
           ))}
         </TabsPrimitive.List>

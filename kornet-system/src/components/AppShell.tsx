@@ -1,4 +1,4 @@
-﻿import { Suspense, useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import { Link, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Command } from 'cmdk'
@@ -78,7 +78,6 @@ export default function AppShell() {
   const [commandOpen, setCommandOpen] = useState(false)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [gPending, setGPending] = useState(false)
 
   useEffect(() => {
     const handleOpen = () => setCommandOpen(true)
@@ -97,15 +96,7 @@ export default function AppShell() {
   const active = visibleRoutes.find((r) => location.pathname === r.path || location.pathname.startsWith(`${r.path}/`))
   const company = COMPANY_CODE
 
-  const hotkeys: Hotkey[] = useMemo(() => [
-    { key: 'Mod+K', description: 'Open command palette', handler: () => setCommandOpen(true) },
-    { key: '?', description: 'Open shortcuts', handler: () => setShortcutsOpen(true) },
-    { key: '/', description: 'Focus global search', handler: () => setCommandOpen(true) },
-    { key: 'N', description: 'New record in current module', handler: () => setCommandOpen(true) },
-    { key: 'Escape', description: 'Close panel/dialog', handler: () => { setCommandOpen(false); setShortcutsOpen(false); setMobileOpen(false); setGPending(false) } },
-    { key: 'G', description: 'Start go-to sequence', handler: () => setGPending(true) },
-    ...['O','A','P','V','B','F','D'].map((key) => ({ key, description: `Go ${key}`, when: gPending, handler: () => { const target: Record<string, string> = { O: '/logistics/ocean-export', A: '/logistics/air-export', P: '/logistics/pd-orders', V: '/logistics/vehicles', B: '/billing/accounting-bridge', F: '/logistics/fleet', D: '/dashboard' }; navigate(target[key]); setGPending(false) } })),
-  ], [gPending, navigate])
+  const hotkeys: Hotkey[] = useMemo(() => [], [])
   useHotkeys(hotkeys)
 
   const sidebar = (
@@ -140,7 +131,6 @@ export default function AppShell() {
                     >
                       <Icon className="size-4 shrink-0" />
                       {!compactSidebar && <span className="truncate">{route.label}</span>}
-                      {!compactSidebar && route.shortcut && <span className="ml-auto font-mono text-[10px] opacity-70">{route.shortcut}</span>}
                     </Link>
                   </li>
                 )

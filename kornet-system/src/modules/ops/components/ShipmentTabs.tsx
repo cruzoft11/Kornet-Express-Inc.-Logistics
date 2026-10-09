@@ -22,6 +22,7 @@ import {
   Badge,
   Button,
   ConfirmDialog,
+  DateInput,
   EditableGrid,
   EmptyState,
   FormField,
@@ -35,6 +36,12 @@ import {
   Timeline,
   Toolbar,
 } from '@/components/ui'
+import {
+  AIRLINE_DROPDOWN_OPTIONS,
+  WAREHOUSE_DROPDOWN_OPTIONS,
+  OFFICIAL_AIRLINES,
+  findAirline,
+} from '@/data/airlineWarehouses'
 import {
   opsApi,
   type CargoLine,
@@ -53,12 +60,10 @@ import {
   computeChargeLine,
   EQUIPMENT_TYPES,
   FREIGHT_TERMS,
-  fromDateInput,
   INCOTERMS,
   LOAD_TYPES,
   newCargoLine,
   STATUS_STEPS,
-  toDateInput,
   validateIso6346,
   validateMawb,
   VAT_CLASSES,
@@ -383,18 +388,16 @@ export function GeneralTab({
             </FormField>
 
             <FormField label="Departure Date (ATD)">
-              <Input
-                type="date"
-                value={toDateInput(draft.etd)}
-                onChange={(e) => update({ etd: fromDateInput(e.target.value) })}
+              <DateInput
+                value={draft.etd}
+                onValueChange={(etd) => update({ etd })}
               />
             </FormField>
 
             <FormField label="Delivery Date (ATA)">
-              <Input
-                type="date"
-                value={toDateInput(draft.eta)}
-                onChange={(e) => update({ eta: fromDateInput(e.target.value) })}
+              <DateInput
+                value={draft.eta}
+                onValueChange={(eta) => update({ eta })}
               />
             </FormField>
           </FormSection>
@@ -516,8 +519,40 @@ export function GeneralTab({
             title="Flight Schedule & AWB Booking"
             description="Airline carrier, Master AWB #, flight number, airport codes and flight cutoffs."
           >
+            <FormField label="Official Airline (NAIA Directory May 2026)" hint="Official carrier circular — auto-assigns AWB prefix & warehouse terminal">
+              <Select
+                value={OFFICIAL_AIRLINES.find((a) => draft.flightNo?.toUpperCase().startsWith(a.code) || draft.bookingNo?.startsWith(a.prefix))?.code || ''}
+                onValueChange={(code) => {
+                  const airline = findAirline(code)
+                  if (!airline) return
+                  const flightPatch = draft.flightNo && !draft.flightNo.toUpperCase().startsWith(airline.code)
+                    ? `${airline.code} ${draft.flightNo.replace(/^[A-Z0-9]{2}\s*/, '')}`
+                    : draft.flightNo || `${airline.code} `
+                  const bookingPatch = !draft.bookingNo || draft.bookingNo.length < 4
+                    ? `${airline.prefix}-`
+                    : draft.bookingNo
+                  update({
+                    flightNo: flightPatch,
+                    bookingNo: bookingPatch,
+                    warehouse: airline.warehouseName,
+                  })
+                }}
+                options={AIRLINE_DROPDOWN_OPTIONS.map((a) => ({ value: a.value, label: a.label }))}
+                placeholder="Select official airline…"
+              />
+            </FormField>
+
+            <FormField label="Designated Cargo Warehouse" hint="Official NAIA Bonded Terminal">
+              <Select
+                value={draft.warehouse || ''}
+                onValueChange={(warehouse) => update({ warehouse })}
+                options={WAREHOUSE_DROPDOWN_OPTIONS.map((w) => ({ value: w.value, label: w.label }))}
+                placeholder="Choose cargo warehouse…"
+              />
+            </FormField>
+
             <LookupField
-              label="Airline Carrier"
+              label="Airline Carrier Party"
               value={draft.carrierPartyId}
               onChange={(carrierPartyId) => update({ carrierPartyId })}
               loader={opsApi.lookupParties}
@@ -595,18 +630,16 @@ export function GeneralTab({
             />
 
             <FormField label="Flight Scheduled ETD">
-              <Input
-                type="date"
-                value={toDateInput(draft.etd)}
-                onChange={(e) => update({ etd: fromDateInput(e.target.value) })}
+              <DateInput
+                value={draft.etd}
+                onValueChange={(etd) => update({ etd })}
               />
             </FormField>
 
             <FormField label="Flight Scheduled ETA">
-              <Input
-                type="date"
-                value={toDateInput(draft.eta)}
-                onChange={(e) => update({ eta: fromDateInput(e.target.value) })}
+              <DateInput
+                value={draft.eta}
+                onValueChange={(eta) => update({ eta })}
               />
             </FormField>
 
@@ -850,18 +883,16 @@ export function GeneralTab({
             </FormField>
 
             <FormField label="Estimated Departure (ETD)">
-              <Input
-                type="date"
-                value={toDateInput(draft.etd)}
-                onChange={(e) => update({ etd: fromDateInput(e.target.value) })}
+              <DateInput
+                value={draft.etd}
+                onValueChange={(etd) => update({ etd })}
               />
             </FormField>
 
             <FormField label="Estimated Arrival (ETA)">
-              <Input
-                type="date"
-                value={toDateInput(draft.eta)}
-                onChange={(e) => update({ eta: fromDateInput(e.target.value) })}
+              <DateInput
+                value={draft.eta}
+                onValueChange={(eta) => update({ eta })}
               />
             </FormField>
 
@@ -979,10 +1010,9 @@ export function ImportTab({
           />
         </FormField>
         <FormField label="Entry Date">
-          <Input
-            type="date"
-            value={toDateInput(draft.entryDate)}
-            onChange={(e) => update({ entryDate: fromDateInput(e.target.value) })}
+          <DateInput
+            value={draft.entryDate}
+            onValueChange={(entryDate) => update({ entryDate })}
           />
         </FormField>
         <FormField label="IT / Transit #" hint="In-Transit permit number">
@@ -994,10 +1024,9 @@ export function ImportTab({
           />
         </FormField>
         <FormField label="IT Date">
-          <Input
-            type="date"
-            value={toDateInput(draft.itDate)}
-            onChange={(e) => update({ itDate: fromDateInput(e.target.value) })}
+          <DateInput
+            value={draft.itDate}
+            onValueChange={(itDate) => update({ itDate })}
           />
         </FormField>
         <FormField label="GO # / Pier Reg">
@@ -1009,21 +1038,27 @@ export function ImportTab({
           />
         </FormField>
         <FormField label="Cargo Available Date">
-          <Input
-            type="date"
-            value={toDateInput(draft.availableDate)}
-            onChange={(e) => update({ availableDate: fromDateInput(e.target.value) })}
+          <DateInput
+            value={draft.availableDate}
+            onValueChange={(availableDate) => update({ availableDate })}
           />
         </FormField>
         <FormField label="Free Time Expires" hint="Demurrage / Detention cutoff">
-          <Input
-            type="date"
-            value={toDateInput(draft.freeTimeExpires)}
-            onChange={(e) => update({ freeTimeExpires: fromDateInput(e.target.value) })}
+          <DateInput
+            value={draft.freeTimeExpires}
+            onValueChange={(freeTimeExpires) => update({ freeTimeExpires })}
+          />
+        </FormField>
+        <FormField label="Cargo Terminal Warehouse (NAIA May 2026 Directory)">
+          <Select
+            value={draft.warehouse || ''}
+            onValueChange={(warehouse) => update({ warehouse })}
+            options={WAREHOUSE_DROPDOWN_OPTIONS.map((w) => ({ value: w.value, label: w.label }))}
+            placeholder="Choose terminal warehouse…"
           />
         </FormField>
         <LookupField
-          label="Customs Bonded Warehouse"
+          label="Customs Bonded Warehouse Party"
           value={draft.cargoLocationPartyId}
           onChange={(cargoLocationPartyId) => update({ cargoLocationPartyId })}
           loader={opsApi.lookupParties}
@@ -1846,6 +1881,28 @@ export function DocsTab({
                   />
                 </FormField>
 
+                {isAir && (
+                  <FormField label="Official Airline (Auto-prefix AWB)" hint="Official May 2026 circular directory">
+                    <Select
+                      value={OFFICIAL_AIRLINES.find((a) => (editingDoc.docNo || '').startsWith(a.prefix))?.code || ''}
+                      onValueChange={(code) => {
+                        const a = findAirline(code)
+                        if (a) {
+                          const existingParts = (editingDoc.docNo || '').split('-')
+                          const serial = existingParts[1] || ''
+                          setEditingDoc({
+                            ...editingDoc,
+                            docNo: `${a.prefix}-${serial}`,
+                            handlingInfo: editingDoc.handlingInfo || `Assigned Cargo Warehouse: ${a.warehouseName}. Routes: ${a.routes}`,
+                          })
+                        }
+                      }}
+                      options={AIRLINE_DROPDOWN_OPTIONS.map((a) => ({ value: a.value, label: a.label }))}
+                      placeholder="Select airline carrier…"
+                    />
+                  </FormField>
+                )}
+
                 <FormField
                   label="Document Number"
                   required
@@ -1874,7 +1931,14 @@ export function DocsTab({
                 </FormField>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-1">
+                <FormField label="Date of Issue">
+                  <DateInput
+                    value={editingDoc.issueDate || draft.eta || ''}
+                    onValueChange={(val) => setEditingDoc({ ...editingDoc, issueDate: val })}
+                  />
+                </FormField>
+
                 <FormField label="Issue Place">
                   <Input
                     value={editingDoc.issuePlace || ''}

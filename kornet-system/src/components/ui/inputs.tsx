@@ -51,17 +51,85 @@ export const MoneyInput = forwardRef<HTMLInputElement, MoneyInputProps>(({ curre
 ))
 MoneyInput.displayName = 'MoneyInput'
 
-export interface DateInputProps extends Omit<InputProps, 'value' | 'onChange'> { value?: string; onValueChange?: (isoDate: string) => void }
-export const DateInput = forwardRef<HTMLInputElement, DateInputProps>(({ value, onValueChange, onKeyDown, ...props }, ref) => {
-  const [text, setText] = useState(value ?? '')
-  const apply = (raw: string) => {
-    if (raw.toLowerCase() === 't') return onValueChange?.(toInputDate(new Date()))
-    const plus = raw.match(/^\+(\d+)$/)
-    if (plus) { const d = new Date(); d.setDate(d.getDate() + Number(plus[1])); return onValueChange?.(toInputDate(d)) }
-    const parsed = parseDdMmYyyy(raw)
-    if (parsed) onValueChange?.(toInputDate(parsed))
+export interface DateInputProps extends Omit<InputProps, 'value' | 'onChange'> {
+  value?: string | null
+  onValueChange?: (isoDate: string) => void
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void
+}
+
+export const DateInput = forwardRef<HTMLInputElement, DateInputProps>(({
+  value,
+  onValueChange,
+  onChange,
+  className,
+  onClick,
+  rightSlot,
+  ...props
+}, ref) => {
+  // Normalize value to YYYY-MM-DD for native HTML5 date input
+  const normalizedValue = useMemo(() => {
+    if (!value) return ''
+    if (typeof value === 'string') {
+      if (value.includes('T')) return value.slice(0, 10)
+      if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value
+      const parsed = parseDdMmYyyy(value)
+      if (parsed) return toInputDate(parsed)
+    }
+    return String(value).slice(0, 10)
+  }, [value])
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value
+    onValueChange?.(val)
+    onChange?.(e)
   }
-  return <Input ref={ref} value={text} placeholder="dd/mm/yyyy" leftIcon={<CalendarDays className="size-4" />} onChange={(e) => setText(e.target.value)} onBlur={() => apply(text)} onKeyDown={(e) => { if (e.key === 'Enter') apply(text); onKeyDown?.(e) }} {...props} />
+
+  const handleClick = (e: React.MouseEvent<HTMLInputElement>) => {
+    try {
+      e.currentTarget.showPicker?.()
+    } catch {}
+    onClick?.(e)
+  }
+
+  const handleClear = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onValueChange?.('')
+    if (onChange) {
+      const syntheticEvent = {
+        target: { value: '' },
+      } as React.ChangeEvent<HTMLInputElement>
+      onChange(syntheticEvent)
+    }
+  }
+
+  const clearButton = normalizedValue && !props.disabled && !props.readOnly ? (
+    <button
+      type="button"
+      onClick={handleClear}
+      tabIndex={-1}
+      title="Clear date"
+      className="rounded p-0.5 text-muted-foreground/60 hover:bg-muted hover:text-foreground"
+    >
+      <X className="size-3.5" />
+    </button>
+  ) : null
+
+  return (
+    <Input
+      ref={ref}
+      type="date"
+      value={normalizedValue}
+      onChange={handleChange}
+      onClick={handleClick}
+      leftIcon={<CalendarDays className="size-4 text-muted-foreground" />}
+      rightSlot={rightSlot || clearButton}
+      className={cn(
+        'cursor-pointer font-sans [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-70 hover:[&::-webkit-calendar-picker-indicator]:opacity-100',
+        className,
+      )}
+      {...props}
+    />
+  )
 })
 DateInput.displayName = 'DateInput'
 

@@ -4,14 +4,14 @@ The internal map is available at **Operations → Live Logistics Map** (`/logist
 
 ## Map layers and locations
 
-- Light/dark vector basemaps use OpenFreeMap styles through MapLibre GL JS. The terrain switch overlays public Terrarium elevation tiles from AWS Open Data; attribution is displayed in the map.
-- Airport reference points are selected from OurAirports’ public-domain airport CSV. OurAirports provides no accuracy warranty, so validate important facilities before operational use.
-- The initial seaport markers are approximate port-area points from `tayljordan/ports`, derived from the 2019 NGA World Port Index. Their coordinates are rounded to 0.01 degrees, so they are not berth-level. The data license is included in `server/src/data/PORTS_DATA_LICENSE.txt`. Administrators/managers can save verified company-port coordinates from the map; these override the approximate reference.
+- Light/dark vector basemaps use [OpenFreeMap](https://openfreemap.org/quick_start/) styles through MapLibre GL JS. The terrain switch overlays public Terrarium elevation tiles from [AWS Open Data](https://registry.opendata.aws/terrain-tiles/); attribution is displayed in the map.
+- Airport reference points are selected from the [OurAirports public-domain airport CSV](https://ourairports.com/data/). OurAirports provides no accuracy warranty, so validate important facilities before operational use.
+- The initial seaport markers are approximate port-area points from [`tayljordan/ports`](https://github.com/tayljordan/ports), derived from the 2019 NGA World Port Index. Their coordinates are rounded to 0.01 degrees, so they are not berth-level. The data license is included in `server/src/data/PORTS_DATA_LICENSE.txt`. Administrators/managers can save verified company-port coordinates from the map; these override the approximate reference.
 
 ## Live tracking
 
-- Aircraft use the public ADSB.lol API. No API key is required by the current API documentation. Its API declares ODbL 1.0; retain source attribution and review ODbL obligations before redistribution. The screen describes aircraft only: position data does not establish cargo type or shipment association.
-- Vessel positions use the OpenSeaFeed AIS WebSocket. Its current site describes free, key-optional live access within the free-tier area and a key for expanded access/history. A key is optional for the current live view. The service is **disabled by default**; enable only after reviewing the current service/data terms and confirming acceptable Philippine coverage:
+- Aircraft use the public [ADSB.lol API](https://www.adsb.lol/docs/open-data/api/). No API key is required by the current API documentation. Its API declares ODbL 1.0; retain source attribution and review ODbL obligations before redistribution. The screen describes aircraft only: position data does not establish cargo type or shipment association.
+- Vessel positions use the [OpenSeaFeed AIS WebSocket](https://openseafeed.com/). Its current site describes free, key-optional live access within the free-tier area and a key for expanded access/history. A key is optional for the current live view. The service is **disabled by default**; enable only after reviewing the current service/data terms and confirming acceptable Philippine coverage:
 
   ```env
   OPENSEAFEED_ENABLED=true
