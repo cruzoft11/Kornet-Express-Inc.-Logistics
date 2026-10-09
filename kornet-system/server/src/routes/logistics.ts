@@ -150,15 +150,167 @@ logistics.patch('/charges/:id', writeAll, asyncHandler(async (req, res) => {
   if (req.body?.version !== undefined && Number(req.body.version) !== existing.version) throw conflict('Version mismatch');
   const parsed = s.chargeUpdate.parse(req.body ?? {}) as Record<string, unknown>;
   for (const field of ['id', 'companyCode', 'createdBy', 'createdAt', 'updatedAt', 'invoiceId', 'apBillId', 'tariffId', 'source', 'status', 'billStatus', 'costStatus', 'version', 'deletedAt']) delete parsed[field];
-  assertChargeMutable(existing, parsed);
+  const financialChange = Object.keys(parsed).some((field) => !['notes', 'sortOrder'].includes(field));
+  const [linkedInvoice, linkedApBill] = await Promise.all([
+    existing.invoiceId
+      ? prisma.invoice.findFirst({ where: { id: existing.invoiceId, companyCode }, select: { status: true } })
+      : Promise.resolve(null),
+    existing.apBillId
+      ? prisma.apBill.findFirst({ where: { id: existing.apBillId, companyCode }, select: { status: true } })
+      : Promise.resolve(null),
+  ]);
+  const hasLinkedDocuments = Boolean(existing.invoiceId || existing.apBillId);
+  const linkedDocumentsAreDraft =
+    (!existing.invoiceId || linkedInvoice?.status === 'DRAFT') &&
+    (!existing.apBillId || linkedApBill?.status === 'DRAFT');
+  const hasPostedStatus = [existing.status, existing.billStatus, existing.costStatus].some((status) => status === 'POSTED');
+  const mutableCharge = financialChange && hasLinkedDocuments && linkedDocumentsAreDraft && !hasPostedStatus
+    ? { ...existing, status: 'OPEN', billStatus: 'OPEN', costStatus: 'OPEN' }
+    : existing;
+  assertChargeMutable(mutableCharge, parsed);
   const data = { ...existing, ...parsed } as Record<string, unknown>;
   await assertShipmentMutable(typeof data.shipmentId === 'string' ? data.shipmentId : undefined, companyCode);
   const ctx = await chargeContext(companyCode, data);
   const bc = await prisma.billingCode.findUnique({ where: { companyCode_code: { companyCode, code: String(data.billingCode) } } });
   const computed = computeCharge({ ...data, vatClass: bc?.vatClass ?? data.vatClass }, ctx);
-  const updated = await prisma.charge.update({ where: { id: existing.id }, data: { ...parsed, ...computed, version: { increment: 1 } } });
-  await writeAudit(req, 'update', 'Charge', existing.id, { before: existing, after: updated });
-  res.json(updated);
+  const finalVatClass = String(bc?.vatClass ?? data.vatClass ?? existing.vatClass);
+  const result = await prisma.$transaction(async (tx) => {
+    const current = await tx.charge.findFirst({ where: { id: existing.id, companyCode } });
+    if (!current) throw notFound('Charge not found');
+    if (current.version !== existing.version) throw conflict('Version mismatch');
+
+    const invoice = current.invoiceId
+      ? await tx.invoice.findFirst({ where: { id: current.invoiceId, companyCode } })
+      : null;
+    const apBill = current.apBillId
+      ? await tx.apBill.findFirst({ where: { id: current.apBillId, companyCode } })
+      : null;
+    if (financialChange && ((current.invoiceId && invoice?.status !== 'DRAFT') || (current.apBillId && apBill?.status !== 'DRAFT'))) {
+      throw conflict('Financial charge fields can only be revised while linked invoice/AP documents are drafts');
+    }
+
+    const charge = await tx.charge.update({
+      where: { id: current.id },
+      data: { ...parsed, ...(financialChange ? computed : {}), version: { increment: 1 } },
+    });
+
+    let updatedInvoice: typeof invoice = null;
+    if (financialChange && invoice) {
+      const line = await tx.invoiceLine.findFirst({
+        where: { companyCode, invoiceId: invoice.id, chargeId: current.id },
+      });
+      if (!line) throw conflict('Draft invoice line is missing for this charge');
+      const billingCode = await tx.billingCode.findUnique({
+        where: { companyCode_code: { companyCode, code: charge.billingCode } },
+      });
+      await tx.invoiceLine.update({
+        where: { id: line.id },
+        data: {
+          billingCode: charge.billingCode,
+          description: charge.description,
+          qty: charge.qty,
+          unit: charge.unit,
+          rate: charge.rate,
+          amount: charge.amount,
+          amountPhp: charge.amountPhp,
+          vatClass: charge.vatClass,
+          vatAmountPhp: charge.vatAmountPhp,
+          revenueAccount: billingCode?.revenueAccount ?? line.revenueAccount,
+          zeroRatedReason: charge.vatClass === 'ZERO_RATED'
+            ? line.zeroRatedReason ?? 'International freight forwarding service (NIRC Sec.108(B))'
+            : null,
+        },
+      });
+      const lines = await tx.invoiceLine.findMany({ where: { companyCode, invoiceId: invoice.id } });
+      const totals = lines.reduce((sum, item) => {
+        if (item.vatClass === 'VATABLE') sum.vatable += round2(item.amountPhp);
+        else if (item.vatClass === 'ZERO_RATED') sum.zeroRated += round2(item.amountPhp);
+        else if (item.vatClass === 'NON_VAT_REIMBURSABLE') sum.reimbursables += round2(item.amountPhp);
+        else sum.exempt += round2(item.amountPhp);
+        sum.vat += round2(item.vatAmountPhp);
+        return sum;
+      }, { vatable: 0, zeroRated: 0, exempt: 0, reimbursables: 0, vat: 0 });
+      const sales = round2(totals.vatable + totals.zeroRated + totals.exempt + totals.reimbursables);
+      const ewtAmount = round2((totals.vatable + totals.zeroRated + totals.exempt) * (invoice.ewtRate / 100));
+      const totalAmount = round2(sales + totals.vat);
+      const netReceivable = round2(totalAmount - ewtAmount);
+      updatedInvoice = await tx.invoice.update({
+        where: { id: invoice.id },
+        data: {
+          vatableSales: round2(totals.vatable),
+          zeroRatedSales: round2(totals.zeroRated),
+          exemptSales: round2(totals.exempt),
+          reimbursables: round2(totals.reimbursables),
+          vatAmount: round2(totals.vat),
+          totalAmount,
+          ewtAmount,
+          netReceivable,
+          balance: round2(netReceivable - invoice.amountPaid),
+          version: { increment: 1 },
+        },
+      });
+    }
+
+    let updatedApBill: typeof apBill = null;
+    if (financialChange && apBill) {
+      const line = await tx.apBillLine.findFirst({
+        where: { companyCode, apBillId: apBill.id, chargeId: current.id },
+      });
+      if (!line) throw conflict('Draft AP line is missing for this charge');
+      const [vendor, billingCode, withholdSetting] = await Promise.all([
+        apBill.vendorPartyId
+          ? tx.party.findFirst({ where: { id: apBill.vendorPartyId, companyCode } })
+          : Promise.resolve(null),
+        tx.billingCode.findUnique({ where: { companyCode_code: { companyCode, code: charge.billingCode } } }),
+        tx.companySetting.findUnique({ where: { companyCode_key: { companyCode, key: 'withholdOnVendors' } } }),
+      ]);
+      const withholdOnVendors = parseJson(withholdSetting?.value, true);
+      const ewtFor = (amountPhp: number, vatClass: string) =>
+        withholdOnVendors && vendor && !vendor.ewtExemptVendor && vatClass !== 'NON_VAT_REIMBURSABLE'
+          ? round2(amountPhp * 0.02)
+          : 0;
+      const inputVat = vendor?.vatRegistered && finalVatClass === 'VATABLE'
+        ? vatAmount(charge.costAmountPhp, 'VATABLE')
+        : 0;
+      const ewtWithheld = round2(
+        apBill.ewtWithheld -
+        ewtFor(current.costAmountPhp, current.vatClass) +
+        ewtFor(charge.costAmountPhp, finalVatClass),
+      );
+      await tx.apBillLine.update({
+        where: { id: line.id },
+        data: {
+          billingCode: charge.billingCode,
+          description: charge.description,
+          amount: charge.costAmount,
+          amountPhp: charge.costAmountPhp,
+          inputVat,
+          expenseAccount: billingCode?.costAccount ?? line.expenseAccount,
+        },
+      });
+      const lines = await tx.apBillLine.findMany({ where: { companyCode, apBillId: apBill.id } });
+      const subtotal = round2(lines.reduce((sum, item) => sum + round2(item.amountPhp), 0));
+      const totalInputVat = round2(lines.reduce((sum, item) => sum + round2(item.inputVat), 0));
+      const total = round2(subtotal + totalInputVat - ewtWithheld);
+      updatedApBill = await tx.apBill.update({
+        where: { id: apBill.id },
+        data: {
+          subtotal,
+          inputVat: totalInputVat,
+          ewtWithheld,
+          total,
+          balance: Math.max(0, round2(total - apBill.amountPaid)),
+          version: { increment: 1 },
+        },
+      });
+    }
+    return { charge, invoice: updatedInvoice, apBill: updatedApBill };
+  });
+
+  await writeAudit(req, 'update', 'Charge', existing.id, { before: existing, after: result.charge });
+  if (result.invoice) await writeAudit(req, 'update', 'Invoice', result.invoice.id, { reason: 'Draft charge revision', after: result.invoice });
+  if (result.apBill) await writeAudit(req, 'update', 'ApBill', result.apBill.id, { reason: 'Draft charge revision', after: result.apBill });
+  res.json(result.charge);
 }));
 logistics.delete('/charges/:id', writeAll, asyncHandler(async (req, res) => {
   const existing = await getOwned(prisma.charge, req.params.id, req.companyCode!, 'Charge');
