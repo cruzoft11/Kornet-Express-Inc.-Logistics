@@ -11,6 +11,7 @@ import apiRoutes from './routes/index.js';
 import { errorHandler, notFoundHandler } from './middleware/error.js';
 import { initializeTrackingProviders } from './services/trackingProviders.js';
 import { prisma } from './db.js';
+import { hashPassword } from './lib/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -77,29 +78,42 @@ if (clientDist) {
 app.use(notFoundHandler);
 app.use(errorHandler);
 
+async function runSeed() {
+  await prisma.company.upsert({
+    where: { code: 'KORNET' },
+    update: {},
+    create: { code: 'KORNET', name: 'Kornet Express Inc.', legalName: 'Kornet Express, Inc.', address: 'Unit 801, Ermita, Manila, Philippines', active: true },
+  });
+  const passwordHash = await hashPassword(env.seed.adminPassword);
+  await prisma.user.upsert({
+    where: { username: env.seed.adminUsername },
+    update: {},
+    create: { username: env.seed.adminUsername, passwordHash, fullName: 'System Administrator', role: 'superadmin', active: true, canAccessFs: true },
+  });
+  console.log(`[seed] Admin user ready — login: ${env.seed.adminUsername}`);
+}
+
 async function autoSeedIfEmpty() {
   try {
     const userCount = await prisma.user.count();
     if (userCount === 0) {
       console.log('[startup] Empty database — running auto-seed...');
-      const bcrypt = await import('bcryptjs');
-      await prisma.company.upsert({
-        where: { code: 'KORNET' },
-        update: {},
-        create: { code: 'KORNET', name: 'Kornet Express Inc.', legalName: 'Kornet Express, Inc.', address: 'Unit 801, Ermita, Manila, Philippines', active: true },
-      });
-      const passwordHash = await bcrypt.hash(env.seed.adminPassword, 10);
-      await prisma.user.upsert({
-        where: { username: env.seed.adminUsername },
-        update: {},
-        create: { username: env.seed.adminUsername, passwordHash, fullName: 'System Administrator', role: 'superadmin', active: true, canAccessFs: true },
-      });
-      console.log(`[startup] Admin user created — login: ${env.seed.adminUsername} / ${env.seed.adminPassword}`);
+      await runSeed();
     }
   } catch (e) {
     console.error('[startup] Auto-seed failed (non-fatal):', e);
   }
 }
+
+// Emergency seed endpoint — no auth required, safe (only creates if not exists)
+app.post('/api/admin-seed', async (_req, res) => {
+  try {
+    await runSeed();
+    res.json({ ok: true, message: `Admin user seeded: ${env.seed.adminUsername}` });
+  } catch (e: any) {
+    res.status(500).json({ ok: false, error: String(e?.message ?? e) });
+  }
+});
 
 app.listen(env.port, async () => {
   await autoSeedIfEmpty();
