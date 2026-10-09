@@ -8,8 +8,8 @@ import { requireAuth, requireCompany, requireRole } from '../middleware/auth.js'
 import { COMPANY_CODE } from '../company.js';
 import { createCrudRouter, type PrismaDelegate, writeAudit } from '../lib/crud.js';
 import { nextNumber, sequenceKeyForShipment } from '../lib/sequence.js';
-import { round2, vatAmount } from '../lib/calc.js';
-import { computeCharge, convertQuote, recomputeInvoice, recomputeApBill, applyTariffs, recalcShipment, shipmentAnalysis, createInvoiceFromShipment, createApBillsFromShipment, postInvoice, postApBill, trialBridge, finalBridge, closeShipment, closeCheck, createBridge, getOwned, emitStatus, bankAccount, parseJson, assertShipmentMutable } from '../services/domain.js';
+import { airChargeableKg, airVolumetricKg, cbm, oceanWmTons, round2, vatAmount } from '../lib/calc.js';
+import { computeCharge, convertQuote, recomputeInvoice, recomputeApBill, applyTariffs, recalcShipment, shipmentAnalysis, createInvoiceFromShipment, createApBillsFromShipment, postInvoice, postApBill, trialBridge, finalBridge, closeShipment, closeCheck, createBridge, getOwned, emitStatus, bankAccount, parseJson, assertChargeMutable, assertShipmentMutable } from '../services/domain.js';
 import * as s from '../schemas.js';
 
 const logistics = Router();
@@ -20,6 +20,43 @@ const acct = requireRole('accounting', 'manager', 'admin');
 function delegate(name: string) { return (prisma as unknown as Record<string, PrismaDelegate>)[name]; }
 function crud(path: string, modelName: string, entity: string, createSchema: ZodTypeAny, updateSchema: ZodTypeAny, options: Partial<Parameters<typeof createCrudRouter>[0]> = {}) {
   logistics.use(path, createCrudRouter({ model: delegate(modelName), modelName, entity, createSchema, updateSchema, ...options }));
+}
+async function chargeContext(companyCode: string, data: Record<string, unknown>) {
+  if (typeof data.shipmentId === 'string' && data.shipmentId) {
+    const shipment = await prisma.shipment.findFirst({ where: { id: data.shipmentId, companyCode }, include: { containers: true } });
+    if (!shipment) throw notFound('Shipment not found');
+    return {
+      containerCount: shipment.containers.length,
+      chargeableKg: shipment.totalChargeableKg,
+      cbm: shipment.totalCbm,
+      wmTons: shipment.totalWmTons,
+      pieces: shipment.totalPieces,
+      units: 1,
+      percentBase: shipment.declaredValue,
+    };
+  }
+  if (typeof data.quoteId === 'string' && data.quoteId) {
+    const quote = await prisma.quote.findFirst({ where: { id: data.quoteId, companyCode }, include: { cargoLines: true } });
+    if (!quote) throw notFound('Quote not found');
+    const cargo = quote.cargoLines.reduce((totals, line) => {
+      const pieces = line.pieces || 1;
+      totals.pieces += line.pieces;
+      totals.grossKg += line.grossKg;
+      totals.cbm += line.cbm || cbm(line.lengthCm, line.widthCm, line.heightCm, pieces);
+      totals.volumetricKg += line.volumetricKg || airVolumetricKg(line.lengthCm, line.widthCm, line.heightCm, pieces);
+      return totals;
+    }, { pieces: 0, grossKg: 0, cbm: 0, volumetricKg: 0 });
+    return {
+      containerCount: 0,
+      chargeableKg: quote.mode.toUpperCase() === 'AIR' ? airChargeableKg(cargo.grossKg, cargo.volumetricKg) : cargo.grossKg,
+      cbm: round2(cargo.cbm),
+      wmTons: oceanWmTons(cargo.grossKg, cargo.cbm),
+      pieces: cargo.pieces,
+      units: 1,
+      percentBase: quote.declaredValue,
+    };
+  }
+  return {};
 }
 
 crud('/parties', 'party', 'Party', s.partyCreate, s.partyUpdate, { searchFields: ['code', 'name', 'email', 'tin'], orderBy: { name: 'asc' } });
@@ -64,8 +101,45 @@ logistics.post('/shipments/:id/clone', writeAll, asyncHandler(async (req, res) =
 logistics.get('/shipments/:id/documents/:kind', asyncHandler(async (req, res) => { const kinds = ['bl', 'hbl', 'awb', 'booking-confirmation', 'arrival-notice', 'delivery-order', 'cargo-release', 'manifest', 'file-analysis', 'invoice']; const kind = req.params.kind.toLowerCase(); if (kind === 'list') return res.json({ kinds }); if (!kinds.includes(kind)) throw badRequest('Unknown document kind'); const shipment = await prisma.shipment.findFirst({ where: { id: req.params.id, companyCode: req.companyCode! }, include: { cargoLines: true, containers: true, charges: true, transportDocs: true } }); if (!shipment) throw notFound('Shipment not found'); const [company, settings, ports] = await Promise.all([prisma.company.findUnique({ where: { code: req.companyCode! } }), prisma.companySetting.findMany({ where: { companyCode: req.companyCode! } }), prisma.port.findMany({ where: { companyCode: req.companyCode!, code: { in: [shipment.polCode ?? '', shipment.podCode ?? ''] } } })]); res.json({ kind, company, settings: Object.fromEntries(settings.map((x) => [x.key, parseJson(x.value, x.value)])), ports, shipment, cargo: shipment.cargoLines, containers: shipment.containers, charges: shipment.charges.filter((c) => c.showOnDoc), generatedAt: new Date().toISOString() }); }));
 logistics.get('/transport-docs/:id', asyncHandler(async (req, res) => { const doc = await prisma.transportDoc.findFirst({ where: { id: req.params.id, companyCode: req.companyCode! }, include: { cargoLines: true, containers: true } }); if (!doc) throw notFound('Transport document not found'); const houses = doc.docClass === 'MASTER' ? await prisma.transportDoc.findMany({ where: { companyCode: req.companyCode!, parentDocId: doc.id }, include: { cargoLines: true } }) : []; const totals = houses.flatMap((h) => h.cargoLines).reduce((a, l) => ({ pieces: a.pieces + l.pieces, grossKg: a.grossKg + l.grossKg, cbm: round2(a.cbm + l.cbm) }), { pieces: 0, grossKg: 0, cbm: 0 }); res.json({ ...doc, houses, masterTotals: totals }); }));
 logistics.post('/transport-docs/:id/issue', writeAll, asyncHandler(async (req, res) => { const d = await getOwned(prisma.transportDoc, req.params.id, req.companyCode!, 'Transport doc'); if (d.status === 'ISSUED') return res.json(d); if (d.status !== 'DRAFT') throw conflict('Only DRAFT documents can be issued'); const row = await prisma.transportDoc.update({ where: { id: d.id }, data: { status: 'ISSUED', issueDate: new Date(), version: { increment: 1 } } }); await emitStatus(req.companyCode!, 'SHIPMENT', d.shipmentId, 'DOC', req.user?.sub, { notes: `${d.docNo} issued`, isPublic: true }); res.json(row); }));
-logistics.post('/charges', writeAll, asyncHandler(async (req, res) => { const companyCode = req.companyCode!; const data = s.chargeCreate.parse(req.body) as Record<string, unknown>; await assertShipmentMutable(data.shipmentId as string | undefined, companyCode); const shipment = data.shipmentId ? await prisma.shipment.findFirst({ where: { id: String(data.shipmentId), companyCode }, include: { containers: true } }) : null; const ctx = shipment ? { containerCount: shipment.containers.length, chargeableKg: shipment.totalChargeableKg, cbm: shipment.totalCbm, wmTons: shipment.totalWmTons, pieces: shipment.totalPieces, units: 1, percentBase: shipment.declaredValue } : {}; const bc = await prisma.billingCode.findUnique({ where: { companyCode_code: { companyCode, code: String(data.billingCode) } } }); const computed = computeCharge({ vatClass: bc?.vatClass, ...data }, ctx); const chargeData = { companyCode, createdBy: req.user?.sub, description: bc?.description ?? String(data.description ?? data.billingCode), vatClass: bc?.vatClass ?? String(data.vatClass ?? 'VATABLE'), billStatus: 'OPEN', costStatus: 'OPEN', ...data, ...computed }; const created = await prisma.charge.create({ data: chargeData as never }); await writeAudit(req, 'create', 'Charge', created.id, { after: created }); res.status(201).json(created); }));
+logistics.post('/charges', writeAll, asyncHandler(async (req, res) => {
+  const companyCode = req.companyCode!;
+  const data = s.chargeCreate.parse(req.body) as Record<string, unknown>;
+  await assertShipmentMutable(data.shipmentId as string | undefined, companyCode);
+  const ctx = await chargeContext(companyCode, data);
+  const bc = await prisma.billingCode.findUnique({ where: { companyCode_code: { companyCode, code: String(data.billingCode) } } });
+  const computed = computeCharge({ ...data, vatClass: bc?.vatClass ?? data.vatClass }, ctx);
+  const chargeData = { companyCode, createdBy: req.user?.sub, description: bc?.description ?? String(data.description ?? data.billingCode), vatClass: bc?.vatClass ?? String(data.vatClass ?? 'VATABLE'), billStatus: 'OPEN', costStatus: 'OPEN', ...data, ...computed };
+  const created = await prisma.charge.create({ data: chargeData as never });
+  await writeAudit(req, 'create', 'Charge', created.id, { after: created });
+  res.status(201).json(created);
+}));
 logistics.get('/charges', asyncHandler(async (req, res) => { const where: Record<string, unknown> = { companyCode: req.companyCode! }; if (req.query.shipmentId) where.shipmentId = String(req.query.shipmentId); res.json({ data: await prisma.charge.findMany({ where, orderBy: { sortOrder: 'asc' } }) }); }));
+logistics.get('/charges/:id', asyncHandler(async (req, res) => res.json(await getOwned(prisma.charge, req.params.id, req.companyCode!, 'Charge'))));
+logistics.patch('/charges/:id', writeAll, asyncHandler(async (req, res) => {
+  const companyCode = req.companyCode!;
+  const existing = await getOwned(prisma.charge, req.params.id, companyCode, 'Charge');
+  if (req.body?.version !== undefined && Number(req.body.version) !== existing.version) throw conflict('Version mismatch');
+  const parsed = s.chargeUpdate.parse(req.body ?? {}) as Record<string, unknown>;
+  for (const field of ['id', 'companyCode', 'createdBy', 'createdAt', 'updatedAt', 'invoiceId', 'apBillId', 'tariffId', 'source', 'status', 'billStatus', 'costStatus', 'version', 'deletedAt']) delete parsed[field];
+  assertChargeMutable(existing, parsed);
+  const data = { ...existing, ...parsed } as Record<string, unknown>;
+  await assertShipmentMutable(typeof data.shipmentId === 'string' ? data.shipmentId : undefined, companyCode);
+  const ctx = await chargeContext(companyCode, data);
+  const bc = await prisma.billingCode.findUnique({ where: { companyCode_code: { companyCode, code: String(data.billingCode) } } });
+  const computed = computeCharge({ ...data, vatClass: bc?.vatClass ?? data.vatClass }, ctx);
+  const updated = await prisma.charge.update({ where: { id: existing.id }, data: { ...parsed, ...computed, version: { increment: 1 } } });
+  await writeAudit(req, 'update', 'Charge', existing.id, { before: existing, after: updated });
+  res.json(updated);
+}));
+logistics.delete('/charges/:id', writeAll, asyncHandler(async (req, res) => {
+  const existing = await getOwned(prisma.charge, req.params.id, req.companyCode!, 'Charge');
+  await assertShipmentMutable(existing.shipmentId ?? undefined, req.companyCode!);
+  assertChargeMutable(existing, { billingCode: 'delete' });
+  if (!['DRAFT', 'OPEN'].includes(existing.status.toUpperCase())) throw conflict(`Only draft/open Charge records can be deleted`);
+  await prisma.charge.delete({ where: { id: existing.id } });
+  await writeAudit(req, 'delete', 'Charge', existing.id, { before: existing });
+  res.status(204).end();
+}));
 logistics.post('/invoices/:id/post', acct, asyncHandler(async (req, res) => { await getOwned(prisma.invoice, req.params.id, req.companyCode!, 'Invoice'); res.json(await postInvoice(req.params.id, req.companyCode!, req.user?.sub)); }));
 logistics.post('/invoices/:id/void', acct, asyncHandler(async (req, res) => { const inv = await getOwned(prisma.invoice, req.params.id, req.companyCode!, 'Invoice'); if (inv.status !== 'POSTED') throw conflict('Only POSTED invoices can be voided'); if (inv.amountPaid > 0) throw conflict('Cannot void invoice with payments; issue a credit memo'); const row = await prisma.invoice.update({ where: { id: inv.id }, data: { status: 'VOID', voidReason: String(req.body?.reason ?? ''), version: { increment: 1 } } }); const bridge = await import('../services/domain.js').then((m) => m.stageBridgeForInvoice(inv.id, req.companyCode!, req.user?.sub, true, 'INVOICE_VOID')); res.json({ invoice: row, bridge }); }));
 logistics.post('/invoices/:id/credit-memo', acct, asyncHandler(async (req, res) => { const inv = await prisma.invoice.findFirst({ where: { id: req.params.id, companyCode: req.companyCode! }, include: { lines: true } }); if (!inv) throw notFound('Invoice not found'); const selected = Array.isArray(req.body?.lines) && req.body.lines.length ? req.body.lines : inv.lines.map((l) => ({ invoiceLineId: l.id, amount: l.amountPhp })); const creditNo = await prisma.$transaction((tx) => nextNumber(tx, req.companyCode!, 'CREDIT_MEMO')); const cm = await prisma.invoice.create({ data: { companyCode: req.companyCode!, invoiceNo: creditNo, kind: 'CREDIT_MEMO', relatedInvoiceId: inv.id, billToPartyId: inv.billToPartyId, billToName: inv.billToName, billToAddress: inv.billToAddress, billToTin: inv.billToTin, date: new Date(), glPeriod: new Date().toISOString().slice(0, 7), status: 'DRAFT', createdBy: req.user?.sub } }); for (const x of selected) { const src = inv.lines.find((l) => l.id === x.invoiceLineId); if (!src) throw badRequest('Invalid invoiceLineId'); const amt = round2(Number(x.amount)); if (amt <= 0 || amt - src.amountPhp > 0.005) throw badRequest('Invalid credit memo amount'); await prisma.invoiceLine.create({ data: { companyCode: req.companyCode!, invoiceId: cm.id, chargeId: src.chargeId, billingCode: src.billingCode, description: `CM: ${src.description}`, qty: 1, unit: src.unit, rate: amt, amount: amt, amountPhp: amt, vatClass: src.vatClass, vatAmountPhp: vatAmount(amt, src.vatClass), revenueAccount: src.revenueAccount, zeroRatedReason: src.zeroRatedReason } }); } const out = await import('../services/domain.js').then((m) => m.recomputeInvoice(cm.id, req.companyCode!)); await prisma.invoice.update({ where: { id: inv.id }, data: { balance: Math.max(0, round2(inv.balance - out.netReceivable)), status: inv.balance - out.netReceivable <= 0.005 ? 'PAID' : inv.status } }); res.json(out); }));
