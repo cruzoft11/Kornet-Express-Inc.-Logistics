@@ -334,7 +334,107 @@ logistics.post('/bridge/trial-post', acct, asyncHandler(async (req, res) => res.
 logistics.post('/bridge/post', acct, asyncHandler(async (req, res) => res.json({ data: await finalBridge((req.body?.ids ?? []) as string[], req.companyCode!, req.user?.sub) })));
 logistics.post('/bridge/:id/reject', acct, asyncHandler(async (req, res) => { const b = await getOwned(prisma.bridgeItem, req.params.id, req.companyCode!, 'Bridge item'); res.json(await prisma.bridgeItem.update({ where: { id: b.id }, data: { status: 'REJECTED', errorsJson: JSON.stringify([String(req.body?.reason ?? 'Rejected')]) } })); }));
 function vinCheck(vin: string) { return /^[A-HJ-NPR-Z0-9]{17}$/.test(vin) ? { valid: true, warning: null } : { valid: false, warning: 'VIN must be 17 chars excluding I/O/Q' }; }
-for (const action of ['receive', 'inspect', 'hold', 'release-hold', 'ready', 'force-ready', 'temporal-release', 'undo-temporal-release', 'withdraw', 'link-to-container', 'title-rejected'] as const) logistics.post(`/vehicles/:id/${action}`, action === 'force-ready' ? requireRole('manager', 'admin') : writeAll, asyncHandler(async (req, res) => { const v = await getOwned(prisma.vehicle, req.params.id, req.companyCode!, 'Vehicle'); const data: Record<string, unknown> = { version: { increment: 1 } }; if (action === 'receive') { if (v.status !== 'EXPECTED') throw conflict('receive requires EXPECTED'); data.status = 'RECEIVED'; data.wrNo = v.wrNo ?? await prisma.$transaction((tx) => nextNumber(tx, req.companyCode!, 'WR')); } else if (action === 'inspect') { if (v.status !== 'RECEIVED') throw conflict('inspect requires RECEIVED'); if (!req.body?.inspectionDate || !req.body?.inspectedBy) throw badRequest('inspectionDate and inspectedBy are required'); data.inspectionDate = new Date(req.body.inspectionDate); data.inspectedBy = req.body.inspectedBy; data.inspectionNo = v.inspectionNo ?? await prisma.$transaction((tx) => nextNumber(tx, req.companyCode!, 'INSPECTION')); } else if (action === 'hold') { if (!['RECEIVED', 'READY_TO_SHIP'].includes(v.status)) throw conflict('hold requires RECEIVED or READY_TO_SHIP'); data.priorStatus = v.status; data.status = 'ON_HOLD'; data.hold = true; } else if (action === 'release-hold') { if (v.status !== 'ON_HOLD') throw conflict('release-hold requires ON_HOLD'); data.status = v.priorStatus ?? 'RECEIVED'; data.hold = false; } else if (action === 'ready') { if (v.status !== 'RECEIVED') throw conflict('ready requires RECEIVED'); if (v.shipperTentative || v.destinationTentative || (v.lienReleaseRequired && !v.lienReleaseReceived) || !v.titleReceived) throw conflict('Vehicle readiness prerequisites are incomplete'); data.status = 'READY_TO_SHIP'; } else if (action === 'force-ready') { if (!String(req.body?.reason ?? '').trim()) throw badRequest('force-ready reason is required'); data.status = 'READY_TO_SHIP'; data.remarks = `Force ready: ${req.body.reason}`; } else if (action === 'temporal-release') { data.temporalRelease = true; data.status = 'RELEASED'; } else if (action === 'undo-temporal-release') { data.temporalRelease = false; data.status = 'RECEIVED'; } else if (action === 'withdraw') { if (['LOADED', 'SHIPPED'].includes(v.status)) throw conflict('Cannot withdraw loaded/shipped vehicle'); data.status = 'WITHDRAWN'; data.withdrawnAt = new Date(); data.withdrawnBy = req.user?.sub; } else if (action === 'link-to-container') { if (!req.body?.containerId) throw badRequest('containerId required'); data.containerId = req.body.containerId; data.status = 'LOADED'; } else if (action === 'title-rejected') { data.titleRejectedSent = new Date(); if (v.containerId) await prisma.vehicle.updateMany({ where: { companyCode: req.companyCode!, containerId: v.containerId }, data: { titleRejectedSent: new Date() } }); } const updated = await prisma.vehicle.update({ where: { id: v.id }, data }); await emitStatus(req.companyCode!, 'VEHICLE', v.id, String(data.status ?? action).toUpperCase(), req.user?.sub); res.json(updated); }));
+for (const action of ['receive', 'inspect', 'hold', 'release-hold', 'ready', 'force-ready', 'temporal-release', 'undo-temporal-release', 'withdraw', 'link-to-container', 'title-rejected'] as const) {
+  logistics.post(`/vehicles/:id/${action}`, action === 'force-ready' ? requireRole('manager', 'admin') : writeAll, asyncHandler(async (req, res) => {
+    const v = await getOwned(prisma.vehicle, req.params.id, req.companyCode!, 'Vehicle');
+    const data: Record<string, unknown> = { version: { increment: 1 } };
+    let containerToLoad: Awaited<ReturnType<typeof prisma.container.findFirst>> = null;
+
+    if (action === 'receive') {
+      if (v.status !== 'EXPECTED') throw conflict('receive requires EXPECTED');
+      data.status = 'RECEIVED';
+      data.wrNo = v.wrNo ?? await prisma.$transaction((tx) => nextNumber(tx, req.companyCode!, 'WR'));
+    } else if (action === 'inspect') {
+      if (v.status !== 'RECEIVED') throw conflict('inspect requires RECEIVED');
+      if (!req.body?.inspectionDate || !req.body?.inspectedBy) throw badRequest('inspectionDate and inspectedBy are required');
+      data.inspectionDate = new Date(req.body.inspectionDate);
+      data.inspectedBy = req.body.inspectedBy;
+      data.inspectionNo = v.inspectionNo ?? await prisma.$transaction((tx) => nextNumber(tx, req.companyCode!, 'INSPECTION'));
+    } else if (action === 'hold') {
+      if (!['RECEIVED', 'READY_TO_SHIP'].includes(v.status)) throw conflict('hold requires RECEIVED or READY_TO_SHIP');
+      data.priorStatus = v.status;
+      data.status = 'ON_HOLD';
+      data.hold = true;
+    } else if (action === 'release-hold') {
+      if (v.status !== 'ON_HOLD') throw conflict('release-hold requires ON_HOLD');
+      data.status = v.priorStatus ?? 'RECEIVED';
+      data.hold = false;
+    } else if (action === 'ready') {
+      if (v.status !== 'RECEIVED') throw conflict('ready requires RECEIVED');
+      if (v.shipperTentative || v.destinationTentative || (v.lienReleaseRequired && !v.lienReleaseReceived) || !v.titleReceived) {
+        throw conflict('Vehicle readiness prerequisites are incomplete');
+      }
+      data.status = 'READY_TO_SHIP';
+    } else if (action === 'force-ready') {
+      if (!String(req.body?.reason ?? '').trim()) throw badRequest('force-ready reason is required');
+      data.status = 'READY_TO_SHIP';
+      data.remarks = `Force ready: ${req.body.reason}`;
+    } else if (action === 'temporal-release') {
+      data.temporalRelease = true;
+      data.status = 'RELEASED';
+    } else if (action === 'undo-temporal-release') {
+      data.temporalRelease = false;
+      data.status = 'RECEIVED';
+    } else if (action === 'withdraw') {
+      if (['LOADED', 'SHIPPED'].includes(v.status)) throw conflict('Cannot withdraw loaded/shipped vehicle');
+      data.status = 'WITHDRAWN';
+      data.withdrawnAt = new Date();
+      data.withdrawnBy = req.user?.sub;
+    } else if (action === 'link-to-container') {
+      if (v.status !== 'READY_TO_SHIP') throw conflict('link-to-container requires READY_TO_SHIP');
+      if (v.containerId) throw conflict('Vehicle is already linked to a container');
+      if (typeof req.body?.containerId !== 'string' || !req.body.containerId.trim()) throw badRequest('containerId required');
+      containerToLoad = await prisma.container.findFirst({
+        where: { id: req.body.containerId, companyCode: req.companyCode! },
+      });
+      if (!containerToLoad) throw notFound('Container not found');
+      if (v.shipmentId && v.shipmentId !== containerToLoad.shipmentId) {
+        throw conflict('Vehicle and container belong to different shipments');
+      }
+      data.containerId = containerToLoad.id;
+      if (!v.shipmentId) data.shipmentId = containerToLoad.shipmentId;
+      data.status = 'LOADED';
+    } else if (action === 'title-rejected') {
+      data.titleRejectedSent = new Date();
+      if (v.containerId) {
+        await prisma.vehicle.updateMany({
+          where: { companyCode: req.companyCode!, containerId: v.containerId },
+          data: { titleRejectedSent: new Date() },
+        });
+      }
+    }
+
+    const updated = await prisma.$transaction(async (tx) => {
+      if (containerToLoad) {
+        const container = await tx.container.findFirst({
+          where: { id: containerToLoad.id, companyCode: req.companyCode! },
+        });
+        if (!container) throw notFound('Container not found');
+        if (container.shipmentId !== containerToLoad.shipmentId) throw conflict('Container shipment changed; refresh and retry');
+        if (!['EMPTY', 'LOADED'].includes(container.status)) throw conflict('Vehicle can only be linked to an empty or loaded container');
+        if (container.maxPayloadKg > 0 && container.grossKg + v.grossKg > container.maxPayloadKg) {
+          throw conflict('Vehicle would exceed the container payload limit');
+        }
+        if (container.maxCbm > 0 && container.cbm + v.cbm > container.maxCbm) {
+          throw conflict('Vehicle would exceed the container volume limit');
+        }
+        await tx.container.update({
+          where: { id: container.id },
+          data: {
+            status: 'LOADED',
+            pieces: { increment: 1 },
+            grossKg: { increment: v.grossKg },
+            cbm: { increment: v.cbm },
+            version: { increment: 1 },
+          },
+        });
+      }
+      return tx.vehicle.update({ where: { id: v.id }, data });
+    });
+    await emitStatus(req.companyCode!, 'VEHICLE', v.id, String(data.status ?? action).toUpperCase(), req.user?.sub);
+    res.json(updated);
+  }));
+}
 logistics.get('/vin/decode/:vin', asyncHandler(async (req, res) => { const vin = req.params.vin.toUpperCase(); const validation = vinCheck(vin); if (!validation.valid) return res.status(400).json({ error: validation.warning }); const existing = await prisma.vehicle.findFirst({ where: { companyCode: req.companyCode!, vin } }); if (existing?.decodedJson) return res.json(JSON.parse(existing.decodedJson)); const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), 10_000); try { const r = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${encodeURIComponent(vin)}?format=json`, { signal: controller.signal }); if (!r.ok) return res.status(502).json({ error: 'NHTSA vPIC unavailable' }); const raw = await r.json() as { Results?: Array<Record<string, string>> }; const first = raw?.Results?.[0] ?? {}; if (first.ErrorCode && first.ErrorCode !== '0') return res.status(502).json({ error: first.ErrorText ?? 'NHTSA vPIC decode error', raw }); const normalized = { vin, year: Number(first.ModelYear) || null, make: first.Make || null, model: first.Model || null, trim: first.Trim || null, body: first.BodyClass || null, engine: first.EngineModel || first.DisplacementL || null, fuel: first.FuelTypePrimary || null, warning: validation.warning, raw }; if (existing) await prisma.vehicle.update({ where: { id: existing.id }, data: { decodedJson: JSON.stringify(normalized), year: normalized.year ?? undefined, make: normalized.make, model: normalized.model, trim: normalized.trim, body: normalized.body, engine: normalized.engine, fuel: normalized.fuel } }); res.json(normalized); } catch { res.status(502).json({ error: 'NHTSA vPIC request timed out or failed' }); } finally { clearTimeout(timer); } }));
 async function releasePdResources(tx: Prisma.TransactionClient, order: { companyCode: string; driverId: string | null; fleetVehicleId: string | null; routeId: string | null }) {
   const activeStatuses = ['DISPATCHED', 'IN_TRANSIT'];

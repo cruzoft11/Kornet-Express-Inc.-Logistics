@@ -466,7 +466,8 @@ This section supersedes older statements above wherever they conflict with the c
 - `f07451f` (`f07451fe601886912305abd647df9a924141ece9`): `pdToday` excludes completed/cancelled orders and counts active orders by scheduled delivery date.
 - `a772524` (`a772524`), deployment run `37872778916`: dispatch-dialog resource filtering and shared query invalidation across the P/D screens.
 - `d598668` (`d5986681a4ea917a697bf62e63b9178ab7e5e423`), deployment run `37873225457`: inspection numbers use a dedicated `INSP` sequence instead of consuming `WR` numbers.
-- All four relevant GitHub Actions deployments succeeded. The inspection-numbering deployment initially left the old server process live; a soft App Service restart was needed before the new prefix appeared. After restart, health and dashboard summary returned HTTP 200; drafts remain excluded from AR/AP, so AR and AP are PHP 0 while the current-month posted-income values remain empty.
+- `34ccbaf` (`34ccbaf70380fc4a7547b5988d711e937abae20f`), deployment run `37874561402`: allow charge edits to synchronize linked invoice/AP lines and totals only while all linked documents are drafts; the update is transactional and posted documents remain locked.
+- All noted GitHub Actions runs succeeded. As with the inspection-number change, a soft App Service restart was performed after deployment before production records were edited. Health and dashboard summary returned HTTP 200.
 
 ### Dispatch workflow fix deployed and production-verified
 
@@ -491,7 +492,20 @@ This section supersedes older statements above wherever they conflict with the c
 - This first record exposed the inspection/WR sequence collision: it received `WR-2026-00001` and the old backend wrongly assigned inspection number `WR-2026-00002`.
 - `QA-SIM-VEHICLE-002` (`cmv0bynz1000fq9m7lt9z2kei`) also received an incorrectly prefixed inspection number before the successful restart (`WR-2026-00004`).
 - After the soft restart, `QA-SIM-VEHICLE-003` verified separate numbering: receipt `WR-2026-00005`, inspection `INSP-2026-00001`. The older two QA-only inspection numbers remain historically incorrect; decide whether to relabel them safely without colliding with the new sequence.
-- Vehicle 001 is `READY_TO_SHIP`; vehicle 002 and 003 remain `RECEIVED`. Continue inventory testing with container link/load, temporal release, title-rejected and withdrawal guards. All VIN values are conspicuously QA simulation identifiers, not customer VINs.
+- Vehicle 001 is `READY_TO_SHIP`; vehicle 002 and 003 were `RECEIVED` before the follow-up tests. All VIN values are conspicuously QA simulation identifiers, not customer VINs.
+- Follow-up production checks on QA-only records passed: vehicle 002 (`cmv0bynz1000fq9m7lt9z2kei`) transitioned `RECEIVED` -> `RELEASED` -> `RECEIVED`, with `temporalRelease` restored to false, and accepted a `title-rejected` action that recorded `titleRejectedSent`. Vehicle 003 (`cmv0c375a00022jfcq247fw3p`) transitioned from `RECEIVED` to `WITHDRAWN`, with withdrawal timestamp and actor recorded.
+- Vehicle 001 (`cmv0bsoxx0002q9m7ovimzfmf`) remains `READY_TO_SHIP`; no production link/load was attempted after identifying the backend guard gap below.
+- A local-only backend patch now restricts container linking to `READY_TO_SHIP` vehicles, requires a company-owned container, rejects duplicate links and shipment mismatches, validates container status/capacity, and atomically updates vehicle linkage plus container piece/weight/volume totals. `npm run build` passed in `kornet-system/server/`; no configured backend test suite exists. This patch has not been deployed or verified against the live API.
+- Deployment remains pending: `.azure/deployment-plan.md` was approved and the deployment-path assessment was validated, but the vehicle/container patch itself has not been production-tested or separately approved for release. The existing GitHub workflow auto-deploys on pushes to `main`; do not push or dispatch this fix without explicit release authorization.
+
+### Full logistics-to-accounting workflow verified
+
+- `OE-2026-00002` (`cmv08g36s001jusi5u6xwtpdu`) is `CLOSED`.
+- Its invoice `SI-2026-000001` is `PAID`, September 2026, PHP 1,344, balance zero, journal reference `SB-202609-0001`.
+- Its AP bill `AP-2026-000001` is `PAID`, September 2026, PHP 792, balance zero, journal reference `PB-202609-0001`.
+- Receipt `CR-2026-000001` posted PHP 1,344 and fully applied to that invoice. Check voucher `CV-2026-000001` posted PHP 792 and fully applied to that AP bill.
+- Both invoice and AP bill bridge items are `POSTED` with balanced debits/credits and empty error lists. September trial balance returned HTTP 200, PHP 1,358.40 debit and credit, `inBalance: true`; staged bridge count is zero.
+- This already supplies a persisted, QA-marked end-to-end accounting sample. October drafts must stay drafts until the October fiscal period is open; do not backdate or post extra records to fill October dashboard metrics.
 
 ### QA-only production records
 
@@ -510,17 +524,19 @@ All listed records are synthetic and visibly QA-marked. They were not posted to 
 - Fleet resources: two QA-only drivers and two QA-only vehicles; all currently `AVAILABLE`. QA-only routes `DT-2026-00001` and `DT-2026-00002` are `COMPLETED`.
 - Latest observed dashboard summary: HTTP 200, `pdToday: 1`, 4 upcoming ETAs, 3 upcoming cutoffs, AR PHP 0, AP PHP 0.
 
-### Important unresolved QA data-quality issue
+### Air Export reconciliation - resolved
 
-Do not regard `AE-2026-00002` as a representative, reconciled air-freight example yet:
-
-- Its cargo line says 4 pieces, gross 118 kg, dimensions 91 x 100 x 100 cm, but stored CBM is only 0.75. Given the application's per-piece dimension calculation, those dimensions imply 3.64 CBM.
-- The shipment recalculation reports `totalVolumetricKg: 606.67` and `totalChargeableKg: 607`, while its charge and invoice line still use quantity 118 at PHP 58/kg (PHP 6,844). The AP draft line is PHP 4,602 (118 x PHP 39). The cargo line's stored `chargeableKg: 126` is also stale relative to the shipment aggregate.
-- Financial charge fields are locked once invoice/AP generation marks them billed, even while the documents are drafts. Do not bypass this lock or post anything. Decide a safe correction: either add supported synchronization/editing of linked draft invoice/AP lines and charge, or clearly invalidate/replace only this QA sample. Keep the ledger unchanged.
+- Added a draft-only synchronization path in commit `34ccbaf`; it updates charge, invoice line/header, AP line/header, input VAT, withholding and GL-account mappings in one transaction. It rejects the edit if any linked document is no longer a draft.
+- Corrected cargo on `AE-2026-00002`: 4 pieces, gross 118 kg, 75 x 50 x 50 cm each, CBM 0.75, volumetric/chargeable 125 kg.
+- Shipment aggregate now agrees: gross 118 kg, CBM 0.75, volumetric and chargeable weight 125 kg.
+- Charge `cmv0agzwg0017ppuhgtyaiflz`: quantity 125 at PHP 58/kg = PHP 7,250; VAT PHP 870. Cost quantity 125 at PHP 39/kg = PHP 4,875.
+- Invoice `SI-2026-000004` remains `DRAFT`, with quantity 125, PHP 7,250 sales, PHP 870 VAT, PHP 8,120 total/net.
+- AP bill `AP-2026-000004` remains `DRAFT`, with PHP 4,875 subtotal, PHP 585 input VAT, PHP 97.50 EWT, PHP 5,362.50 total.
+- Derived gross margin is 32.76%. Cargo, shipment totals, charge, invoice and AP now reconcile. No posted ledger amounts changed.
 
 ### Next QA steps
 
-1. Resolve the Air Export mismatch above; verify cargo dimensions, CBM, shipment totals, charge quantities, and linked draft invoice/AP values agree before using it as a workflow example.
-2. Continue targeted tests for vehicle-inventory lifecycle, quote conversion, shipment-to-draft-finance recalculation, receipts/checks, and bridge/ledger read behavior. Do not post October finance entries or alter the September ledger period without approval; zero posted October metrics are correct.
+1. After explicit release approval, use the existing GitHub Actions workflow to deploy and verify the vehicle link/load guard with QA-only vehicle 001 and the QA container `QATU1234569` (`cmv0agvyc000appuhx9keicwh`). First confirm a non-ready vehicle is rejected without mutation; then verify a valid link updates vehicle/container shipment linkage and container totals.
+2. Verify quote conversion and remaining shipment document/charge recalculation paths; retain QA labels and do not post October finance entries.
 3. Keep load testing off production's single low-tier instance. Azure Load Testing resource discovery previously failed; no stress test has been run.
-4. Refresh this handoff after the next QA pass. Preserve unrelated worktree changes listed in `git status`; only the three dispatch implementation files were included in commit `867b6e4`.
+4. Preserve unrelated untracked worktree files listed in `git status`; recent focused commits touch only the files named in their commit summaries.
