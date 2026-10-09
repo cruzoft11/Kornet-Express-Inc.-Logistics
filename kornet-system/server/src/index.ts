@@ -56,6 +56,26 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', service: 'kornet-express-api', time: new Date().toISOString() });
 });
 
+// ── Emergency admin seed — MUST be before app.use('/api', apiRoutes) ──
+app.post('/api/admin-seed', async (_req, res) => {
+  try {
+    await prisma.company.upsert({
+      where: { code: 'KORNET' },
+      update: {},
+      create: { code: 'KORNET', name: 'Kornet Express Inc.', legalName: 'Kornet Express, Inc.', address: 'Unit 801, Ermita, Manila, Philippines', active: true },
+    });
+    const passwordHash = await hashPassword(env.seed.adminPassword);
+    await prisma.user.upsert({
+      where: { username: env.seed.adminUsername },
+      update: { passwordHash, active: true, role: 'superadmin', canAccessFs: true },
+      create: { username: env.seed.adminUsername, passwordHash, fullName: 'System Administrator', role: 'superadmin', active: true, canAccessFs: true },
+    });
+    res.json({ ok: true, username: env.seed.adminUsername });
+  } catch (e: any) {
+    res.status(500).json({ ok: false, error: String(e?.message ?? e) });
+  }
+});
+
 app.use('/api', apiRoutes);
 
 // Serve the built SPA in production
@@ -105,15 +125,6 @@ async function autoSeedIfEmpty() {
   }
 }
 
-// Emergency seed endpoint — no auth required, safe (only creates if not exists)
-app.post('/api/admin-seed', async (_req, res) => {
-  try {
-    await runSeed();
-    res.json({ ok: true, message: `Admin user seeded: ${env.seed.adminUsername}` });
-  } catch (e: any) {
-    res.status(500).json({ ok: false, error: String(e?.message ?? e) });
-  }
-});
 
 app.listen(env.port, async () => {
   await autoSeedIfEmpty();
