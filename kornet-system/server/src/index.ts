@@ -56,8 +56,8 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', service: 'kornet-express-api', time: new Date().toISOString() });
 });
 
-// ── Emergency admin seed — MUST be before app.use('/api', apiRoutes) ──
-app.post('/api/admin-seed', async (_req, res) => {
+// ── Admin seed endpoint — outside /api to bypass auth middleware ──
+app.post('/internal-seed', async (_req, res) => {
   try {
     await prisma.company.upsert({
       where: { code: 'KORNET' },
