@@ -17,10 +17,10 @@ export default function PdDispatchBoard() {
   const [dispatchOrder, setDispatchOrder] = useState<PdOrder | null>(null)
   const params = useMemo(() => scope === 'today' ? { dateFrom: todayIso(), dateTo: `${todayIso()}T23:59:59.999`, dateField: 'date', include: 'relations' as const, pageSize: 200 } : { include: 'relations' as const, pageSize: 200 }, [scope])
   const orders = useQuery({ queryKey: ['pd-board', params], queryFn: () => pdApi.list(params) })
-  const drivers = useQuery({ queryKey: ['pd-board-drivers'], queryFn: () => pdApi.drivers() })
-  const fleet = useQuery({ queryKey: ['pd-board-fleet'], queryFn: () => pdApi.fleetVehicles() })
-  const routes = useQuery({ queryKey: ['pd-board-routes'], queryFn: () => fleetApi.routes() })
-  const dispatch = useMutation({ mutationFn: (v: { order: PdOrder; driverId: string; fleetVehicleId: string; routeId?: string }) => pdApi.dispatch(v.order.id, { driverId: v.driverId, fleetVehicleId: v.fleetVehicleId, routeId: v.routeId }), onSuccess: (row) => { toast.success(`${row.orderNo} dispatched`); setDispatchOrder(null); qc.invalidateQueries({ queryKey: ['pd-board'] }); qc.invalidateQueries({ queryKey: ['pd-board-drivers'] }); qc.invalidateQueries({ queryKey: ['pd-board-fleet'] }); qc.invalidateQueries({ queryKey: ['pd-board-routes'] }) }, onError: (e) => toast.error(err(e)) })
+  const drivers = useQuery({ queryKey: ['pd-drivers'], queryFn: () => pdApi.drivers() })
+  const fleet = useQuery({ queryKey: ['pd-fleet'], queryFn: () => pdApi.fleetVehicles() })
+  const routes = useQuery({ queryKey: ['pd-routes'], queryFn: () => fleetApi.routes() })
+  const dispatch = useMutation({ mutationFn: (v: { order: PdOrder; driverId: string; fleetVehicleId: string; routeId?: string }) => pdApi.dispatch(v.order.id, { driverId: v.driverId, fleetVehicleId: v.fleetVehicleId, routeId: v.routeId }), onSuccess: (row) => { toast.success(`${row.orderNo} dispatched`); setDispatchOrder(null); qc.invalidateQueries({ queryKey: ['pd-board'] }); qc.invalidateQueries({ queryKey: ['pd-orders'] }); qc.invalidateQueries({ queryKey: ['pd-drivers'] }); qc.invalidateQueries({ queryKey: ['pd-fleet'] }); qc.invalidateQueries({ queryKey: ['pd-routes'] }) }, onError: (e) => toast.error(err(e)) })
   const rows = orders.data?.data ?? []
   return <div className="space-y-5 p-4 md:p-6"><PageHeader title="P/D Dispatch Board" eyebrow="Operations" description="Drag an OPEN run into Dispatch to assign a driver and fleet vehicle." actions={<Button variant={scope === 'today' ? 'secondary' : 'outline'} onClick={() => setScope(scope === 'today' ? 'all' : 'today')}>{scope === 'today' ? "Today's runs" : 'All runs'}</Button>} />
     <Toolbar><span className="text-sm text-muted-foreground">{rows.length} runs visible</span></Toolbar>
@@ -34,15 +34,34 @@ function DispatchDialog({ order, drivers, vehicles, routes, onClose, onSubmit, l
   const [driverId, setDriver] = useState(order.driverId ?? drivers.find((driver) => driver.name === assignedRoute?.driverName)?.id ?? '');
   const [fleetVehicleId, setVehicle] = useState(order.fleetVehicleId ?? vehicles.find((vehicle) => vehicle.plateNo === assignedRoute?.vehiclePlate)?.id ?? '');
   const selectRoute = (id: string) => {
+    if (id === '__none__') {
+      setRoute('');
+      setDriver('');
+      setVehicle('');
+      return;
+    }
     setRoute(id);
     const route = routes.find((item) => item.id === id);
     const routeDriver = drivers.find((driver) => driver.name === route?.driverName);
     const routeVehicle = vehicles.find((vehicle) => vehicle.plateNo === route?.vehiclePlate);
-    if (routeDriver) setDriver(routeDriver.id);
-    if (routeVehicle) setVehicle(routeVehicle.id);
+    setDriver(routeDriver?.id ?? '');
+    setVehicle(routeVehicle?.id ?? '');
   };
   const routeOptions = routes
     .filter((route) => route.stage.toUpperCase() !== 'COMPLETED')
     .map((route) => ({ value: route.id, label: `${route.routeNo} · ${route.origin || 'Origin'} → ${route.destination || 'Destination'} · ${route.stage}` }));
-  return <Dialog open onOpenChange={(v) => !v && onClose()}><DialogContent title={`Dispatch ${order.orderNo}`} description="Assign available resources, or join the resources already assigned to a route."><div className="space-y-3"><FormField label="Dispatch route"><Select value={routeId || undefined} onValueChange={selectRoute} options={routeOptions} /></FormField><FormField label="Driver" required><Select value={driverId || undefined} onValueChange={setDriver} options={drivers.map((d) => ({ value: d.id, label: `${d.name} · ${d.status}` }))} /></FormField><FormField label="Fleet vehicle" required><Select value={fleetVehicleId || undefined} onValueChange={setVehicle} options={vehicles.map((v) => ({ value: v.id, label: `${v.plateNo} · ${v.status}` }))} /></FormField><div className="flex justify-end gap-2"><Button variant="outline" onClick={onClose}>Close</Button><Button disabled={!driverId || !fleetVehicleId} loading={loading} onClick={() => onSubmit(driverId, fleetVehicleId, routeId || undefined)}>Dispatch</Button></div></div></DialogContent></Dialog>
+  const selectedRoute = routes.find((route) => route.id === routeId);
+  const assignedDriver = selectedRoute?.stage.toUpperCase() === 'IN_PROGRESS'
+    ? drivers.find((driver) => driver.name === selectedRoute.driverName)
+    : undefined;
+  const assignedVehicle = selectedRoute?.stage.toUpperCase() === 'IN_PROGRESS'
+    ? vehicles.find((vehicle) => vehicle.plateNo === selectedRoute.vehiclePlate)
+    : undefined;
+  const driverOptions = drivers
+    .filter((driver) => driver.status.toUpperCase() === 'AVAILABLE' || driver.id === assignedDriver?.id)
+    .map((driver) => ({ value: driver.id, label: `${driver.name} · ${driver.status}` }));
+  const vehicleOptions = vehicles
+    .filter((vehicle) => vehicle.status.toUpperCase() === 'AVAILABLE' || vehicle.id === assignedVehicle?.id)
+    .map((vehicle) => ({ value: vehicle.id, label: `${vehicle.plateNo} · ${vehicle.status}` }));
+  return <Dialog open onOpenChange={(v) => !v && onClose()}><DialogContent title={`Dispatch ${order.orderNo}`} description="Assign available resources, or join the resources already assigned to a route."><div className="space-y-3"><FormField label="Dispatch route"><Select value={routeId || undefined} onValueChange={selectRoute} options={[{ value: '__none__', label: 'No route' }, ...routeOptions]} /></FormField><FormField label="Driver" required><Select value={driverId || undefined} onValueChange={setDriver} options={driverOptions} /></FormField><FormField label="Fleet vehicle" required><Select value={fleetVehicleId || undefined} onValueChange={setVehicle} options={vehicleOptions} /></FormField><div className="flex justify-end gap-2"><Button variant="outline" onClick={onClose}>Close</Button><Button disabled={!driverId || !fleetVehicleId} loading={loading} onClick={() => onSubmit(driverId, fleetVehicleId, routeId || undefined)}>Dispatch</Button></div></div></DialogContent></Dialog>
 }

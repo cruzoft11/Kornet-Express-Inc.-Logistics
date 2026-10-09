@@ -46,9 +46,14 @@ export default function PdOrdersPage() {
   const events = useQuery({ queryKey: ['pd-events', selected?.id], enabled: !!selected?.id, queryFn: () => pdApi.statusEvents(selected!.id) })
 
   const save = useMutation({ mutationFn: () => draft.id ? pdApi.update(draft.id, draft) : pdApi.create(draft), onSuccess: (row) => { toast.success(`P/D ${row.orderNo} saved`); setSelected(row); setDraft(row); qc.invalidateQueries({ queryKey: ['pd-orders'] }) }, onError: (e) => toast.error(err(e)) })
-  const dispatch = useMutation({ mutationFn: (v: { order: PdOrder; driverId: string; fleetVehicleId: string; routeId?: string }) => pdApi.dispatch(v.order.id, { driverId: v.driverId, fleetVehicleId: v.fleetVehicleId, routeId: v.routeId }), onSuccess: (row) => { toast.success(`${row.orderNo} dispatched`); setDispatchOrder(null); qc.invalidateQueries({ queryKey: ['pd-orders'] }); qc.invalidateQueries({ queryKey: ['pd-drivers'] }); qc.invalidateQueries({ queryKey: ['pd-fleet'] }); qc.invalidateQueries({ queryKey: ['pd-routes'] }) }, onError: (e) => toast.error(err(e)) })
-  const complete = useMutation({ mutationFn: (v: { order: PdOrder; signedBy: string; podAt?: string; remarks?: string; signatureDataUrl?: string }) => pdApi.complete(v.order.id, v), onSuccess: (row) => { toast.success(`${row.orderNo} completed with POD`); setPodOrder(null); qc.invalidateQueries({ queryKey: ['pd-orders'] }); qc.invalidateQueries({ queryKey: ['pd-drivers'] }); qc.invalidateQueries({ queryKey: ['pd-fleet'] }); qc.invalidateQueries({ queryKey: ['pd-routes'] }) }, onError: (e) => toast.error(err(e)) })
-  const cancel = useMutation({ mutationFn: (v: { order: PdOrder; reason: string }) => pdApi.cancel(v.order.id, v.reason), onSuccess: (row) => { toast.success(`${row.orderNo} cancelled`); setCancelOrder(null); qc.invalidateQueries({ queryKey: ['pd-orders'] }); qc.invalidateQueries({ queryKey: ['pd-drivers'] }); qc.invalidateQueries({ queryKey: ['pd-fleet'] }); qc.invalidateQueries({ queryKey: ['pd-routes'] }) }, onError: (e) => toast.error(err(e)) })
+  const invalidateDispatchData = () => {
+    for (const key of [['pd-orders'], ['pd-board'], ['pd-drivers'], ['pd-fleet'], ['pd-routes'], ['pd-board-drivers'], ['pd-board-fleet'], ['pd-board-routes']]) {
+      qc.invalidateQueries({ queryKey: key })
+    }
+  }
+  const dispatch = useMutation({ mutationFn: (v: { order: PdOrder; driverId: string; fleetVehicleId: string; routeId?: string }) => pdApi.dispatch(v.order.id, { driverId: v.driverId, fleetVehicleId: v.fleetVehicleId, routeId: v.routeId }), onSuccess: (row) => { toast.success(`${row.orderNo} dispatched`); setDispatchOrder(null); invalidateDispatchData() }, onError: (e) => toast.error(err(e)) })
+  const complete = useMutation({ mutationFn: (v: { order: PdOrder; signedBy: string; podAt?: string; remarks?: string; signatureDataUrl?: string }) => pdApi.complete(v.order.id, v), onSuccess: (row) => { toast.success(`${row.orderNo} completed with POD`); setPodOrder(null); invalidateDispatchData() }, onError: (e) => toast.error(err(e)) })
+  const cancel = useMutation({ mutationFn: (v: { order: PdOrder; reason: string }) => pdApi.cancel(v.order.id, v.reason), onSuccess: (row) => { toast.success(`${row.orderNo} cancelled`); setCancelOrder(null); invalidateDispatchData() }, onError: (e) => toast.error(err(e)) })
 
   const openNew = () => { setSelected(null); setDraft(blankOrder); setSheetOpen(true); setTab('order') }
   const openEdit = (row: PdOrder) => { setSelected(row); setDraft(row); setSheetOpen(true); setTab('order') }
@@ -162,18 +167,37 @@ function DispatchDialog({ order, drivers, vehicles, routes, onClose, onSubmit, l
   const [routeId, setRoute] = useState(order.routeId ?? '');
   const [driverId, setDriver] = useState(order.driverId ?? drivers.find((driver) => driver.name === assignedRoute?.driverName)?.id ?? '');
   const [fleetVehicleId, setVehicle] = useState(order.fleetVehicleId ?? vehicles.find((vehicle) => vehicle.plateNo === assignedRoute?.vehiclePlate)?.id ?? '');
+  const selectedRoute = routes.find((route) => route.id === routeId);
+  const assignedDriver = selectedRoute?.stage.toUpperCase() === 'IN_PROGRESS'
+    ? drivers.find((driver) => driver.name === selectedRoute.driverName)
+    : undefined;
+  const assignedVehicle = selectedRoute?.stage.toUpperCase() === 'IN_PROGRESS'
+    ? vehicles.find((vehicle) => vehicle.plateNo === selectedRoute.vehiclePlate)
+    : undefined;
   const selectRoute = (id: string) => {
+    if (id === '__none__') {
+      setRoute('');
+      setDriver('');
+      setVehicle('');
+      return;
+    }
     setRoute(id);
     const route = routes.find((item) => item.id === id);
     const routeDriver = drivers.find((driver) => driver.name === route?.driverName);
     const routeVehicle = vehicles.find((vehicle) => vehicle.plateNo === route?.vehiclePlate);
-    if (routeDriver) setDriver(routeDriver.id);
-    if (routeVehicle) setVehicle(routeVehicle.id);
+    setDriver(routeDriver?.id ?? '');
+    setVehicle(routeVehicle?.id ?? '');
   };
   const routeOptions = routes
     .filter((route) => route.stage.toUpperCase() !== 'COMPLETED')
     .map((route) => ({ value: route.id, label: `${route.routeNo} · ${route.origin || 'Origin'} → ${route.destination || 'Destination'} · ${route.stage}` }));
-  return <Dialog open onOpenChange={(v) => !v && onClose()}><DialogContent title={`Dispatch ${order.orderNo}`} description="Assign available resources, or join the resources already assigned to a route."><div className="space-y-3"><FormField label="Dispatch route"><Select value={routeId || undefined} onValueChange={selectRoute} options={routeOptions} /></FormField><FormField label="Driver" required><Select value={driverId || undefined} onValueChange={setDriver} options={drivers.map((d) => ({ value: d.id, label: `${d.name}${d.licenseNo ? ` · ${d.licenseNo}` : ''} · ${d.status}` }))} /></FormField><FormField label="Fleet vehicle" required><Select value={fleetVehicleId || undefined} onValueChange={setVehicle} options={vehicles.map((v) => ({ value: v.id, label: `${v.plateNo}${v.type ? ` · ${v.type}` : ''} · ${v.status}` }))} /></FormField><div className="flex justify-end gap-2"><Button variant="outline" onClick={onClose}>Close</Button><Button disabled={!driverId || !fleetVehicleId} loading={loading} onClick={() => onSubmit(driverId, fleetVehicleId, routeId || undefined)}><Truck className="size-4" />Dispatch</Button></div></div></DialogContent></Dialog>
+  const driverOptions = drivers
+    .filter((driver) => driver.status.toUpperCase() === 'AVAILABLE' || driver.id === assignedDriver?.id)
+    .map((driver) => ({ value: driver.id, label: `${driver.name}${driver.licenseNo ? ` · ${driver.licenseNo}` : ''} · ${driver.status}` }));
+  const vehicleOptions = vehicles
+    .filter((vehicle) => vehicle.status.toUpperCase() === 'AVAILABLE' || vehicle.id === assignedVehicle?.id)
+    .map((vehicle) => ({ value: vehicle.id, label: `${vehicle.plateNo}${vehicle.type ? ` · ${vehicle.type}` : ''} · ${vehicle.status}` }));
+  return <Dialog open onOpenChange={(v) => !v && onClose()}><DialogContent title={`Dispatch ${order.orderNo}`} description="Assign available resources, or join the resources already assigned to a route."><div className="space-y-3"><FormField label="Dispatch route"><Select value={routeId || undefined} onValueChange={selectRoute} options={[{ value: '__none__', label: 'No route' }, ...routeOptions]} /></FormField><FormField label="Driver" required><Select value={driverId || undefined} onValueChange={setDriver} options={driverOptions} /></FormField><FormField label="Fleet vehicle" required><Select value={fleetVehicleId || undefined} onValueChange={setVehicle} options={vehicleOptions} /></FormField><div className="flex justify-end gap-2"><Button variant="outline" onClick={onClose}>Close</Button><Button disabled={!driverId || !fleetVehicleId} loading={loading} onClick={() => onSubmit(driverId, fleetVehicleId, routeId || undefined)}><Truck className="size-4" />Dispatch</Button></div></div></DialogContent></Dialog>
 }
 function PodDialog({ order, onClose, onSubmit, loading }: { order: PdOrder; onClose: () => void; onSubmit: (v: { signedBy: string; podAt?: string; remarks?: string; signatureDataUrl?: string }) => void; loading: boolean }) { const [signedBy, setSignedBy] = useState(''); const [podAt, setPodAt] = useState(new Date().toISOString().slice(0, 16)); const [remarks, setRemarks] = useState(''); const [signatureDataUrl, setSignature] = useState(''); return <Dialog open onOpenChange={(v) => !v && onClose()}><DialogContent title={`Complete ${order.orderNo}`} description="POD completion requires the receiver/signatory."><div className="space-y-3"><FormField label="Signed by" required><Input value={signedBy} onChange={(e) => setSignedBy(e.target.value)} /></FormField><FormField label="POD date/time"><Input type="datetime-local" value={podAt} onChange={(e) => setPodAt(e.target.value)} /></FormField><FormField label="Remarks"><Textarea value={remarks} onChange={(e) => setRemarks(e.target.value)} /></FormField><FormField label="Signature / attachment reference"><><Textarea value={signatureDataUrl} onChange={(e) => setSignature(e.target.value)} /><p className="text-xs text-muted-foreground">Backend accepts signatureDataUrl text; binary photo upload endpoint is not exposed.</p></></FormField><div className="flex justify-end gap-2"><Button variant="outline" onClick={onClose}>Close</Button><Button disabled={!signedBy.trim()} loading={loading} onClick={() => onSubmit({ signedBy, podAt, remarks, signatureDataUrl })}><ClipboardCheck className="size-4" />Complete</Button></div></div></DialogContent></Dialog> }
 function CancelDialog({ order, onClose, onSubmit, loading }: { order: PdOrder; onClose: () => void; onSubmit: (reason: string) => void; loading: boolean }) { const [reason, setReason] = useState(''); return <Dialog open onOpenChange={(v) => !v && onClose()}><DialogContent title={`Cancel ${order.orderNo}`} description="Cancellation reason is sent to the backend action."><FormField label="Reason" required><Textarea value={reason} onChange={(e) => setReason(e.target.value)} /></FormField><div className="mt-4 flex justify-end gap-2"><Button variant="outline" onClick={onClose}>Close</Button><Button variant="destructive" disabled={!reason.trim()} loading={loading} onClick={() => onSubmit(reason)}>Cancel order</Button></div></DialogContent></Dialog> }
