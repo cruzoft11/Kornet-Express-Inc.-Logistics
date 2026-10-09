@@ -14,6 +14,7 @@ const SPECS: Record<string, { prefix: string; width: number; year?: 'YYYY' | 'YY
   HAWB: { prefix: 'KEX', year: false, width: 8 },
   PD: { prefix: 'PD', year: 'YYYY', width: 5 },
   WR: { prefix: 'WR', year: 'YYYY', width: 5 },
+  INSPECTION: { prefix: 'INSP', year: 'YYYY', width: 5 },
   INVOICE: { prefix: 'SI', year: 'YYYY', width: 6 },
   CREDIT_MEMO: { prefix: 'CM', year: 'YYYY', width: 6 },
   AP_BILL: { prefix: 'AP', year: 'YYYY', width: 6 },
