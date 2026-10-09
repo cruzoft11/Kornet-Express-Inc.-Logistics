@@ -246,7 +246,12 @@ logistics.get('/dashboard/summary', asyncHandler(async (req, res) => {
     prisma.bridgeItem.groupBy({ by: ['status'], where: { companyCode }, _count: true }),
     prisma.vehicle.count({ where: { companyCode, deletedAt: null, hold: true } }),
     prisma.pdOrder.count({
-      where: { companyCode, deletedAt: null, deliverBy: { gte: today, lt: tomorrow } },
+      where: {
+        companyCode,
+        deletedAt: null,
+        status: { in: ['OPEN', 'DISPATCHED', 'IN_TRANSIT'] },
+        deliverBy: { gte: today, lt: tomorrow },
+      },
     }),
     prisma.invoice.findMany({
       where: { companyCode, deletedAt: null, status: { in: openFinancialStatuses }, balance: { gt: 0 } },
