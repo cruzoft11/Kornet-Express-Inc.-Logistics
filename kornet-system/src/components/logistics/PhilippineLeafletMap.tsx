@@ -278,19 +278,25 @@ export default function PhilippineLeafletMap({
   const [assetFilter, setAssetFilter] = useState<'all' | 'truck' | 'ship' | 'plane'>('all')
   const [selectedAsset, setSelectedAsset] = useState<LiveAsset | null>(null)
 
-  // Ensure Leaflet library is available
+  // Ensure Leaflet library is available (handles defer loading)
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).L) {
       setIsLeafletReady(true)
       return
     }
 
+    let attempts = 0
+    const maxAttempts = 100 // 10 seconds total
     const interval = setInterval(() => {
+      attempts++
       if ((window as any).L) {
         setIsLeafletReady(true)
         clearInterval(interval)
+      } else if (attempts >= maxAttempts) {
+        console.warn('[PhilippineLeafletMap] Leaflet failed to load after 10s — check CDN connectivity')
+        clearInterval(interval)
       }
-    }, 80)
+    }, 100)
 
     return () => clearInterval(interval)
   }, [])

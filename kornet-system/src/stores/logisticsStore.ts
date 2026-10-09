@@ -805,24 +805,39 @@ export const useLogisticsStore = create<LogisticsState>()(
   setFxRates: (rates) => set((state) => ({ fxRates: { ...state.fxRates, ...rates } as any, fxLastUpdated: new Date().toISOString() })),
   setVatRate: (vat) => set({ vatRate: vat }),
   fetchLiveFxRates: async () => {
+    const buildRates = (phpPerUsd: number, rates: Record<string, number>) => ({
+      USD: Number(phpPerUsd.toFixed(2)),
+      EUR: Number((phpPerUsd / (rates.EUR || 0.92)).toFixed(2)),
+      JPY: Number((phpPerUsd / (rates.JPY || 150)).toFixed(4)),
+      CNY: Number((phpPerUsd / (rates.CNY || 7.23)).toFixed(2)),
+      SGD: Number((phpPerUsd / (rates.SGD || 1.34)).toFixed(2)),
+      HKD: Number((phpPerUsd / (rates.HKD || 7.82)).toFixed(2)),
+    })
+
+    // Try Frankfurter (free, no key, CORS-safe)
+    try {
+      const res = await fetch('https://api.frankfurter.app/latest?from=USD&to=PHP,EUR,JPY,CNY,SGD,HKD')
+      if (res.ok) {
+        const json = await res.json()
+        const rates = json.rates || {}
+        const phpPerUsd = rates.PHP || 56.50
+        set({ fxRates: buildRates(phpPerUsd, rates), fxLastUpdated: new Date().toISOString() })
+        return
+      }
+    } catch (_) { /* try fallback */ }
+
+    // Fallback: open.er-api.com
     try {
       const res = await fetch('https://open.er-api.com/v6/latest/USD')
       if (res.ok) {
         const json = await res.json()
         const rates = json.rates || {}
         const phpPerUsd = rates.PHP || 56.50
-        const newRates = {
-          USD: Number(phpPerUsd.toFixed(2)),
-          EUR: Number((phpPerUsd / (rates.EUR || 0.92)).toFixed(2)),
-          JPY: Number((phpPerUsd / (rates.JPY || 150)).toFixed(4)),
-          CNY: Number((phpPerUsd / (rates.CNY || 7.23)).toFixed(2)),
-          SGD: Number((phpPerUsd / (rates.SGD || 1.34)).toFixed(2)),
-          HKD: Number((phpPerUsd / (rates.HKD || 7.82)).toFixed(2)),
-        }
-        set({ fxRates: newRates, fxLastUpdated: new Date().toISOString() })
+        set({ fxRates: buildRates(phpPerUsd, rates), fxLastUpdated: new Date().toISOString() })
+        return
       }
     } catch (e) {
-      console.warn('[logistics] failed to fetch live fx rates:', e)
+      console.warn('[logistics] all live FX sources failed, using hardcoded rates:', e)
     }
   },
 
