@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
@@ -1286,6 +1287,7 @@ export function DocsTab({
   setDocs: (rows: TransportDoc[]) => void
   onNext?: () => void
 }) {
+  const queryClient = useQueryClient()
   const [editingDoc, setEditingDoc] = useState<TransportDoc | null>(null)
   const [editingIndex, setEditingIndex] = useState<number>(-1)
   const [deletingDoc, setDeletingDoc] = useState<{ doc: TransportDoc; index: number } | null>(null)
@@ -1368,6 +1370,13 @@ export function DocsTab({
         : ''
       toast.success(`${updated.docNo || 'Transport document'} issued successfully.${financeSummary}`)
       setDocs(docs.map((d, i) => (i === index ? updated : d)))
+      const refreshes: Promise<unknown>[] = []
+      if (invoiceCount > 0) {
+        refreshes.push(queryClient.invalidateQueries({ queryKey: ['invoices'] }))
+        refreshes.push(queryClient.invalidateQueries({ queryKey: ['ar-open'] }))
+      }
+      if (apBillCount > 0) refreshes.push(queryClient.invalidateQueries({ queryKey: ['ap-bills'] }))
+      await Promise.all(refreshes)
     } catch (e) {
       toast.error(apiErrorMessage(e))
     }
