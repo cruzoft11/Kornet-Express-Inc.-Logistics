@@ -86,7 +86,16 @@ crud('/integrations', 'integration', 'Integration', s.integrationCreate, s.integ
 crud('/company-settings', 'companySetting', 'CompanySetting', s.companySettingCreate, s.companySettingUpdate, { searchFields: ['key'], jsonFields: ['value'] });
 
 logistics.get('/quotes/:id/print', asyncHandler(async (req, res) => { const quote = await prisma.quote.findFirst({ where: { id: req.params.id, companyCode: req.companyCode! }, include: { cargoLines: true, charges: true } }); if (!quote) throw notFound('Quote not found'); res.json({ data: quote }); }));
-logistics.post('/quotes/:id/convert', writeAll, asyncHandler(async (req, res) => { const row = await convertQuote(req.params.id, req.companyCode!, req.user?.sub); await writeAudit(req, 'convert', 'Quote', req.params.id, { shipment: row }); res.json(row); }));
+logistics.post('/quotes/:id/convert', writeAll, asyncHandler(async (req, res) => {
+  const converted = await convertQuote(req.params.id, req.companyCode!, req.user?.sub);
+  if (!converted) throw notFound('Converted shipment not found');
+  const cargoLineCount = await prisma.cargoLine.count({ where: { shipmentId: converted.id, companyCode: req.companyCode! } });
+  const row = cargoLineCount > 0 && converted.totalPieces === 0 && converted.totalGrossKg === 0 && converted.totalCbm === 0 && converted.totalWmTons === 0
+    ? await recalcShipment(converted.id, req.companyCode!, false, req.user?.sub)
+    : converted;
+  await writeAudit(req, 'convert', 'Quote', req.params.id, { shipment: row });
+  res.json(row);
+}));
 logistics.post('/shipments/:id/apply-tariffs', writeAll, asyncHandler(async (req, res) => { await getOwned(prisma.shipment, req.params.id, req.companyCode!, 'Shipment'); res.json({ data: await applyTariffs(req.params.id, req.companyCode!, req.user?.sub) }); }));
 logistics.post('/shipments/:id/recalc', writeAll, asyncHandler(async (req, res) => res.json(await recalcShipment(req.params.id, req.companyCode!, false, req.user?.sub))));
 logistics.get('/shipments/:id/analysis', asyncHandler(async (req, res) => res.json(await shipmentAnalysis(req.params.id, req.companyCode!))));
