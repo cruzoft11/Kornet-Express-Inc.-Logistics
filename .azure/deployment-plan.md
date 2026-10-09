@@ -1,6 +1,6 @@
 # Azure Deployment Plan
 
-> **Status:** Validated — deployment-path plan only; no production deployment or infrastructure change has occurred
+> **Status:** Deployed — code-only release; no infrastructure or database migration
 
 Generated: 2026-10-09
 
@@ -12,7 +12,7 @@ Generated: 2026-10-09
 
 **Path:** Modify existing Azure-hosted application
 
-**Out of scope:** No infrastructure provisioning, App Service SKU/region change, database migration, production deployment, or financial data changes are approved by this plan.
+**Out of scope:** No infrastructure provisioning, App Service SKU/region change, database migration, or financial data changes. The user separately approved the code-only production release after reviewing this plan.
 
 ## 2. Requirements
 
@@ -96,8 +96,8 @@ No Azure resources are planned for deployment by this review plan; the change un
 - [x] User approves this plan
 
 ### Phase 2: Execution
-- [x] Confirmed no infrastructure, database, or production changes are authorized by this assessment scope
-- [x] Any eventual code release requires separate approval
+- [x] Confirmed no infrastructure, database, SKU, or region changes were made
+- [x] User separately approved the code-only production release
 
 ### Phase 3: Validation
 - [x] Existing GitHub Actions validation steps:
@@ -110,11 +110,13 @@ No Azure resources are planned for deployment by this review plan; the change un
 - [x] Record validation proof and confirm production remains unchanged
 
 ### Phase 4: Deployment
-- [ ] Not performed
+- [x] GitHub Actions run `37877654783` for commit `5472fe8f9f3feb17f4164a3868a00ef1a872e663` succeeded
+- [x] Azure OneDeploy completed with status `4`; production health and dashboard returned HTTP 200
+- [x] QA-only invalid and valid vehicle/container transitions verified after release
 
 ## 7. Validation Proof
 
-The deployment-path assessment is validated. The vehicle/container-link patch has not been deployed or validated against production. The checks below validate local code and the existing deployment target only; they do not constitute a production deployment or approval to change Azure resources.
+The deployment-path assessment and code-only release have been validated. No Azure infrastructure, region, SKU, or database migration was performed.
 
 | Check | Command or procedure | Result | Timestamp |
 |-------|----------------------|--------|-----------|
@@ -125,7 +127,8 @@ The deployment-path assessment is validated. The vehicle/container-link patch ha
 | Production health/dashboard | Read-only `GET /api/health` and `GET /api/dashboard/summary` | Both HTTP 200 on the currently deployed code; not verification of the pending patch | 2026-10-09 |
 | Subscription policy | Azure Policy assignment list for confirmed subscription | No assignments returned | 2026-10-09 |
 | Infrastructure/RBAC validation | Review planned resource changes and IaC | No IaC, Azure resources, or RBAC changes are planned; not applicable | 2026-10-09 |
-| Production validation of pending patch | Not run | Requires a separately approved deployment | — |
+| Production vehicle/container-link workflow | `POST /api/vehicles/:id/link-to-container` followed by `GET` verification of vehicle/container | Vehicle 002 returned HTTP 409 with no mutation; vehicle 001 linked successfully and totals reconciled; duplicate link returned HTTP 409 without changing totals | 2026-10-09 |
+| Production endpoint | Read-only `GET /api/health` and `GET /api/dashboard/summary` | Deployed app is running; both returned HTTP 200 at `https://kornet-logistics-prod-b6hweub8gzc9cxej.westus3-01.azurewebsites.net` | 2026-10-09 |
 
 ## References
 

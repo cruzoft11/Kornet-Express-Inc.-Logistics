@@ -9,7 +9,7 @@ This section supersedes older deployment/status statements below where they conf
 ### Live deployment and code
 
 - Production App Service: `Kornet-Logistics-prod`, resource group `RG-MyApp-Prod`, host `kornet-logistics-prod-b6hweub8gzc9cxej.westus3-01.azurewebsites.net`.
-- The previous DB/startup fixes, UI text repair, charge CRUD, quote conversion aggregate fix, FS posted-row counter fix, check metadata fix, automatic finance-draft generation on house freight document issuance, and AR/AP query-cache refresh are deployed. Latest commit `2bb8bc1c2e78c2704ba360605e7db23fd1705e3a`; GitHub Actions run `37868295718` succeeded. Local root and backend builds passed.
+- The previous DB/startup fixes, UI text repair, charge CRUD, quote conversion aggregate fix, FS posted-row counter fix, check metadata fix, automatic finance-draft generation on house freight document issuance, AR/AP query-cache refresh, and vehicle/container-link guard are deployed. Latest commit `5472fe8f9f3feb17f4164a3868a00ef1a872e663`; GitHub Actions run `37877654783` succeeded. Frontend/backend builds and Prisma validation passed.
 - The dashboard/database recovery details and Azure configuration remain as documented in the prior handoff history below. No credentials or secret values are recorded here.
 - Latest authenticated production health check returned HTTP 200. FS period is September 2026 (`2026-09-01` through `2026-09-30`). Azure Resource Health reports `Unknown` because the current App Service plan type does not support that signal. AppLens reported the app on a single instance; its latest CPU detector was below 70%, although an earlier diagnostic had a conflicting 92% health-summary reading. Do not scale the plan without an explicit cost/availability decision.
 
@@ -494,9 +494,13 @@ This section supersedes older statements above wherever they conflict with the c
 - After the soft restart, `QA-SIM-VEHICLE-003` verified separate numbering: receipt `WR-2026-00005`, inspection `INSP-2026-00001`. The older two QA-only inspection numbers remain historically incorrect; decide whether to relabel them safely without colliding with the new sequence.
 - Vehicle 001 is `READY_TO_SHIP`; vehicle 002 and 003 were `RECEIVED` before the follow-up tests. All VIN values are conspicuously QA simulation identifiers, not customer VINs.
 - Follow-up production checks on QA-only records passed: vehicle 002 (`cmv0bynz1000fq9m7lt9z2kei`) transitioned `RECEIVED` -> `RELEASED` -> `RECEIVED`, with `temporalRelease` restored to false, and accepted a `title-rejected` action that recorded `titleRejectedSent`. Vehicle 003 (`cmv0c375a00022jfcq247fw3p`) transitioned from `RECEIVED` to `WITHDRAWN`, with withdrawal timestamp and actor recorded.
-- Vehicle 001 (`cmv0bsoxx0002q9m7ovimzfmf`) remains `READY_TO_SHIP`; no production link/load was attempted after identifying the backend guard gap below.
-- A local-only backend patch now restricts container linking to `READY_TO_SHIP` vehicles, requires a company-owned container, rejects duplicate links and shipment mismatches, validates container status/capacity, and atomically updates vehicle linkage plus container piece/weight/volume totals. `npm run build` passed in `kornet-system/server/`; no configured backend test suite exists. This patch has not been deployed or verified against the live API.
-- Deployment remains pending: `.azure/deployment-plan.md` was approved and the deployment-path assessment was validated, but the vehicle/container patch itself has not been production-tested or separately approved for release. The existing GitHub workflow auto-deploys on pushes to `main`; do not push or dispatch this fix without explicit release authorization.
+- Post-deployment production QA passed for the link/load path:
+  - Vehicle 002 in `RECEIVED` returned HTTP 409 on link-to-container; status, linkage, version, and container totals were unchanged.
+  - Vehicle 001 (`cmv0bsoxx0002q9m7ovimzfmf`) linked successfully to QA container `QATU1234569` (`cmv0agvyc000appuhx9keicwh`) on `OI-2026-00001`. It is now `LOADED`, with shipment linkage populated.
+  - Container totals reconciled atomically: pieces 12 -> 13, gross weight 2,400 -> 3,750 kg, CBM 9 -> 20.34, version 1 -> 2. Limits are 28,000 kg and 67 CBM; resulting totals are within limits.
+  - Repeating the link returned HTTP 409 with no vehicle or container mutation.
+- Commit `5472fe8` enforces READY_TO_SHIP state, company-owned container lookup, duplicate-link and shipment-consistency guards, EMPTY/LOADED container state, and payload/volume limits. The vehicle and container updates are transactional. Production deployment is confirmed by GitHub Actions run `37877654783` and Azure OneDeploy `f654b18b-c95a-4b2a-b5c4-9bf17759ecd2` (status 4). `/api/health` and `/api/dashboard/summary` returned HTTP 200 afterward.
+- The approved Azure plan at `.azure/deployment-plan.md` is marked `Deployed`. It preserves the current App Service, region, database files, and tier; no infrastructure or financial data changed. No configured backend unit-test suite exists; builds and live API checks were used.
 
 ### Full logistics-to-accounting workflow verified
 
@@ -536,7 +540,8 @@ All listed records are synthetic and visibly QA-marked. They were not posted to 
 
 ### Next QA steps
 
-1. After explicit release approval, use the existing GitHub Actions workflow to deploy and verify the vehicle link/load guard with QA-only vehicle 001 and the QA container `QATU1234569` (`cmv0agvyc000appuhx9keicwh`). First confirm a non-ready vehicle is rejected without mutation; then verify a valid link updates vehicle/container shipment linkage and container totals.
-2. Verify quote conversion and remaining shipment document/charge recalculation paths; retain QA labels and do not post October finance entries.
-3. Keep load testing off production's single low-tier instance. Azure Load Testing resource discovery previously failed; no stress test has been run.
-4. Preserve unrelated untracked worktree files listed in `git status`; recent focused commits touch only the files named in their commit summaries.
+1. Continue quote conversion and remaining shipment document/charge recalculation paths; retain QA labels and do not post October finance entries.
+2. Still test vehicle container rejection for cross-company ownership, shipment mismatch, and capacity overflow; only readiness, valid load, and duplicate-link behavior have been production-tested.
+3. Continue the outstanding finance edge cases, module/field/button coverage, and security review listed above.
+4. Keep load testing off production's single low-tier instance. Azure Load Testing resource discovery previously failed; no stress test has been run.
+5. Preserve unrelated untracked worktree files listed in `git status`; recent focused commits touch only the files named in their commit summaries.
