@@ -1,24 +1,63 @@
 # Kornet Express v2 Overhaul — Handoff for the Next AI Agent
 
-_Last updated: 2026-10-09 after production DB configuration and UI text QA._
+_Last updated: 2026-10-09 after controlled production logistics-to-ledger E2E QA._
 
 ## Production state — 2026-10-09
 
-This section supersedes older deployment/status statements below where they conflict:
+This section supersedes older deployment/status statements below where they conflict.
 
-- Commits `c5fc8ee` (fixed single-company KORNET scope) and `e6ada56` (Azure startup schema sync and database schema error handling) were pushed to `main`. GitHub Actions deployment run `37854955702` completed successfully.
-- Azure production API health returned HTTP 200. An authenticated browser check confirmed `/api/dashboard/summary`, shipments, quotes, parties, and ports all returned HTTP 200 after deployment. The dashboard reports 8 shipment files.
-- Root cause of the former dashboard failure: Prisma returned `P2021`/`P2022` because the live SQLite database did not match the current schema. The App Service had neither `NODE_ENV` nor `DATABASE_URL` configured. Production startup now detects Azure via `WEBSITE_SITE_NAME` and executes its existing backed-up, non-destructive SQLite schema synchronization.
-- After verifying the live file with App Service Kudu, `DATABASE_URL` was set directly in Azure to `file:/home/site/wwwroot/server/prisma/data/kornet.db`. This is the existing 839,680-byte production DB; no DB was copied or replaced. The existing `accounting.db` (6,447,104 bytes) is in the same directory. `/home/data` does not exist on this app. The App Service restarted; health remained HTTP 200 and both DB files remained present.
-- `NODE_ENV=production`, fresh independently generated `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET` values, and the verified `DATABASE_URL` are now configured directly in Azure App Service settings. Secret values were generated in memory and were not printed or committed. The app restarted and `/api/health` returned HTTP 200. Access tokens signed with the previous key are invalidated, but refresh tokens are opaque random values stored hashed in SQLite, so the app can silently refresh valid existing sessions. A live browser check saw an initial 401 then recovered to a working dashboard. Password-based login was not retested. `PORTAL_JWT_SECRET` remains unset and portal auth falls back to the new access secret.
-- Authenticated smoke-test data was intentionally created in production per the user's request:
-  - Party `QA-20261008231909`, `QA ONLY - Production Smoke Test 20261008231909`.
-  - Draft quote `QT-2026-00001`, linked to that party, with a clearly marked QA-only note.
-  - An unposted, open `DOC` quote charge of PHP 100; server calculation returned PHP 12 VAT. It has a QA-only note and is not invoiced or posted to the ledger.
-  - The quote was **not** converted to a shipment; do not mistake these synthetic records for customer business. The quote sequence has advanced to `QT-2026-00001`.
-- QA still outstanding: no comprehensive module, shipment-to-invoice/AP, accounting bridge, or ledger posting test has been completed. The dashboard's MTD/AR/AP figures were zero and it reported 20 staged bridge items; verify whether these reflect expected production data before posting or clearing anything. No financial transaction was posted during this QA. Continue with a controlled test plan and safe void/cleanup procedures.
-- Source contained mojibake punctuation and labels (`â€”`, `â†’`, `â€¦`, `NestlÃ©`) in UI and seed text. These strings were corrected, both builds passed, and commit `ee408e7` deployed successfully in workflow run `37860713104`. The deployed frontend entry bundle was checked and no longer contains the corrupted em-dash/arrow sequences.
-- The pre-existing working-tree change to `.github/workflows/azure-deploy.yml` and untracked scripts `check-accts.mjs`, `check-co.mjs`, `check-fs.mjs`, and `list-tables.mjs` remain uncommitted and must be preserved/reviewed separately.
+### Live deployment and code
+
+- Production App Service: `Kornet-Logistics-prod`, resource group `RG-MyApp-Prod`, host `kornet-logistics-prod-b6hweub8gzc9cxej.westus3-01.azurewebsites.net`.
+- The previous DB/startup fixes, UI text repair, charge CRUD, quote conversion aggregate fix, FS posted-row counter fix, check metadata fix, automatic finance-draft generation on house freight document issuance, and AR/AP query-cache refresh are deployed. Latest commit `2bb8bc1c2e78c2704ba360605e7db23fd1705e3a`; GitHub Actions run `37868295718` succeeded. Local root and backend builds passed.
+- The dashboard/database recovery details and Azure configuration remain as documented in the prior handoff history below. No credentials or secret values are recorded here.
+- Latest authenticated production health check returned HTTP 200. FS period is September 2026 (`2026-09-01` through `2026-09-30`). Azure Resource Health reports `Unknown` because the current App Service plan type does not support that signal. AppLens reported the app on a single instance; its latest CPU detector was below 70%, although an earlier diagnostic had a conflicting 92% health-summary reading. Do not scale the plan without an explicit cost/availability decision.
+
+### KORNET ledger cleanup and preservation
+
+- Before cleanup, a fresh backup of both production databases was verified at `/home/kornet-qa-backups/cleanup-20261009-0030/`:
+  - `kornet.db`: 839,680 bytes, SHA-256 `f4e5ba0bdbd146b30ab102aa02cf22f0189f9f85ef088331e8c2bd692a92f4f7`.
+  - `accounting.db`: 6,447,104 bytes, SHA-256 `66a701f272681a886c674bd653ecf4d4052f831467389f621f95e389851bc02c`.
+- Per the user's approval, KORNET's 15 legacy FS vouchers were soft-deleted, 10 orphaned legacy app checks and 20 staged `LEGACY` bridge rows were removed, and KORNET opening balances/movements were cleared. The KORNET chart now has 11 required accounts, including defaults 1130, 2117, 4215 and 4515. The other 17 company partitions in `accounting.db` were preserved.
+- After E2E final posting, KORNET's September trial balance is balanced: debit PHP 1,358.40, credit PHP 1,358.40. Month-end checklist is `ok=true`, with zero unposted items. This includes the posted-row-aware count fix; all four QA postings are excluded from unposted counts.
+
+### Controlled production E2E scenario — intentionally retained QA data
+
+The user explicitly authorized production test records and requested the encoded test data be left in the app. These records are synthetic, unmistakably QA-labeled, and must not be treated as real customer business:
+
+- Customer `QA-E2E-CUST-20261009` (`cmv08eh2l000musi5l6g2hixq`) and vendor `QA-E2E-VEND-20261009` (`cmv08ehfz000pusi5wam2si6z`).
+- Quote `QT-2026-00002` (`cmv08en8o000tusi5vq6jrna8`) converted to ocean export shipment `OE-2026-00002` (`cmv08g36s001jusi5u6xwtpdu`), now `CLOSED`. One QA crate: 720 kg, 1.2 CBM, 1.2 W/M.
+- QA HBL `QA-HBL-OE-2026-00002` (`cmv08z3ps0004k6lypgw7100h`) is `ISSUED` and linked to the cargo line. HBL preview returned one cargo line and one charge.
+- Charge `DOC`: bill PHP 1,200 + VAT PHP 144; cost PHP 720. Shipment analysis: revenue PHP 1,200, cost PHP 720, profit PHP 480, margin 40%.
+- Tariff application was exercised and returned no charges because KORNET has no active tariff records. Automatic tariff pricing is therefore not validated.
+- Financial documents were backdated to 2026-09-30 / `glPeriod=2026-09` to match the open FS period:
+  - Sales invoice `SI-2026-000001` (`cmv08zp8d000fk6lyolum3gfi`): taxable sales PHP 1,200 + VAT PHP 144 = PHP 1,344; fully paid, AR balance zero; FS journal `SB-202609-0001`.
+  - AP bill `AP-2026-000001` (`cmv08zq3c000mk6lyc4ni204e`): cost PHP 720 + input VAT PHP 86.40 - EWT PHP 14.40 = payable PHP 792; fully paid, AP balance zero; FS journal `PB-202609-0001`.
+  - Receipt `CR-2026-000001` (`cmv090ilw000uk6lyq8z80hqz`): PHP 1,344, posted; journal `CR-202609-0001`.
+  - Check voucher `CV-2026-000001` (`cmv090nwh0010k6lyy32ezxb6`): printed check `CHECK_1-2026-00001`, bank 1, PHP 792, posted; journal `CDV-202609-0001`. The FS check master was verified to preserve the actual printed check number and bank number.
+- All four corresponding bridge items passed trial post and final-posted. All are `POSTED`, with balanced debit/credit totals. Invoice and AP bill are paid; shipment close-check passed and shipment is closed.
+- No QA production records were deleted after posting. The earlier smoke party `QA-20261008231909` and draft quote `QT-2026-00001` with an open PHP 100 charge also remain from the prior session.
+- A second QA-only shipment tests the new automation: `OE-2026-00003` (`cmv09n9hj0004x0g865jeyyly`), charge `DOC` (`cmv09nafx000bx0g87fja7fmq`), and issued house BL `QA-AUTO-BL-OE-2026-00003` (`cmv09naur000fx0g8u9hxsyk0`). Issuance automatically created draft invoice `SI-2026-000002` (`cmv09nbu4000lx0g8k8qei8gg`; PHP 100 + PHP 12 VAT = PHP 112) and draft AP bill `AP-2026-000002` (`cmv09nc4g000rx0g8lmd8owq8`; PHP 50 + PHP 6 input VAT - PHP 1 EWT = PHP 55). Both remain `DRAFT`; no bridge or GL entry was created. Reissuing the already-issued document did not create duplicates.
+- The auto-draft trigger applies to HOUSE-class `BL`, `HBL`, `AWB`, and `HAWB` documents. MASTER docs and domestic `DR`/`WAYBILL` docs do not trigger this automation. Frontend success feedback reports draft counts and invalidates AR/AP queues.
+
+### Fixes discovered during E2E QA
+
+- Quote conversion copied cargo but left shipment aggregates at zero. Commit `f361e4b` now recalculates copied cargo totals when a converted shipment's derived totals are all zero. Deployed and production-verified: 1 piece, 720 kg, 1.2 CBM and 1.2 W/M.
+- FS unposted counts included rows already final-posted to the ledger. Commit `6d8f64f` excludes rows with matching posting-log entries. Deployed and verified after all four postings: zero unposted.
+- Final CDB bridge posting omitted the printed check number and bank number from the legacy FS check master. Commit `de587b9` now loads those values from the source check before final posting. Deployed and verified against check master number `CHECK_1-2026-00001`, bank 1.
+- Per the user's approval, issuing a HOUSE-class BL/HBL/AWB/HAWB now creates eligible invoice/AP **drafts only**; it does not post financial entries or create checks. The API reports generated document numbers and the UI shows the resulting draft counts. Production-tested with `OE-2026-00003`; retry did not duplicate drafts.
+- Earlier in this QA, charge detail/update/delete routes were added and verified in production (GET/PATCH/DELETE 200/200/204; deleted charge then returned 404).
+
+### Still outstanding — do not call the app fully QA-complete
+
+- This was one controlled Ocean Export LCL scenario, not a full system/module/button/field certification. Air export/import, ocean import, FCL/container flows, domestic/P&D orders, vehicle/RoRo, fleet/dispatch, customer tracking portal, all document types, and broader dashboard/report screens remain to be exercised.
+- Finance edge cases remain: customer withholding-agent receipts, partial/multiple invoice applications, unapplied deposits, partial AP/check settlements, direct check expenses, manual checks, voids/credit memos/reversals, multiple vendor/customer groupings, and period-close/exception paths.
+- The FS ledger is still open only through September 2026, while newly generated drafts use the current October 2026 date/period. Do not post `SI-2026-000002` or `AP-2026-000002` until an accountant updates the fiscal period or intentionally corrects the document dates/period. Do not backdate or close periods automatically.
+- No tariffs existed, so tariff match precedence, validity dates, currencies, minimums and container-specific ratings were not tested.
+- The automatic draft-creation endpoint was production-tested directly through the authenticated API; the user-facing toast and cache refresh were type/build-checked but not yet verified through a complete interactive browser click-flow.
+- No full role/permission matrix, concurrency/race testing, restore-from-backup drill, security review, browser/device accessibility pass, or full regression suite was completed. The current plan's one-instance redundancy and unsupported Resource Health signal merit operational review.
+- The old smoke quote `QT-2026-00001` and new E2E QA records are intentionally retained. Do not clean them up or modify other company partitions without explicit authorization and a verified backup.
+- Pre-existing worktree changes are unrelated and must remain untouched: modified `.github/workflows/azure-deploy.yml` and untracked scripts `check-accts.mjs`, `check-co.mjs`, `check-fs.mjs`, `list-tables.mjs`.
 
 ---
 
@@ -416,3 +455,72 @@ At handoff time `npx tsc --noEmit` failed on in-progress files in `src/modules/f
 - Do TODOs 1–4 yourself; they are integration work needing one consistent view.
 - Then delegate QA, DevOps and Security to sub-agents. Use lighter models per the user's request, but verify their output yourself with builds, the smoke test and screenshots.
 - Keep the quality bar: no fake data, no dead buttons, every field wired, keyboard-first, premium look.
+
+## 9. Production QA continuation - 2026-10-09
+
+This section supersedes older statements above wherever they conflict with the current production state. It records a focused live QA pass; it is not evidence that every module or field has been fully tested.
+
+### Dashboard fixes already deployed
+
+- `d4bcf4d` (`d4bcf4db8e563f94f645e5bf68c1b6a71a9b4d3d`): dashboard worklists and posted-only AR/AP aging; bounded MTD revenue excluding VAT; by-mode MTD data; due-this-week AP; shipment ETA/cutoff lists.
+- `f07451f` (`f07451fe601886912305abd647df9a924141ece9`): `pdToday` excludes completed/cancelled orders and counts active orders by scheduled delivery date.
+- `a772524` (`a772524`), deployment run `37872778916`: dispatch-dialog resource filtering and shared query invalidation across the P/D screens.
+- `d598668` (`d5986681a4ea917a697bf62e63b9178ab7e5e423`), deployment run `37873225457`: inspection numbers use a dedicated `INSP` sequence instead of consuming `WR` numbers.
+- All four relevant GitHub Actions deployments succeeded. The inspection-numbering deployment initially left the old server process live; a soft App Service restart was needed before the new prefix appeared. After restart, health and dashboard summary returned HTTP 200; drafts remain excluded from AR/AP, so AR and AP are PHP 0 while the current-month posted-income values remain empty.
+
+### Dispatch workflow fix deployed and production-verified
+
+- Commit `867b6e4` (`867b6e449cb1210c71532861faba39f9b5dd09b0`), deployment run `37870951031`, succeeded.
+- Changed `kornet-system/server/src/routes/logistics.ts`:
+  - Dispatch now checks company ownership, reserves an available driver and vehicle, and blocks concurrent conflicting assignments.
+  - Multiple P/D orders may join an active route only with its assigned driver and vehicle.
+  - Completing/cancelling the last active order releases resources; route state completes only after its open/active work is finished.
+  - Invalid status transitions remain explicit conflicts; completion requires a POD signer.
+- Changed `kornet-system/src/modules/pd/PdOrdersPage.tsx` and `kornet-system/src/modules/pd/PdDispatchBoard.tsx`:
+  - Route selection is passed to the dispatch API.
+  - Existing route assignments preselect their driver/vehicle.
+  - Resource/route queries refresh after dispatch, completion, and cancellation.
+- Production workflow checks passed: wrong driver/vehicle for an active route returned 409; joining that route with its assigned resources returned 200; completing one of multiple route orders kept resources `ON_ROUTE`; completing the final stop released both to `AVAILABLE` and completed the route; dispatch-then-cancel also released resources.
+- The dispatch dialogs now show only available resources unless joining an active route, where only its assigned driver/vehicle are selectable. P/D board/list queries invalidate together after mutations.
+- Production `/api/health` and `/api/dashboard/summary` returned HTTP 200 after deployment.
+- `npm run build` passed in `kornet-system/` and `kornet-system/server/`. There is no configured backend test script/test suite; do not treat “no tests found” as a test pass. The frontend build reports existing chunk-size/dynamic-import warnings.
+
+### Vehicle inventory QA
+
+- `QA-SIM-VEHICLE-001` (`cmv0bsoxx0002q9m7ovimzfmf`) completed EXPECTED -> RECEIVED -> inspected -> ON_HOLD -> RECEIVED -> READY_TO_SHIP. Readiness guards rejected the premature transition and missing title/lien prerequisites with 409.
+- This first record exposed the inspection/WR sequence collision: it received `WR-2026-00001` and the old backend wrongly assigned inspection number `WR-2026-00002`.
+- `QA-SIM-VEHICLE-002` (`cmv0bynz1000fq9m7lt9z2kei`) also received an incorrectly prefixed inspection number before the successful restart (`WR-2026-00004`).
+- After the soft restart, `QA-SIM-VEHICLE-003` verified separate numbering: receipt `WR-2026-00005`, inspection `INSP-2026-00001`. The older two QA-only inspection numbers remain historically incorrect; decide whether to relabel them safely without colliding with the new sequence.
+- Vehicle 001 is `READY_TO_SHIP`; vehicle 002 and 003 remain `RECEIVED`. Continue inventory testing with container link/load, temporal release, title-rejected and withdrawal guards. All VIN values are conspicuously QA simulation identifiers, not customer VINs.
+
+### QA-only production records
+
+All listed records are synthetic and visibly QA-marked. They were not posted to the general ledger, paid, or treated as real customer activity.
+
+- Shipments:
+  - `OI-2026-00001` / `cmv0agv070002ppuh4awj7tw7`: Ocean Import FCL; invoice `SI-2026-000003` and AP `AP-2026-000003`, both drafts.
+  - `AE-2026-00002` / `cmv0agz0g0010ppuh8fa24ij0`: Air Export; invoice `SI-2026-000004` and AP `AP-2026-000004`, both drafts.
+  - `AI-2026-00001` / `cmv0ah28w001uppuh9x4rs2nw`: Air Import; invoice `SI-2026-000005` and AP `AP-2026-000005`, both drafts.
+  - `OE-2026-00004` / `cmv0ah55v002nppuhse00no6k`: Ocean Export LCL; invoice `SI-2026-000006` and AP `AP-2026-000006`, both drafts. Its destination was corrected from `NRT` to the existing master-data seaport `LAX` (Port of Los Angeles).
+- P/D:
+  - `PD-2026-00001` completed with a simulated POD.
+  - `PD-2026-00002` and `PD-2026-00003` completed as two orders on route `DT-2026-00002`.
+  - `PD-2026-00004` and resource-release test `PD-2026-00005` cancelled.
+  - `PD-2026-00006` remains intentionally `OPEN`, QA-only, and due today to exercise the dashboard scheduled-delivery card. Dashboard currently reports `pdToday: 1`.
+- Fleet resources: two QA-only drivers and two QA-only vehicles; all currently `AVAILABLE`. QA-only routes `DT-2026-00001` and `DT-2026-00002` are `COMPLETED`.
+- Latest observed dashboard summary: HTTP 200, `pdToday: 1`, 4 upcoming ETAs, 3 upcoming cutoffs, AR PHP 0, AP PHP 0.
+
+### Important unresolved QA data-quality issue
+
+Do not regard `AE-2026-00002` as a representative, reconciled air-freight example yet:
+
+- Its cargo line says 4 pieces, gross 118 kg, dimensions 91 x 100 x 100 cm, but stored CBM is only 0.75. Given the application's per-piece dimension calculation, those dimensions imply 3.64 CBM.
+- The shipment recalculation reports `totalVolumetricKg: 606.67` and `totalChargeableKg: 607`, while its charge and invoice line still use quantity 118 at PHP 58/kg (PHP 6,844). The AP draft line is PHP 4,602 (118 x PHP 39). The cargo line's stored `chargeableKg: 126` is also stale relative to the shipment aggregate.
+- Financial charge fields are locked once invoice/AP generation marks them billed, even while the documents are drafts. Do not bypass this lock or post anything. Decide a safe correction: either add supported synchronization/editing of linked draft invoice/AP lines and charge, or clearly invalidate/replace only this QA sample. Keep the ledger unchanged.
+
+### Next QA steps
+
+1. Resolve the Air Export mismatch above; verify cargo dimensions, CBM, shipment totals, charge quantities, and linked draft invoice/AP values agree before using it as a workflow example.
+2. Continue targeted tests for vehicle-inventory lifecycle, quote conversion, shipment-to-draft-finance recalculation, receipts/checks, and bridge/ledger read behavior. Do not post October finance entries or alter the September ledger period without approval; zero posted October metrics are correct.
+3. Keep load testing off production's single low-tier instance. Azure Load Testing resource discovery previously failed; no stress test has been run.
+4. Refresh this handoff after the next QA pass. Preserve unrelated worktree changes listed in `git status`; only the three dispatch implementation files were included in commit `867b6e4`.
